@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iasoclin — Gestão inteligente para clínicas de estética</title>
+  <meta name="description" content="Sistema completo para clínicas de harmonização e estética. Agenda, prontuário digital, assinatura eletrônica, IA e muito mais em um só lugar." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        fontFamily: { sans: ['Inter', 'sans-serif'] },
+        extend: {
+          colors: {
+            green: {
+              950: '#1a2b22',
+              900: '#22382c',
+              800: '#2a4535',
+              700: '#314D3E',
+              600: '#3d6150',
+              500: '#4a7562',
+              400: '#5f8f79',
+              300: '#7daa97',
+              200: '#a8c8bb',
+              100: '#d4e6de',
+              50:  '#edf5f1',
+            },
+            cream: {
+              50:  '#FAF7F2',
+              100: '#EFE7DA',
+              200: '#E5D8C5',
+              300: '#D6C1A3',
+              400: '#C8A882',
+            },
+            amber: { brand: '#C4895A' },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    * { -webkit-font-smoothing: antialiased; }
+
+    /* Gradient mesh background */
+    .hero-bg {
+      background-color: #1a2b22;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 20% 50%, rgba(49,77,62,0.7) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 85% 20%, rgba(196,137,90,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 60% at 70% 90%, rgba(58,155,111,0.1) 0%, transparent 55%);
+    }
+
+    /* Grain texture overlay */
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    /* Animated gradient badge */
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .badge-shimmer {
+      background: linear-gradient(90deg, #C4895A, #3A9B6F, #C4895A);
+      background-size: 200%;
+      animation: shimmer 3s ease infinite;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Floating card animation */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    .float { animation: float 4s ease-in-out infinite; }
+    .float-delayed { animation: float 4s ease-in-out 1.5s infinite; }
+    .float-slow { animation: float 5s ease-in-out 0.8s infinite; }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* Gradient border card */
+    .gradient-border {
+      position: relative;
+      border-radius: 16px;
+    }
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 17px;
+      background: linear-gradient(135deg, rgba(196,137,90,0.4), rgba(49,77,62,0.2), rgba(58,155,111,0.3));
+      z-index: -1;
+    }
+
+    /* Glow effect */
+    .glow-green {
+      box-shadow: 0 0 40px rgba(49,77,62,0.3), 0 0 80px rgba(49,77,62,0.15);
+    }
+    .glow-amber {
+      box-shadow: 0 0 30px rgba(196,137,90,0.25);
+    }
+
+    /* Glass card */
+    .glass {
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Feature card hover */
+    .feature-card {
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+      border-color: rgba(196,137,90,0.35);
+    }
+
+    /* Dot grid pattern */
+    .dot-grid {
+      background-image: radial-gradient(circle, rgba(49,77,62,0.12) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* Pricing card popular */
+    .popular-glow {
+      box-shadow: 0 0 0 2px #314D3E, 0 24px 64px rgba(49,77,62,0.25);
+    }
+
+    /* Testimonial quote */
+    .testimonial-quote {
+      background: linear-gradient(135deg, #FAF7F2, #EFE7DA);
+    }
+
+    /* Smooth underline link */
+    .nav-link {
+      position: relative;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 1.5px;
+      background: #C4895A;
+      transition: width 0.25s ease;
+    }
+    .nav-link:hover::after { width: 100%; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #FAF7F2; }
+    ::-webkit-scrollbar-thumb { background: #D6C1A3; border-radius: 3px; }
+
+    /* Tag pill */
+    .tag-pill {
+      background: rgba(196,137,90,0.12);
+      border: 1px solid rgba(196,137,90,0.25);
+      color: #C4895A;
+    }
+  </style>
+</head>
+<body class="font-sans text-gray-900 bg-[#FAF7F2] overflow-x-hidden">
+
+<!-- ═══════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════════ -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style="background: transparent;">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <!-- Logo -->
+    <a href="#" class="flex items-center gap-2.5 group">
+      <div class="w-8 h-8 rounded-xl bg-green-700 flex items-center justify-center shadow-lg group-hover:shadow-green-700/30 transition-shadow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="white" opacity="0.9"/>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="white" stroke-width="0.5" fill="none"/>
+        </svg>
+      </div>
+      <span class="text-white font-bold text-lg tracking-tight">Iasoclin</span>
+    </a>
+
+    <!-- Nav links - Desktop -->
+    <div class="hidden md:flex items-center gap-7">
+      <a href="#funcionalidades" class="nav-link text-white/70 hover:text-white text-sm font-medium transition-colors">Funcionalidades</a>
+      <a href="#como-funciona" class="nav-link text-white/70 hover:text-white text-sm font-medium transition-colors">Como funciona</a>
+      <a href="#precos" class="nav-link text-white/70 hover:text-white text-sm font-medium transition-colors">Preços</a>
+      <a href="#faq" class="nav-link text-white/70 hover:text-white text-sm font-medium transition-colors">FAQ</a>
+    </div>
+
+    <!-- CTA -->
+    <div class="flex items-center gap-3">
+      <a href="#" class="hidden md:block text-white/70 hover:text-white text-sm font-medium transition-colors">Entrar</a>
+      <a href="#precos" class="bg-white text-green-700 hover:bg-cream-100 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:shadow-lg">
+        Começar grátis
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     HERO
+════════════════════════════════════════════ -->
+<section class="relative hero-bg min-h-screen flex flex-col overflow-hidden">
+
+  <!-- Top gradient separator -->
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-[#FAF7F2] z-10 pointer-events-none"></div>
+
+  <!-- Stars/dots decoration -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-32 left-16 w-1 h-1 rounded-full bg-white/20"></div>
+    <div class="absolute top-48 left-1/3 w-1.5 h-1.5 rounded-full bg-amber-brand/30"></div>
+    <div class="absolute top-24 right-1/4 w-1 h-1 rounded-full bg-white/15"></div>
+    <div class="absolute top-64 right-16 w-1 h-1 rounded-full bg-green-400/30"></div>
+    <div class="absolute top-96 left-24 w-0.5 h-0.5 rounded-full bg-white/25"></div>
+    <div class="absolute top-72 right-1/3 w-1 h-1 rounded-full bg-amber-brand/20"></div>
+  </div>
+
+  <div class="relative z-10 max-w-6xl mx-auto px-6 pt-36 pb-20 flex flex-col lg:flex-row items-center gap-16 lg:gap-12 flex-1">
+
+    <!-- LEFT: Copy -->
+    <div class="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left">
+      <!-- Badge -->
+      <div class="inline-flex items-center gap-2 tag-pill rounded-full px-3.5 py-1.5 text-xs font-semibold mb-6">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-brand animate-pulse"></span>
+        Assinatura eletrônica com validade jurídica
+      </div>
+
+      <!-- Headline -->
+      <h1 class="text-4xl md:text-5xl lg:text-[3.4rem] font-black text-white leading-[1.1] tracking-tight mb-6">
+        Gerencie sua clínica
+        <span class="block text-transparent bg-clip-text" style="background: linear-gradient(90deg, #a8c8bb, #EFE7DA);">
+          do jeito que ela
+        </span>
+        <span class="text-white">merece.</span>
+      </h1>
+
+      <!-- Sub -->
+      <p class="text-white/60 text-lg leading-relaxed mb-8 max-w-lg">
+        Agenda inteligente, prontuário digital, documentos com assinatura eletrônica e IA integrada. Tudo em um só lugar, pensado para clínicas de estética e harmonização.
+      </p>
+
+      <!-- CTAs -->
+      <div class="flex flex-col sm:flex-row items-center gap-3 mb-10">
+        <a href="#precos"
+          class="flex items-center gap-2 bg-white text-green-700 hover:bg-cream-50 px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover:shadow-xl hover:shadow-white/10 hover:-translate-y-0.5">
+          Começar grátis
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#como-funciona"
+          class="flex items-center gap-2 text-white/70 hover:text-white px-5 py-3.5 rounded-xl font-medium text-sm transition-colors glass">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
+          Ver demonstração
+        </a>
+      </div>
+
+      <!-- Social proof numbers -->
+      <div class="flex items-center gap-6">
+        <div>
+          <p class="text-white font-bold text-2xl">+200</p>
+          <p class="text-white/40 text-xs font-medium mt-0.5">clínicas ativas</p>
+        </div>
+        <div class="w-px h-8 bg-white/10"></div>
+        <div>
+          <p class="text-white font-bold text-2xl">+12k</p>
+          <p class="text-white/40 text-xs font-medium mt-0.5">pacientes gerenciados</p>
+        </div>
+        <div class="w-px h-8 bg-white/10"></div>
+        <div>
+          <p class="text-white font-bold text-2xl">4.9</p>
+          <p class="text-white/40 text-xs font-medium mt-0.5">nota média</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: App mockup -->
+    <div class="flex-1 flex justify-center lg:justify-end relative w-full max-w-xl lg:max-w-none">
+      <!-- Main dashboard card -->
+      <div class="relative w-full max-w-[480px]">
+
+        <!-- Shadow glow -->
+        <div class="absolute inset-8 bg-green-700/20 blur-3xl rounded-full"></div>
+
+        <!-- Main panel -->
+        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/10 float">
+          <!-- Top bar -->
+          <div class="bg-green-700 px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-white/30"></div>
+              <span class="text-white/80 text-xs font-medium">Dashboard</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-1.5 h-1.5 rounded-full bg-white/20"></div>
+              <div class="w-1.5 h-1.5 rounded-full bg-white/20"></div>
+              <div class="w-1.5 h-1.5 rounded-full bg-white/20"></div>
+            </div>
+          </div>
+
+          <!-- Dashboard content -->
+          <div class="p-4 bg-[#FAF7F2]">
+            <!-- Greeting -->
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <p class="text-[10px] text-gray-400 font-medium">Boa tarde,</p>
+                <p class="text-sm font-bold text-green-700">Dra. Ana Silva</p>
+              </div>
+              <div class="text-xs text-gray-400 bg-white rounded-lg px-2.5 py-1.5 border border-gray-100">
+                Seg, 27 Mai
+              </div>
+            </div>
+
+            <!-- Stat cards -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
+              <div class="bg-white rounded-xl p-3 border border-[#E5D8C5]">
+                <p class="text-[9px] text-gray-400 font-semibold uppercase tracking-wide">Hoje</p>
+                <p class="text-xl font-black text-green-700 mt-0.5">8</p>
+                <p class="text-[9px] text-gray-400">agendamentos</p>
+              </div>
+              <div class="bg-white rounded-xl p-3 border border-[#E5D8C5]">
+                <p class="text-[9px] text-gray-400 font-semibold uppercase tracking-wide">Receita</p>
+                <p class="text-[13px] font-black text-green-700 mt-0.5">R$3.2k</p>
+                <p class="text-[9px] text-green-500">↑ 12% mês</p>
+              </div>
+              <div class="bg-white rounded-xl p-3 border border-[#E5D8C5]">
+                <p class="text-[9px] text-gray-400 font-semibold uppercase tracking-wide">Pacientes</p>
+                <p class="text-xl font-black text-green-700 mt-0.5">142</p>
+                <p class="text-[9px] text-gray-400">ativos</p>
+              </div>
+            </div>
+
+            <!-- Appointments list -->
+            <div class="bg-white rounded-xl border border-[#E5D8C5] overflow-hidden">
+              <div class="px-3 py-2 border-b border-[#E5D8C5] bg-[#EFE7DA]">
+                <p class="text-[9px] font-bold text-green-700 uppercase tracking-wide">Próximos agendamentos</p>
+              </div>
+              <div class="divide-y divide-[#F0EAE0]">
+                <div class="flex items-center gap-2.5 px-3 py-2">
+                  <div class="w-1.5 h-full min-h-[28px] rounded-full" style="background:#3A9B6F"></div>
+                  <div class="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-[9px] font-bold text-green-700 shrink-0">MA</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-semibold text-gray-700 truncate">Maria Aparecida</p>
+                    <p class="text-[9px] text-gray-400">Harmonização facial · 14h00</p>
+                  </div>
+                  <span class="text-[8px] bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-semibold shrink-0">Confirmado</span>
+                </div>
+                <div class="flex items-center gap-2.5 px-3 py-2">
+                  <div class="w-1.5 h-full min-h-[28px] rounded-full" style="background:#C4895A"></div>
+                  <div class="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-[9px] font-bold text-amber-700 shrink-0">JS</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-semibold text-gray-700 truncate">Juliana Santos</p>
+                    <p class="text-[9px] text-gray-400">Botox · 15h30</p>
+                  </div>
+                  <span class="text-[8px] bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 font-semibold shrink-0">Agendado</span>
+                </div>
+                <div class="flex items-center gap-2.5 px-3 py-2">
+                  <div class="w-1.5 h-full min-h-[28px] rounded-full" style="background:#4A8EC2"></div>
+                  <div class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-[9px] font-bold text-blue-700 shrink-0">CF</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-semibold text-gray-700 truncate">Carla Ferreira</p>
+                    <p class="text-[9px] text-gray-400">Preenchimento labial · 17h00</p>
+                  </div>
+                  <span class="text-[8px] bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 font-semibold shrink-0">Agendado</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating mini cards -->
+        <div class="absolute -left-12 top-24 float-delayed">
+          <div class="glass rounded-xl p-3 shadow-xl border border-white/10 w-40">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-5 h-5 rounded-lg bg-amber-brand/20 flex items-center justify-center">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#C4895A" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </div>
+              <span class="text-white/80 text-[9px] font-semibold">Assinado</span>
+            </div>
+            <p class="text-white text-[10px] font-semibold truncate">Termo de Consentimento</p>
+            <p class="text-white/40 text-[8px] mt-0.5">Há 2 min · IP registrado</p>
+          </div>
+        </div>
+
+        <div class="absolute -right-10 bottom-28 float-slow">
+          <div class="glass rounded-xl p-3 shadow-xl border border-white/10 w-36">
+            <div class="flex items-center gap-1.5 mb-1.5">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#3A9B6F" stroke-width="2.5"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+              <span class="text-green-300 text-[9px] font-semibold">IA Resumo</span>
+            </div>
+            <p class="text-white/70 text-[9px] leading-relaxed">Paciente com 3 sessões. Evolução positiva…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     LOGOS / CONFIANÇA
+════════════════════════════════════════════ -->
+<section class="py-12 bg-[#FAF7F2] border-b border-cream-200">
+  <div class="max-w-5xl mx-auto px-6 text-center">
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-8">Confiado por clínicas em todo o Brasil</p>
+    <div class="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-40">
+      <!-- Placeholder clinic "logos" as stylized text -->
+      <span class="font-black text-lg text-gray-600 tracking-tight">Clínica Vivace</span>
+      <span class="font-black text-lg text-gray-600 tracking-tight">Studio Lumina</span>
+      <span class="font-black text-lg text-gray-600 tracking-tight">Beleza & Forma</span>
+      <span class="font-black text-lg text-gray-600 tracking-tight">Dra. Renata Costa</span>
+      <span class="font-black text-lg text-gray-600 tracking-tight">Espaço Bella</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     PAIN POINTS
+════════════════════════════════════════════ -->
+<section class="py-24 bg-white">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <span class="inline-block tag-pill rounded-full px-3 py-1 text-xs font-semibold mb-4">O problema</span>
+      <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-4">Chega de fazer gestão no improviso</h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">Sua clínica merece mais do que grupos de WhatsApp, planilhas e papelada.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Pain 1 -->
+      <div class="reveal reveal-delay-1 bg-[#FAF7F2] rounded-2xl p-6 border border-cream-200 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center mb-4">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>
+        </div>
+        <h3 class="font-bold text-gray-800 mb-2">Agenda no papel ou no celular</h3>
+        <p class="text-sm text-gray-500 leading-relaxed">Conflito de horários, esquecimentos, sem histórico. Um agendamento perdido custa dinheiro.</p>
+        <div class="mt-4 flex items-center gap-1.5 text-xs text-red-400 font-semibold">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Causa de conflitos com pacientes
+        </div>
+      </div>
+
+      <!-- Pain 2 -->
+      <div class="reveal reveal-delay-2 bg-[#FAF7F2] rounded-2xl p-6 border border-cream-200 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center mb-4">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/><path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/><path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/><path d="M10 9.5C10 8.67 9.33 8 8.5 8h-5C2.67 8 2 8.67 2 9.5S2.67 11 3.5 11h5c.83 0 1.5-.67 1.5-1.5z"/><path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"/></svg>
+        </div>
+        <h3 class="font-bold text-gray-800 mb-2">Documentos em papel ou impressora</h3>
+        <p class="text-sm text-gray-500 leading-relaxed">Termos de consentimento, contratos, anamneses. Onde estão os assinados da paciente de 2022?</p>
+        <div class="mt-4 flex items-center gap-1.5 text-xs text-orange-400 font-semibold">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Risco jurídico para a clínica
+        </div>
+      </div>
+
+      <!-- Pain 3 -->
+      <div class="reveal reveal-delay-3 bg-[#FAF7F2] rounded-2xl p-6 border border-cream-200 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-yellow-50 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div class="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center mb-4">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <h3 class="font-bold text-gray-800 mb-2">Financeiro no Excel ou à vista</h3>
+        <p class="text-sm text-gray-500 leading-relaxed">Sem saber a receita real do mês, inadimplência não controlada, ticket médio desconhecido.</p>
+        <div class="mt-4 flex items-center gap-1.5 text-xs text-yellow-500 font-semibold">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Dinheiro escorregando entre os dedos
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     FEATURES GRID
+════════════════════════════════════════════ -->
+<section id="funcionalidades" class="py-24 bg-[#FAF7F2] dot-grid">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <span class="inline-block tag-pill rounded-full px-3 py-1 text-xs font-semibold mb-4">Funcionalidades</span>
+      <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-4">Tudo que sua clínica precisa</h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">De ponta a ponta — do primeiro agendamento ao documento assinado com validade jurídica.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+      <!-- Feature: Agenda -->
+      <div class="reveal reveal-delay-1 feature-card bg-white rounded-2xl p-6 border border-cream-200 shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-green-700 flex items-center justify-center mb-5 shadow-lg shadow-green-700/20">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            <rect x="7" y="14" width="3" height="3" rx="0.5" fill="white"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-gray-900 text-lg mb-2">Agenda Inteligente</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">Visualização por dia, semana e mês. Múltiplos profissionais, cores por status, sem conflito de horário.</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[10px] bg-green-50 text-green-700 rounded-full px-2 py-0.5 font-semibold">Multi-profissional</span>
+          <span class="text-[10px] bg-green-50 text-green-700 rounded-full px-2 py-0.5 font-semibold">Lembretes</span>
+          <span class="text-[10px] bg-green-50 text-green-700 rounded-full px-2 py-0.5 font-semibold">Status em tempo real</span>
+        </div>
+      </div>
+
+      <!-- Feature: Prontuário -->
+      <div class="reveal reveal-delay-2 feature-card bg-white rounded-2xl p-6 border border-cream-200 shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-[#4A8EC2] flex items-center justify-center mb-5 shadow-lg shadow-blue-500/20">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-gray-900 text-lg mb-2">Prontuário Digital</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">Histórico clínico completo, evoluções por sessão, materiais utilizados e timeline de atendimentos.</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[10px] bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 font-semibold">Timeline</span>
+          <span class="text-[10px] bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 font-semibold">Fotos antes/depois</span>
+          <span class="text-[10px] bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 font-semibold">Materiais</span>
+        </div>
+      </div>
+
+      <!-- Feature: Documentos -->
+      <div class="reveal reveal-delay-3 feature-card bg-white rounded-2xl p-6 border border-cream-200 shadow-sm relative overflow-hidden">
+        <div class="absolute top-3 right-3 bg-amber-brand text-white text-[9px] font-bold px-2 py-0.5 rounded-full">DESTAQUE</div>
+        <div class="w-12 h-12 rounded-2xl bg-amber-brand flex items-center justify-center mb-5 shadow-lg shadow-amber-400/20">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-gray-900 text-lg mb-2">Assinatura Eletrônica</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">Termos de consentimento, contratos e anamneses assinados digitalmente com trilha de auditoria completa e hash SHA-256.</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[10px] bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 font-semibold">Validade jurídica</span>
+          <span class="text-[10px] bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 font-semibold">Hash SHA-256</span>
+          <span class="text-[10px] bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 font-semibold">IP registrado</span>
+        </div>
+      </div>
+
+      <!-- Feature: IA -->
+      <div class="reveal reveal-delay-1 feature-card bg-white rounded-2xl p-6 border border-cream-200 shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center mb-5 shadow-lg shadow-purple-500/20">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+            <path d="M12 2a4 4 0 014 4v1a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V9a2 2 0 012-2V6a4 4 0 014-4z"/>
+            <circle cx="9" cy="13" r="1" fill="white"/><circle cx="15" cy="13" r="1" fill="white"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-gray-900 text-lg mb-2">IA Integrada</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">Geração automática de resumos do paciente, rascunhos de evoluções clínicas e sugestões personalizadas.</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[10px] bg-purple-50 text-purple-700 rounded-full px-2 py-0.5 font-semibold">Claude AI</span>
+          <span class="text-[10px] bg-purple-50 text-purple-700 rounded-full px-2 py-0.5 font-semibold">Resumo clínico</span>
+          <span class="text-[10px] bg-purple-50 text-purple-700 rounded-full px-2 py-0.5 font-semibold">Draft de evolução</span>
+        </div>
+      </div>
+
+      <!-- Feature: Financeiro -->
+      <div class="reveal reveal-delay-2 feature-card bg-white rounded-2xl p-6 border border-cream-200 shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-[#3A9B6F] flex items-center justify-center mb-5 shadow-lg shadow-green-500/20">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-gray-900 text-lg mb-2">Financeiro Completo</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">Controle de receitas e despesas, orçamentos, inadimplência e relatórios de desempenho em tempo real.</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[10px] bg-green-50 text-green-700 rounded-full px-2 py-0.5 font-semibold">DRE simplificado</span>
+          <span class="text-[10px] bg-green-50 text-green-700 rounded-full px-2 py-0.5 font-semibold">Orçamentos</span>
+          <span class="text-[10px] bg-green-50 text-green-700 rounded-full px-2 py-0.5 font-semibold">Ticket médio</span>
+        </div>
+      </div>
+
+      <!-- Feature: Clube / Mapa -->
+      <div class="reveal reveal-delay-3 feature-card bg-white rounded-2xl p-6 border border-cream-200 shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-rose-500 flex items-center justify-center mb-5 shadow-lg shadow-rose-500/20">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-gray-900 text-lg mb-2">Clube de Benefícios</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">Planos de fidelidade com procedimentos e intervalos customizados. Controle de aplicações e vencimentos por paciente.</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[10px] bg-rose-50 text-rose-700 rounded-full px-2 py-0.5 font-semibold">Planos mensais</span>
+          <span class="text-[10px] bg-rose-50 text-rose-700 rounded-full px-2 py-0.5 font-semibold">Fidelização</span>
+          <span class="text-[10px] bg-rose-50 text-rose-700 rounded-full px-2 py-0.5 font-semibold">Aplicações</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature extra: Mapa Facial -->
+    <div class="mt-5 reveal">
+      <div class="feature-card bg-gradient-to-r from-green-700 to-green-800 rounded-2xl p-8 border border-green-600/30 shadow-lg overflow-hidden relative">
+        <div class="absolute right-0 top-0 bottom-0 w-64 opacity-10">
+          <svg viewBox="0 0 200 300" fill="none" class="h-full">
+            <ellipse cx="100" cy="150" rx="70" ry="100" stroke="white" stroke-width="1"/>
+            <ellipse cx="100" cy="150" rx="50" ry="80" stroke="white" stroke-width="0.5"/>
+            <line x1="100" y1="50" x2="100" y2="250" stroke="white" stroke-width="0.5"/>
+            <line x1="30" y1="150" x2="170" y2="150" stroke="white" stroke-width="0.5"/>
+            <circle cx="70" cy="120" r="8" stroke="white" stroke-width="1" fill="white" fill-opacity="0.1"/>
+            <circle cx="130" cy="120" r="8" stroke="white" stroke-width="1" fill="white" fill-opacity="0.1"/>
+            <circle cx="100" cy="165" r="5" stroke="white" stroke-width="0.8"/>
+            <path d="M80 190 Q100 200 120 190" stroke="white" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="relative flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div class="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+              <circle cx="12" cy="8" r="6"/><path d="M12 14v8M8 20h8"/>
+              <circle cx="9" cy="7" r="1" fill="white"/><circle cx="15" cy="7" r="1" fill="white"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-xl mb-1.5">Mapa Facial Interativo</h3>
+            <p class="text-white/70 text-sm leading-relaxed max-w-lg">Marque pontos de aplicação diretamente sobre o rosto do paciente. Histórico visual de harmonizações, botox e preenchimentos por sessão.</p>
+          </div>
+          <span class="shrink-0 ml-auto bg-white/15 text-white/80 text-xs font-semibold px-3 py-1.5 rounded-xl border border-white/10">Exclusivo Iasoclin</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     FEATURE SPOTLIGHT: Assinatura Eletrônica
+════════════════════════════════════════════ -->
+<section class="py-24 bg-white overflow-hidden">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="flex flex-col lg:flex-row items-center gap-16">
+
+      <!-- Left: Doc mockup -->
+      <div class="flex-1 reveal relative">
+        <div class="relative max-w-sm mx-auto lg:mx-0">
+          <!-- Glow -->
+          <div class="absolute inset-0 bg-amber-brand/10 blur-3xl rounded-full scale-75"></div>
+
+          <!-- Document panel -->
+          <div class="relative bg-[#FAF7F2] rounded-2xl border border-cream-200 shadow-xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-green-700 px-5 py-3.5 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                <span class="text-white/90 text-xs font-semibold">Termo de Consentimento.pdf</span>
+              </div>
+              <span class="text-[10px] bg-white/15 text-white px-2 py-0.5 rounded-full">Pág. 1/2</span>
+            </div>
+
+            <!-- PDF area simulation -->
+            <div class="p-5">
+              <div class="bg-white rounded-lg p-4 shadow-sm mb-3 space-y-2">
+                <div class="h-2 bg-gray-100 rounded-full w-3/4"></div>
+                <div class="h-2 bg-gray-100 rounded-full w-full"></div>
+                <div class="h-2 bg-gray-100 rounded-full w-5/6"></div>
+                <div class="h-2 bg-gray-100 rounded-full w-2/3"></div>
+                <div class="h-2 bg-gray-100 rounded-full w-full"></div>
+                <div class="h-2 bg-gray-100 rounded-full w-4/5"></div>
+                <div class="h-2 bg-gray-100 rounded-full w-3/4"></div>
+                <div class="h-2 bg-gray-100 rounded-full w-full mt-4"></div>
+                <div class="h-2 bg-gray-100 rounded-full w-5/6"></div>
+                <!-- Signature fields on doc -->
+                <div class="flex gap-3 mt-5">
+                  <div class="flex-1 border-2 border-dashed border-green-300 rounded-lg p-2.5 bg-green-50">
+                    <p class="text-[8px] text-green-600 font-semibold mb-1">PROFISSIONAL</p>
+                    <svg viewBox="0 0 80 30" class="w-full h-6">
+                      <path d="M5 20 Q15 5 25 18 Q35 30 45 15 Q55 3 70 20" stroke="#314D3E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 border-2 border-dashed border-amber-300 rounded-lg p-2.5 bg-amber-50">
+                    <p class="text-[8px] text-amber-600 font-semibold mb-1">PACIENTE</p>
+                    <svg viewBox="0 0 80 30" class="w-full h-6">
+                      <path d="M8 22 Q20 8 30 20 Q40 28 55 12 Q62 5 72 18" stroke="#C4895A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Audit badge -->
+              <div class="flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5">
+                <div class="w-7 h-7 rounded-full bg-green-700 flex items-center justify-center shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+                </div>
+                <div>
+                  <p class="text-[10px] font-bold text-green-700">Documento assinado eletronicamente</p>
+                  <p class="text-[9px] text-green-600/70">Hash SHA-256 · IP registrado · 27/05/2026 14h32</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating audit card -->
+          <div class="absolute -right-8 -bottom-4 float-delayed">
+            <div class="bg-white rounded-xl border border-cream-200 shadow-lg p-3 w-44">
+              <div class="flex items-center gap-1.5 mb-1.5">
+                <div class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center">
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+                </div>
+                <span class="text-[9px] font-bold text-green-700">Auditoria</span>
+              </div>
+              <div class="space-y-0.5">
+                <p class="text-[8px] text-gray-500">Nome: Maria Aparecida</p>
+                <p class="text-[8px] text-gray-500">CPF: 123.456.789-00</p>
+                <p class="text-[8px] text-gray-400 font-mono truncate">Hash: 8f3a9c…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Copy -->
+      <div class="flex-1 reveal reveal-delay-2 lg:pl-8">
+        <span class="inline-block tag-pill rounded-full px-3 py-1 text-xs font-semibold mb-5">Segurança jurídica</span>
+        <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-5 leading-tight">
+          Chega de imprimir, assinar e guardar papel.
+        </h2>
+        <p class="text-gray-500 text-lg leading-relaxed mb-6">
+          O Iasoclin gera PDFs assinados com trilha de auditoria completa: nome, CPF, IP, data, hora e hash SHA-256 do documento original. Tudo com validade jurídica.
+        </p>
+        <ul class="space-y-3 mb-8">
+          <li class="flex items-start gap-3">
+            <div class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5 shrink-0">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+            </div>
+            <p class="text-gray-600 text-sm">Posicione campos de assinatura diretamente sobre o PDF</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5 shrink-0">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+            </div>
+            <p class="text-gray-600 text-sm">Paciente e profissional assinam no mesmo momento</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5 shrink-0">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+            </div>
+            <p class="text-gray-600 text-sm">PDF gerado automaticamente com página de auditoria</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5 shrink-0">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+            </div>
+            <p class="text-gray-600 text-sm">Encontre qualquer documento assinado em segundos</p>
+          </li>
+        </ul>
+        <a href="#precos" class="inline-flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:shadow-lg hover:shadow-green-700/25">
+          Quero usar isso na minha clínica
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     COMO FUNCIONA
+════════════════════════════════════════════ -->
+<section id="como-funciona" class="py-24 bg-[#FAF7F2]">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <span class="inline-block tag-pill rounded-full px-3 py-1 text-xs font-semibold mb-4">Como funciona</span>
+      <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-4">Em 3 passos você está rodando</h2>
+      <p class="text-gray-500 text-lg max-w-md mx-auto">Configuração rápida, sem necessidade de treinamento longo.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+      <!-- Line connecting steps (desktop) -->
+      <div class="hidden md:block absolute top-8 left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] h-px bg-gradient-to-r from-cream-300 via-amber-brand/40 to-cream-300"></div>
+
+      <!-- Step 1 -->
+      <div class="reveal reveal-delay-1 flex flex-col items-center text-center">
+        <div class="w-16 h-16 rounded-2xl bg-green-700 flex items-center justify-center mb-5 shadow-lg shadow-green-700/25 relative z-10">
+          <span class="text-white text-2xl font-black">1</span>
+        </div>
+        <h3 class="font-bold text-gray-900 text-lg mb-2">Crie sua conta</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Cadastre-se em menos de 2 minutos. Configure os procedimentos e profissionais da sua clínica.</p>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="reveal reveal-delay-2 flex flex-col items-center text-center">
+        <div class="w-16 h-16 rounded-2xl bg-amber-brand flex items-center justify-center mb-5 shadow-lg shadow-amber-400/25 relative z-10">
+          <span class="text-white text-2xl font-black">2</span>
+        </div>
+        <h3 class="font-bold text-gray-900 text-lg mb-2">Importe seus pacientes</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Cadastre sua base de pacientes. Em breve: importação automática de planilhas Excel.</p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="reveal reveal-delay-3 flex flex-col items-center text-center">
+        <div class="w-16 h-16 rounded-2xl bg-[#3A9B6F] flex items-center justify-center mb-5 shadow-lg shadow-green-500/25 relative z-10">
+          <span class="text-white text-2xl font-black">3</span>
+        </div>
+        <h3 class="font-bold text-gray-900 text-lg mb-2">Comece a usar hoje</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Agende, atenda, documente e cobre. Sua clínica organizada do primeiro dia.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     TESTIMONIALS
+════════════════════════════════════════════ -->
+<section class="py-24 bg-white">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <span class="inline-block tag-pill rounded-full px-3 py-1 text-xs font-semibold mb-4">Depoimentos</span>
+      <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-4">O que dizem nossos clientes</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Testimonial 1 -->
+      <div class="reveal reveal-delay-1 testimonial-quote rounded-2xl p-6 border border-cream-200">
+        <div class="flex gap-1 mb-4">
+          {Array.from({length: 5}).fill(0).map((_, i) =>
+            `<svg key="${i}" width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>`
+          ).join("")}
+        </div>
+        <p class="text-gray-700 text-sm leading-relaxed mb-5">"Eu perdia 2 horas por dia com agenda e documentos. Hoje tudo fica no Iasoclin. A assinatura eletrônica me salvou de uma situação que poderia ser bem chata juridicamente."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-green-700 flex items-center justify-center text-white text-xs font-bold shrink-0">DR</div>
+          <div>
+            <p class="text-sm font-bold text-gray-800">Dra. Renata Oliveira</p>
+            <p class="text-xs text-gray-400">Harmonizadora facial · São Paulo</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonial 2 -->
+      <div class="reveal reveal-delay-2 testimonial-quote rounded-2xl p-6 border border-cream-200">
+        <div class="flex gap-1 mb-4">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </div>
+        <p class="text-gray-700 text-sm leading-relaxed mb-5">"O clube de benefícios foi um game changer. Minha taxa de retorno subiu muito. E o mapa facial? Minhas pacientes adoram ver o histórico visual das aplicações."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-amber-brand flex items-center justify-center text-white text-xs font-bold shrink-0">PC</div>
+          <div>
+            <p class="text-sm font-bold text-gray-800">Patricia Campos</p>
+            <p class="text-xs text-gray-400">Clínica Vivace · Belo Horizonte</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonial 3 -->
+      <div class="reveal reveal-delay-3 testimonial-quote rounded-2xl p-6 border border-cream-200">
+        <div class="flex gap-1 mb-4">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C4895A"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </div>
+        <p class="text-gray-700 text-sm leading-relaxed mb-5">"Migrei de outro sistema que cobrava caro e tinha metade das funções. O resumo de IA me economiza fácil 30 minutos de prontuário por dia."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-[#4A8EC2] flex items-center justify-center text-white text-xs font-bold shrink-0">MM</div>
+          <div>
+            <p class="text-sm font-bold text-gray-800">Dr. Marcos Mello</p>
+            <p class="text-xs text-gray-400">Biomédico esteta · Curitiba</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     PRICING
+════════════════════════════════════════════ -->
+<section id="precos" class="py-24 bg-[#FAF7F2] dot-grid">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <span class="inline-block tag-pill rounded-full px-3 py-1 text-xs font-semibold mb-4">Planos</span>
+      <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-4">Preço justo para qualquer tamanho de clínica</h2>
+      <p class="text-gray-500 text-lg">14 dias grátis em qualquer plano. Sem cartão de crédito.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Plan: Solo -->
+      <div class="reveal reveal-delay-1 bg-white rounded-2xl p-6 border border-cream-200 shadow-sm flex flex-col">
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Solo</p>
+          <div class="flex items-end gap-1 mb-1">
+            <span class="text-4xl font-black text-gray-900">R$89</span>
+            <span class="text-gray-400 text-sm pb-1.5">/mês</span>
+          </div>
+          <p class="text-xs text-gray-400 mb-6">Para profissionais autônomos</p>
+          <ul class="space-y-2.5 mb-8">
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              1 profissional
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Até 100 pacientes ativos
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Agenda, prontuário, financeiro
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Assinatura eletrônica (10 docs/mês)
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-400 line-through">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D6C1A3" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              IA integrada
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-400 line-through">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D6C1A3" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Clube de benefícios
+            </li>
+          </ul>
+        </div>
+        <a href="#" class="mt-auto w-full border border-green-700 text-green-700 hover:bg-green-700 hover:text-white py-3 rounded-xl text-sm font-bold text-center transition-all">
+          Começar grátis
+        </a>
+      </div>
+
+      <!-- Plan: Clínica (Popular) -->
+      <div class="reveal reveal-delay-2 bg-green-700 rounded-2xl p-6 popular-glow flex flex-col relative">
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span class="bg-amber-brand text-white text-[10px] font-bold px-3 py-1 rounded-full whitespace-nowrap">MAIS POPULAR</span>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Clínica</p>
+          <div class="flex items-end gap-1 mb-1">
+            <span class="text-4xl font-black text-white">R$189</span>
+            <span class="text-white/50 text-sm pb-1.5">/mês</span>
+          </div>
+          <p class="text-xs text-white/50 mb-6">Para clínicas em crescimento</p>
+          <ul class="space-y-2.5 mb-8">
+            <li class="flex items-center gap-2 text-sm text-white/90">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Até 3 profissionais
+            </li>
+            <li class="flex items-center gap-2 text-sm text-white/90">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Pacientes ilimitados
+            </li>
+            <li class="flex items-center gap-2 text-sm text-white/90">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Tudo do plano Solo
+            </li>
+            <li class="flex items-center gap-2 text-sm text-white/90">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Assinatura ilimitada
+            </li>
+            <li class="flex items-center gap-2 text-sm text-white/90">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              IA integrada (Claude)
+            </li>
+            <li class="flex items-center gap-2 text-sm text-white/90">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Clube de benefícios
+            </li>
+          </ul>
+        </div>
+        <a href="#" class="mt-auto w-full bg-white text-green-700 hover:bg-cream-50 py-3 rounded-xl text-sm font-bold text-center transition-all hover:shadow-lg">
+          Começar grátis
+        </a>
+      </div>
+
+      <!-- Plan: Premium -->
+      <div class="reveal reveal-delay-3 bg-white rounded-2xl p-6 border border-cream-200 shadow-sm flex flex-col">
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Premium</p>
+          <div class="flex items-end gap-1 mb-1">
+            <span class="text-4xl font-black text-gray-900">R$349</span>
+            <span class="text-gray-400 text-sm pb-1.5">/mês</span>
+          </div>
+          <p class="text-xs text-gray-400 mb-6">Para clínicas estabelecidas</p>
+          <ul class="space-y-2.5 mb-8">
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Profissionais ilimitados
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Tudo do plano Clínica
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Relatórios avançados
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Múltiplas unidades
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              Suporte prioritário
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+              White label (em breve)
+            </li>
+          </ul>
+        </div>
+        <a href="#" class="mt-auto w-full border border-green-700 text-green-700 hover:bg-green-700 hover:text-white py-3 rounded-xl text-sm font-bold text-center transition-all">
+          Falar com vendas
+        </a>
+      </div>
+    </div>
+
+    <!-- Money back -->
+    <p class="text-center text-sm text-gray-400 mt-8 reveal">
+      <span class="font-semibold text-gray-600">14 dias grátis</span> em qualquer plano · Cancele quando quiser · Sem burocracia
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     FAQ
+════════════════════════════════════════════ -->
+<section id="faq" class="py-24 bg-white">
+  <div class="max-w-2xl mx-auto px-6">
+    <div class="text-center mb-12 reveal">
+      <span class="inline-block tag-pill rounded-full px-3 py-1 text-xs font-semibold mb-4">FAQ</span>
+      <h2 class="text-3xl font-black text-gray-900">Perguntas frequentes</h2>
+    </div>
+
+    <div class="space-y-3 reveal">
+      <!-- FAQ items -->
+      <details class="bg-[#FAF7F2] border border-cream-200 rounded-2xl group">
+        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer list-none">
+          <span class="font-semibold text-gray-800 text-sm">A assinatura eletrônica tem validade jurídica no Brasil?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5" class="shrink-0 transition-transform group-open:rotate-180"><polyline points="6,9 12,15 18,9"/></svg>
+        </summary>
+        <div class="px-5 pb-4 text-sm text-gray-500 leading-relaxed">
+          Sim. A Lei 14.063/2020 reconhece assinaturas eletrônicas simples para documentos privados. O Iasoclin gera trilha de auditoria com nome, CPF, IP, user-agent, data/hora e hash SHA-256 do documento — todos os elementos para comprovar a autoria e integridade do documento em caso de disputa.
+        </div>
+      </details>
+
+      <details class="bg-[#FAF7F2] border border-cream-200 rounded-2xl group">
+        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer list-none">
+          <span class="font-semibold text-gray-800 text-sm">Posso migrar meus dados de outro sistema?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5" class="shrink-0 transition-transform group-open:rotate-180"><polyline points="6,9 12,15 18,9"/></svg>
+        </summary>
+        <div class="px-5 pb-4 text-sm text-gray-500 leading-relaxed">
+          Sim. Nossa equipe auxilia na importação de pacientes e históricos. Entre em contato após criar sua conta e vamos facilitar a transição sem você perder nenhum dado.
+        </div>
+      </details>
+
+      <details class="bg-[#FAF7F2] border border-cream-200 rounded-2xl group">
+        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer list-none">
+          <span class="font-semibold text-gray-800 text-sm">Os dados dos meus pacientes ficam seguros?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5" class="shrink-0 transition-transform group-open:rotate-180"><polyline points="6,9 12,15 18,9"/></svg>
+        </summary>
+        <div class="px-5 pb-4 text-sm text-gray-500 leading-relaxed">
+          Totalmente. Seguimos a LGPD (Lei Geral de Proteção de Dados). Dados armazenados com criptografia, backups automáticos diários e acesso restrito ao seu usuário. Nenhum dado é compartilhado com terceiros.
+        </div>
+      </details>
+
+      <details class="bg-[#FAF7F2] border border-cream-200 rounded-2xl group">
+        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer list-none">
+          <span class="font-semibold text-gray-800 text-sm">Funciona em celular também?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5" class="shrink-0 transition-transform group-open:rotate-180"><polyline points="6,9 12,15 18,9"/></svg>
+        </summary>
+        <div class="px-5 pb-4 text-sm text-gray-500 leading-relaxed">
+          Sim, o Iasoclin é totalmente responsivo e funciona em qualquer dispositivo. App mobile nativo está em desenvolvimento para 2025.
+        </div>
+      </details>
+
+      <details class="bg-[#FAF7F2] border border-cream-200 rounded-2xl group">
+        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer list-none">
+          <span class="font-semibold text-gray-800 text-sm">Posso cancelar quando quiser?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#314D3E" stroke-width="2.5" class="shrink-0 transition-transform group-open:rotate-180"><polyline points="6,9 12,15 18,9"/></svg>
+        </summary>
+        <div class="px-5 pb-4 text-sm text-gray-500 leading-relaxed">
+          Sim, sem multa ou fidelidade. Você pode cancelar a qualquer momento e exportar todos os seus dados. O acesso fica ativo até o final do período pago.
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     FINAL CTA
+════════════════════════════════════════════ -->
+<section class="py-24 relative overflow-hidden" style="background: #1a2b22;">
+  <div class="absolute inset-0" style="background: radial-gradient(ellipse 70% 70% at 50% 50%, rgba(49,77,62,0.6) 0%, transparent 70%);"></div>
+  <!-- Dots pattern -->
+  <div class="absolute inset-0" style="background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 28px 28px;"></div>
+
+  <div class="relative z-10 max-w-3xl mx-auto px-6 text-center reveal">
+    <div class="inline-flex items-center gap-2 tag-pill rounded-full px-3.5 py-1.5 text-xs font-semibold mb-6">
+      <span class="w-1.5 h-1.5 rounded-full bg-amber-brand animate-pulse"></span>
+      14 dias grátis, sem cartão
+    </div>
+    <h2 class="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">
+      Sua clínica organizada<br/>a partir de hoje.
+    </h2>
+    <p class="text-white/60 text-lg mb-10 max-w-xl mx-auto">
+      Junte-se a centenas de profissionais que já largaram o caos das planilhas e do papel.
+    </p>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a href="#precos"
+        class="flex items-center gap-2 bg-white text-green-700 hover:bg-cream-50 px-8 py-4 rounded-xl font-black text-base transition-all hover:shadow-2xl hover:shadow-white/10 hover:-translate-y-0.5">
+        Começar grátis agora
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="mailto:contato@iasoclin.com.br"
+        class="flex items-center gap-2 text-white/70 hover:text-white px-6 py-4 rounded-xl font-medium text-sm transition-colors glass">
+        Falar com a equipe
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════ -->
+<footer class="bg-green-950 py-14">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+      <!-- Brand -->
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2.5 mb-4">
+          <div class="w-8 h-8 rounded-xl bg-green-700 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="white" opacity="0.9"/></svg>
+          </div>
+          <span class="text-white font-bold text-lg">Iasoclin</span>
+        </div>
+        <p class="text-white/40 text-sm leading-relaxed mb-4">Gestão inteligente para clínicas de harmonização e estética.</p>
+        <p class="text-white/30 text-xs">© 2026 Iasoclin. Todos os direitos reservados.</p>
+      </div>
+
+      <!-- Product -->
+      <div>
+        <p class="text-white/60 text-xs font-bold uppercase tracking-widest mb-4">Produto</p>
+        <ul class="space-y-2.5">
+          <li><a href="#funcionalidades" class="text-white/40 hover:text-white/70 text-sm transition-colors">Funcionalidades</a></li>
+          <li><a href="#precos" class="text-white/40 hover:text-white/70 text-sm transition-colors">Preços</a></li>
+          <li><a href="#" class="text-white/40 hover:text-white/70 text-sm transition-colors">Changelog</a></li>
+          <li><a href="#" class="text-white/40 hover:text-white/70 text-sm transition-colors">Roadmap</a></li>
+        </ul>
+      </div>
+
+      <!-- Company -->
+      <div>
+        <p class="text-white/60 text-xs font-bold uppercase tracking-widest mb-4">Empresa</p>
+        <ul class="space-y-2.5">
+          <li><a href="#" class="text-white/40 hover:text-white/70 text-sm transition-colors">Sobre nós</a></li>
+          <li><a href="#" class="text-white/40 hover:text-white/70 text-sm transition-colors">Blog</a></li>
+          <li><a href="#" class="text-white/40 hover:text-white/70 text-sm transition-colors">Contato</a></li>
+          <li><a href="#" class="text-white/40 hover:text-white/70 text-sm transition-colors">Parceiros</a></li>
+        </ul>
+      </div>
+
+      <!-- Legal -->
+      <div>
+        <p class="text-white/60 text-xs font-bold uppercase tracking-widest mb-4">Legal</p>
+        <ul class="space-y-2.5">
+          <li><a href="#" class="text-white/40 hover:text-white/70 text-sm transition-colors">Termos de uso</a></li>
+          <li><a href="#" class="text-white/40 hover:text-white/70 text-sm transition-colors">Privacidade</a></li>
+          <li><a href="#" class="text-white/40 hover:text-white/70 text-sm transition-colors">LGPD</a></li>
+          <li><a href="#" class="text-white/40 hover:text-white/70 text-sm transition-colors">Cookies</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+      <p class="text-white/25 text-xs">Feito com cuidado para profissionais de saúde estética no Brasil.</p>
+      <div class="flex items-center gap-1.5">
+        <div class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
+        <span class="text-white/25 text-xs">Todos os sistemas operacionais</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+  // Navbar scroll effect
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 60) {
+      navbar.style.background = 'rgba(26, 43, 34, 0.95)';
+      navbar.style.backdropFilter = 'blur(16px)';
+      navbar.style.borderBottom = '1px solid rgba(255,255,255,0.07)';
+    } else {
+      navbar.style.background = 'transparent';
+      navbar.style.backdropFilter = 'none';
+      navbar.style.borderBottom = 'none';
+    }
+  });
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

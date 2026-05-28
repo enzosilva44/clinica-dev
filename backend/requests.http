@@ -1,0 +1,153 @@
+# POST http://localhost:3000/auth/register
+# Content-Type: application/json
+
+# {
+#   "name": "Enzo",
+#   "email": "enzo@email.com",
+#   "password": "123456"
+# 
+
+# POST http://localhost:3000/auth/register
+# Content-Type: application/json
+
+# {
+#   "name": "ana",
+#   "email": "ana@email.com",
+#   "password": "123456"
+# }
+
+# POST http://localhost:3000/auth/login
+# Content-Type: application/json
+
+# {
+#   "email": "ana@email.com",
+#   "password": "123456"
+# }
+
+# POST http://localhost:3000/patients
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzIwODYwLCJleHAiOjE3NzkzMjU2NjB9.FcM7zXbxkTB2rOV8U09l3u49Oi1uJfci-CcjB8NHvBw
+# Content-Type: application/json
+
+# {
+#   "name": "Paciente Ana",
+#   "phone": "16999999999"
+# }
+
+# POST http://localhost:3000/patients
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzI2Mjk3LCJleHAiOjE3NzkzMzEwOTd9.RqfWFmM-tvmTlo9mEx_k1SLW2GAQJhi4__DOCiPEDk0
+# Content-Type: application/json
+
+# {
+#   "name": "Paciente Teste",
+#   "phone": "16999999999"
+# }
+
+# GET http://localhost:3000/patients
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzIwODYwLCJleHAiOjE3NzkzMjU2NjB9.FcM7zXbxkTB2rOV8U09l3u49Oi1uJfci-CcjB8NHvBw
+
+# GET http://localhost:3000/patients/cmp4t8iua0000sqancrc0sj7x
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDF5bmc5NzAwMDBzcW00eGlxMHVxNnIiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NTUwMzc2LCJleHAiOjE3NzkxNTUxNzZ9.Bj-wPq98aUn5QU_ktaw6w-qDeFbRbo_UQiqRF7J4y7w
+
+# PUT http://localhost:3000/patients/cmp4t8iua0000sqancrc0sj7x
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzIwODYwLCJleHAiOjE3NzkzMjU2NjB9.FcM7zXbxkTB2rOV8U09l3u49Oi1uJfci-CcjB8NHvBw
+# Content-Type: application/json
+
+# {
+#   "name": "Paciente Ana Atualizada",
+#   "phone": "16988888888",
+#   "observations": "Paciente com retorno em 30 dias"
+# }
+
+# DELETE http://localhost:3000/patients/cmp4t8iua0000sqancrc0sj7x
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzIwODYwLCJleHAiOjE3NzkzMjU2NjB9.FcM7zXbxkTB2rOV8U09l3u49Oi1uJfci-CcjB8NHvBw
+
+# GET http://localhost:3000/me
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzIwODYwLCJleHAiOjE3NzkzMjU2NjB9.FcM7zXbxkTB2rOV8U09l3u49Oi1uJfci-CcjB8NHvBw
+
+# POST http://localhost:3000/auth/login
+# Content-Type: application/json
+
+# {
+#   "email": "enzo@email.com",
+#   "password": "123456"
+# }
+
+# GET http://localhost:3000/patients
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDF5bmc5NzAwMDBzcW00eGlxMHVxNnIiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NTUwMzc2LCJleHAiOjE3NzkxNTUxNzZ9.Bj-wPq98aUn5QU_ktaw6w-qDeFbRbo_UQiqRF7J4y7w
+
+# GET http://localhost:3000/patients/cmpd8oh280000sqo92qn4zlk9
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDF5bmc5NzAwMDBzcW00eGlxMHVxNnIiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NTUwMzc2LCJleHAiOjE3NzkxNTUxNzZ9.Bj-wPq98aUn5QU_ktaw6w-qDeFbRbo_UQiqRF7J4y7w
+
+# GET http://localhost:3000/me
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDF5bmc5NzAwMDBzcW00eGlxMHVxNnIiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NTUwMzc2LCJleHAiOjE3NzkxNTUxNzZ9.Bj-wPq98aUn5QU_ktaw6w-qDeFbRbo_UQiqRF7J4y7w
+
+# POST http://localhost:3000/appointments
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzI2Mjk3LCJleHAiOjE3NzkzMzEwOTd9.RqfWFmM-tvmTlo9mEx_k1SLW2GAQJhi4__DOCiPEDk0
+# Content-Type: application/json
+
+# {
+#   "title": "Consulta Harmonização",
+#   "description": "Primeira avaliação",
+
+#   "startsAt": "2026-05-20T14:00:00.000Z",
+#   "endsAt": "2026-05-20T15:00:00.000Z",
+
+#   "patientId": "cmp4vrvqg0000sqd8o442zr5l"
+# }
+
+# GET http://localhost:3000/appointments/cmp4vsmdr0001sqd8vl4jfqq3
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzI2Mjk3LCJleHAiOjE3NzkzMzEwOTd9.RqfWFmM-tvmTlo9mEx_k1SLW2GAQJhi4__DOCiPEDk0
+# Content-Type: application/json
+
+# PUT http://localhost:3000/appointments/cmp4vsmdr0001sqd8vl4jfqq3
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzI2Mjk3LCJleHAiOjE3NzkzMzEwOTd9.RqfWFmM-tvmTlo9mEx_k1SLW2GAQJhi4__DOCiPEDk0
+# Content-Type: application/json
+
+# {
+#   "status": "CONFIRMED"
+# }
+
+# GET http://localhost:3000/patients
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzI2Mjk3LCJleHAiOjE3NzkzMzEwOTd9.RqfWFmM-tvmTlo9mEx_k1SLW2GAQJhi4__DOCiPEDk0
+
+
+# POST http://localhost:3000/evolutions
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzI2Mjk3LCJleHAiOjE3NzkzMzEwOTd9.RqfWFmM-tvmTlo9mEx_k1SLW2GAQJhi4__DOCiPEDk0
+# Content-Type: application/json
+
+# {
+#   "patientId": "cmp4vrvqg0000sqd8o442zr5l",
+
+#   "content": "Paciente apresentou boa recuperação pós procedimento.",
+
+#   "photoUrl": "https://teste.com/foto.jpg"
+# }
+
+# GET http://localhost:3000/evolutions/patient/cmp4vrvqg0000sqd8o442zr5l
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzI2Mjk3LCJleHAiOjE3NzkzMzEwOTd9.RqfWFmM-tvmTlo9mEx_k1SLW2GAQJhi4__DOCiPEDk0
+
+POST http://localhost:3000/procedures
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcDRzZjd1bjAwMDBzcXVyMXl4OXE5NXoiLCJyb2xlIjoiUFJPRkVTU0lPTkFMIiwiaWF0IjoxNzc4NzI2Mjk3LCJleHAiOjE3NzkzMzEwOTd9.RqfWFmM-tvmTlo9mEx_k1SLW2GAQJhi4__DOCiPEDk0
+Content-Type: application/json
+
+{
+  "name": "Botox Full Face",
+  "description": "Procedimento facial com toxina botulínica",
+  "materials": [
+    {
+      "name": "Botox Allergan",
+      "defaultQuantity": 1,
+      "unit": "frasco"
+    },
+    {
+      "name": "Seringa 1ml",
+      "defaultQuantity": 2,
+      "unit": "unidade"
+    },
+    {
+      "name": "Agulha 30G",
+      "defaultQuantity": 3,
+      "unit": "unidade"
+    }
+  ]
+}

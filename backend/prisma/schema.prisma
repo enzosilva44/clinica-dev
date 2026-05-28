@@ -1,0 +1,503 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PROFESSIONAL
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELED
+}
+
+model Clinic {
+  id String @id @default(cuid())
+
+  name String
+
+  users    User[]
+  patients Patient[]
+
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id String @id @default(cuid())
+
+  name     String
+  email    String @unique
+  password String
+  googleId String? @unique
+  avatarUrl String?
+  authProvider String @default("password")
+
+  role Role @default(PROFESSIONAL)
+
+  clinicId String?
+  clinic   Clinic? @relation(fields: [clinicId], references: [id])
+
+  patients         Patient[]
+  appointments     Appointment[]
+  evolutions       Evolution[]
+  procedures       Procedure[]
+  products         Product[]
+  productMovements ProductMovement[]
+  transactions     Transaction[]
+  clubPlans        ClubPlan[]
+  clubMembers      ClubMember[]
+  procedureMaps    ProcedureMap[]
+  documents        Document[]
+  patientDocuments PatientDocument[]
+  budgets          Budget[]
+  patientPhotos    PatientPhoto[]
+  automationTemplates AutomationTemplate[]
+  automationLogs      AutomationLog[]
+
+  createdAt DateTime @default(now())
+}
+
+model Patient {
+  id String @id @default(cuid())
+
+  name  String
+  email String?
+  phone String
+
+  birthDate DateTime?
+
+  document String?
+  street   String?
+  city     String?
+  state    String?
+  country  String?
+  zipCode  String?
+  cpf      String?
+  rg       String?
+
+  observations String?
+
+  isActive Boolean @default(true)
+
+  clinicId String?
+  clinic   Clinic? @relation(fields: [clinicId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  appointments    Appointment[]
+  evolutions      Evolution[]
+  transactions    Transaction[]
+  clubMemberships  ClubMember[]
+  procedureMaps    ProcedureMap[]
+  patientDocuments PatientDocument[]
+  budgets          Budget[]
+  photos           PatientPhoto[]
+  automationLogs   AutomationLog[]
+
+  createdAt DateTime @default(now())
+}
+
+model Budget {
+  id String @id @default(cuid())
+
+  title        String
+  validUntil   DateTime?
+  subtotal     Float    @default(0)
+  discount     Float    @default(0)
+  total        Float    @default(0)
+  observations String?
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  items BudgetItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BudgetItem {
+  id String @id @default(cuid())
+
+  procedureId   String?
+  procedureName String
+  quantity      Int    @default(1)
+  unitPrice     Float  @default(0)
+  total         Float  @default(0)
+  observation   String?
+
+  budgetId String
+  budget   Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Appointment {
+  id String @id @default(cuid())
+
+  title String
+
+  description String?
+
+  startsAt DateTime
+
+  endsAt DateTime
+
+  status String @default("SCHEDULED")
+
+  color String?
+
+  professional String?
+
+  notes String?
+
+  procedureType String?
+
+  patientId String
+
+  userId String
+
+  createdAt DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  user User @relation(fields: [userId], references: [id])
+
+  transaction Transaction?
+}
+
+model Evolution {
+  id String @id @default(cuid())
+
+  content String?
+
+  description String?
+
+  procedure String?
+
+  materials String?
+
+  photoUrl String?
+
+  date DateTime?
+
+  procedureId String?
+
+  procedureRelation Procedure? @relation("ProcedureToEvolution", fields: [procedureId], references: [id])
+
+  materialsUsed Json?
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Procedure {
+  id String @id @default(cuid())
+
+  name String
+
+  description String?
+
+  category String?
+
+  duration Int?
+
+  price Float?
+
+  hasMultipleSessions Boolean @default(false)
+
+  requiresReturn Boolean @default(false)
+
+  returnDays Int?
+
+  isActive Boolean @default(true)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  products ProcedureProduct[]
+
+  evolutions Evolution[] @relation("ProcedureToEvolution")
+
+  createdAt DateTime @default(now())
+}
+
+model ProcedureProduct {
+  id String @id @default(cuid())
+
+  procedureId String
+  procedure   Procedure @relation(fields: [procedureId], references: [id])
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+
+  customName String?
+
+  quantity Float?
+
+  perSession Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id String @id @default(cuid())
+
+  name String
+
+  description String?
+
+  stock Float? @default(0)
+
+  unit String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  procedureProducts ProcedureProduct[]
+  movements         ProductMovement[]
+
+  createdAt DateTime @default(now())
+}
+
+model ProductMovement {
+  id String @id @default(cuid())
+
+  type     String
+  quantity Float
+  reason   String?
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model ProcedureMap {
+  id        String   @id @default(cuid())
+  title     String?
+  date      DateTime @default(now())
+  markers   Json     @default("[]")
+  backgroundPhotoId String?
+
+  productName      String?
+  applicationDate  DateTime?
+  dilutionDate     DateTime?
+  dilutionVolume   Float?
+  lotNumber        String?
+  expiryDate       DateTime?
+  vialPresentation String?
+  clinicalNotes    String?
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model ClubPlan {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  price        Float    @default(0)
+  billingCycle String   @default("mensal")
+  isActive     Boolean  @default(true)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  items        ClubPlanItem[]
+  members      ClubMember[]
+  createdAt    DateTime @default(now())
+}
+
+model ClubPlanItem {
+  id             String   @id @default(cuid())
+  planId         String
+  plan           ClubPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  procedureName  String
+  quantity       Int      @default(1)
+  intervalMonths Int      @default(12)
+  applications   ClubApplication[]
+  createdAt      DateTime @default(now())
+}
+
+model ClubMember {
+  id            String    @id @default(cuid())
+  patientId     String
+  patient       Patient   @relation(fields: [patientId], references: [id])
+  planId        String
+  plan          ClubPlan  @relation(fields: [planId], references: [id])
+  startDate     DateTime
+  endDate       DateTime?
+  status        String    @default("ativo")
+  paymentMethod String?
+  notes         String?
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  applications  ClubApplication[]
+  createdAt     DateTime  @default(now())
+}
+
+model ClubApplication {
+  id         String       @id @default(cuid())
+  memberId   String
+  member     ClubMember   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  planItemId String
+  planItem   ClubPlanItem @relation(fields: [planItemId], references: [id])
+  appliedAt  DateTime
+  nextDueAt  DateTime
+  notes      String?
+  createdAt  DateTime     @default(now())
+}
+
+model Transaction {
+  id String @id @default(cuid())
+
+  type        String
+  status      String  @default("pendente")
+  description String
+  amount      Float   @default(0)
+
+  paymentMethod String?
+
+  dueDate DateTime?
+  paidAt  DateTime?
+
+  appointmentId String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+
+  patientId String?
+  patient   Patient? @relation(fields: [patientId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model PatientPhoto {
+  id       String @id @default(cuid())
+  fileName String
+  filePath String
+  fileSize Int?
+  mimeType String?
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Document {
+  id       String @id @default(cuid())
+  name     String
+  type     String @default("termo")
+  fileName String
+  filePath String
+  fileSize Int?
+  fields   Json?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  patientDocuments PatientDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PatientDocument {
+  id     String @id @default(cuid())
+  status String @default("pending")
+
+  signedAt              DateTime?
+  fieldValues           Json?
+  professionalSignature String?
+  patientSignature      String?
+  signerName            String?
+  signerCpf             String?
+  signerIp              String?
+  signerUserAgent       String?
+  originalHash          String?
+  signedHash            String?
+  signedFilePath        String?
+  signedFileSize        Int?
+  auditTrail            Json?
+
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model AutomationTemplate {
+  id   String @id @default(cuid())
+  type String // birthday | welcome | confirmation | reminder
+  name String
+  body String
+  isActive Boolean @default(true)
+
+  reminderHoursBefore Int?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  logs AutomationLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AutomationLog {
+  id           String   @id @default(cuid())
+  type         String
+  patientName  String
+  phone        String
+  message      String
+  status       String   @default("pending")
+  scheduledFor DateTime
+  sentAt       DateTime?
+  error        String?
+
+  templateId String?
+  template   AutomationTemplate? @relation(fields: [templateId], references: [id])
+
+  patientId String?
+  patient   Patient? @relation(fields: [patientId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}

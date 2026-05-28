@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: fixed;
+    inset: 0;
+    overflow: visible;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
