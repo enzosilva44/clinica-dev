@@ -15,7 +15,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      await login(email, password);
+      await login(email.trim().toLowerCase(), password);
     } catch (error) {
       console.error(error);
 
@@ -82,10 +82,14 @@ export default function Login() {
 
       <form onSubmit={handleLogin} className="space-y-4">
         <input
+          type="email"
           className="w-full border border-[#D6C1A3] rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#314D3E]"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoCapitalize="none"
+          autoCorrect="off"
+          inputMode="email"
         />
 
         <input
