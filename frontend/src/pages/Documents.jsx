@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { FileText, Upload, Trash2, Eye, X, Plus } from "lucide-react";
+import { FileText, Trash2, Eye, X, Plus, Settings2 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 import toast from "react-hot-toast";
+import FieldPlacementModal from "../components/documents/FieldPlacementModal";
 
 const DOC_TYPES = [
   { value: "contrato", label: "Contrato" },
@@ -35,6 +36,7 @@ export default function Documents() {
   const [form, setForm] = useState({ name: "", type: "termo" });
   const [file, setFile] = useState(null);
   const [dragging, setDragging] = useState(false);
+  const [configuringDoc, setConfiguringDoc] = useState(null);
   const fileRef = useRef();
 
   async function loadDocs() {
@@ -105,12 +107,12 @@ export default function Documents() {
     <MainLayout>
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-[#314D3E]">Pasta Sanitária</h1>
+          <h1 className="text-3xl font-bold text-[#1F4D46]">Pasta Sanitária</h1>
           <p className="text-gray-500 mt-1">Documentos da clínica para assinar com pacientes</p>
         </div>
         <button
           onClick={() => setShowUpload(true)}
-          className="bg-[#314D3E] hover:bg-[#465634] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
+          className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
         >
           <Plus size={16} /> Adicionar documento
         </button>
@@ -118,35 +120,35 @@ export default function Documents() {
 
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-[#EFE7DA] rounded-xl animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-[#E8E0D2] rounded-xl animate-pulse" />)}
         </div>
       ) : docs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-28 text-center">
-          <div className="w-16 h-16 bg-[#EFE7DA] rounded-2xl flex items-center justify-center mb-4">
-            <FileText size={28} className="text-[#D6C1A3]" />
+          <div className="w-16 h-16 bg-[#E8E0D2] rounded-2xl flex items-center justify-center mb-4">
+            <FileText size={28} className="text-[#C2A56B]" />
           </div>
-          <h2 className="text-xl font-semibold text-[#314D3E] mb-2">Nenhum documento</h2>
+          <h2 className="text-xl font-semibold text-[#1F4D46] mb-2">Nenhum documento</h2>
           <p className="text-gray-500 mb-6 max-w-xs">Adicione contratos, termos e anamneses para usar com os pacientes.</p>
           <button
             onClick={() => setShowUpload(true)}
-            className="bg-[#314D3E] hover:bg-[#465634] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
+            className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
           >
             <Plus size={16} /> Adicionar documento
           </button>
         </div>
       ) : (
-        <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-3.5 bg-[#EFE7DA] border-b border-[#E5D8C5] flex items-center justify-between">
-            <span className="text-sm font-semibold text-[#314D3E]">{docs.length} {docs.length === 1 ? "documento" : "documentos"}</span>
+        <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-3.5 bg-[#E8E0D2] border-b border-[#D8CDB9] flex items-center justify-between">
+            <span className="text-sm font-semibold text-[#1F4D46]">{docs.length} {docs.length === 1 ? "documento" : "documentos"}</span>
           </div>
-          <div className="divide-y divide-[#E5D8C5]">
+          <div className="divide-y divide-[#D8CDB9]">
             {docs.map((doc) => (
               <div key={doc.id} className="flex items-center gap-4 px-5 py-4 hover:bg-[#F3EEE5] transition group">
-                <div className="w-9 h-9 bg-[#EFE7DA] rounded-xl flex items-center justify-center shrink-0">
-                  <FileText size={17} className="text-[#314D3E]" />
+                <div className="w-9 h-9 bg-[#E8E0D2] rounded-xl flex items-center justify-center shrink-0">
+                  <FileText size={17} className="text-[#1F4D46]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[#314D3E] text-sm truncate">{doc.name}</p>
+                  <p className="font-semibold text-[#1F4D46] text-sm truncate">{doc.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {new Date(doc.createdAt).toLocaleDateString("pt-BR")}
                     {doc.fileSize ? ` · ${formatSize(doc.fileSize)}` : ""}
@@ -155,13 +157,31 @@ export default function Documents() {
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${TYPE_COLORS[doc.type] ?? TYPE_COLORS.outro}`}>
                   {DOC_TYPES.find((t) => t.value === doc.type)?.label ?? doc.type}
                 </span>
+                {/* Badge: campos configurados */}
+                {(doc.fields ?? []).some((f) => f.type === "patient_sig") ? (
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0 hidden sm:inline">
+                    ✓ Campos configurados
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 shrink-0 hidden sm:inline">
+                    Sem campos
+                  </span>
+                )}
+
                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition">
                   <button
+                    onClick={() => setConfiguringDoc(doc)}
+                    className="flex items-center gap-1 px-2.5 h-8 border border-[#C2A56B] rounded-lg hover:bg-white transition text-xs text-[#1F4D46] font-medium shrink-0"
+                    title="Configurar campos de assinatura"
+                  >
+                    <Settings2 size={13} /> Campos
+                  </button>
+                  <button
                     onClick={() => openFile(doc.id)}
-                    className="w-8 h-8 flex items-center justify-center border border-[#D6C1A3] rounded-lg hover:bg-white transition"
+                    className="w-8 h-8 flex items-center justify-center border border-[#C2A56B] rounded-lg hover:bg-white transition"
                     title="Visualizar"
                   >
-                    <Eye size={14} className="text-[#314D3E]" />
+                    <Eye size={14} className="text-[#1F4D46]" />
                   </button>
                   <button
                     onClick={() => handleDelete(doc.id)}
@@ -182,7 +202,7 @@ export default function Documents() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-[#314D3E]">Adicionar documento</h2>
+              <h2 className="text-lg font-bold text-[#1F4D46]">Adicionar documento</h2>
               <button onClick={() => { setShowUpload(false); setFile(null); setForm({ name: "", type: "termo" }); }}>
                 <X size={20} className="text-gray-400 hover:text-gray-600" />
               </button>
@@ -195,7 +215,7 @@ export default function Documents() {
                 onDrop={handleDrop}
                 onClick={() => fileRef.current?.click()}
                 className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${
-                  dragging ? "border-[#314D3E] bg-[#EFE7DA]" : file ? "border-[#314D3E]/40 bg-[#FAF7F2]" : "border-[#D6C1A3] hover:border-[#314D3E]/40"
+                  dragging ? "border-[#1F4D46] bg-[#E8E0D2]" : file ? "border-[#1F4D46]/40 bg-[#F5F1EA]" : "border-[#C2A56B] hover:border-[#1F4D46]/40"
                 }`}
               >
                 <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={(e) => {
@@ -204,13 +224,13 @@ export default function Documents() {
                 }} />
                 {file ? (
                   <>
-                    <FileText size={28} className="text-[#314D3E] mx-auto mb-2" />
-                    <p className="text-sm font-semibold text-[#314D3E] truncate">{file.name}</p>
+                    <FileText size={28} className="text-[#1F4D46] mx-auto mb-2" />
+                    <p className="text-sm font-semibold text-[#1F4D46] truncate">{file.name}</p>
                     <p className="text-xs text-gray-400 mt-1">{formatSize(file.size)}</p>
                   </>
                 ) : (
                   <>
-                    <Upload size={28} className="text-[#D6C1A3] mx-auto mb-2" />
+                    <Upload size={28} className="text-[#C2A56B] mx-auto mb-2" />
                     <p className="text-sm font-medium text-gray-500">Arraste o PDF ou clique para selecionar</p>
                     <p className="text-xs text-gray-400 mt-1">Máximo 20 MB</p>
                   </>
@@ -223,7 +243,7 @@ export default function Documents() {
                   value={form.name}
                   onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                   placeholder="Ex: Contrato de Prestação de Serviços"
-                  className="w-full border border-[#D6C1A3] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20"
+                  className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
                 />
               </div>
 
@@ -237,8 +257,8 @@ export default function Documents() {
                       onClick={() => setForm((p) => ({ ...p, type: t.value }))}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition border ${
                         form.type === t.value
-                          ? "bg-[#314D3E] text-white border-[#314D3E]"
-                          : "border-[#D6C1A3] text-[#314D3E] hover:bg-[#EFE7DA]"
+                          ? "bg-[#1F4D46] text-white border-[#1F4D46]"
+                          : "border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2]"
                       }`}
                     >
                       {t.label}
@@ -251,20 +271,34 @@ export default function Documents() {
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
               <button
                 onClick={() => { setShowUpload(false); setFile(null); setForm({ name: "", type: "termo" }); }}
-                className="border border-[#D6C1A3] px-4 py-2 rounded-xl text-sm hover:bg-[#EFE7DA] transition"
+                className="border border-[#C2A56B] px-4 py-2 rounded-xl text-sm hover:bg-[#E8E0D2] transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleUpload}
                 disabled={uploading || !file}
-                className="bg-[#314D3E] hover:bg-[#465634] disabled:opacity-40 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
+                className="bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-40 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
               >
                 {uploading ? "Enviando…" : "Adicionar"}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* FIELD PLACEMENT MODAL */}
+      {configuringDoc && (
+        <FieldPlacementModal
+          patientDoc={{ document: configuringDoc }}
+          onClose={() => setConfiguringDoc(null)}
+          onSaved={(fields) => {
+            setDocs((prev) =>
+              prev.map((d) => d.id === configuringDoc.id ? { ...d, fields } : d)
+            );
+            setConfiguringDoc(null);
+          }}
+        />
       )}
     </MainLayout>
   );

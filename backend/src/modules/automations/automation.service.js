@@ -44,11 +44,29 @@ async function getActiveTemplate(userId, type) {
 
 async function logAndSend({ userId, patientId, patientName, phone, type, message, scheduledFor, templateId }) {
   if (!phone) return;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { whatsappPhoneNumberId: true, whatsappAccessToken: true },
+  });
+
+  const config = {
+    phoneNumberId: user?.whatsappPhoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID,
+    accessToken:   user?.whatsappAccessToken   || process.env.WHATSAPP_ACCESS_TOKEN,
+  };
+
+  if (!config.phoneNumberId || !config.accessToken) {
+    await prisma.automationLog.create({
+      data: { userId, patientId, patientName, phone, type, message, scheduledFor, templateId, status: "skipped" },
+    });
+    return;
+  }
+
   const log = await prisma.automationLog.create({
     data: { userId, patientId, patientName, phone, type, message, scheduledFor, templateId, status: "pending" },
   });
   try {
-    await sendWhatsAppMessage(phone, message);
+    await sendWhatsAppMessage(phone, message, config);
     await prisma.automationLog.update({
       where: { id: log.id },
       data: { status: "sent", sentAt: new Date() },
@@ -101,7 +119,7 @@ export async function runBirthdayCron() {
     if (!tpl) continue;
 
     const patients = await prisma.patient.findMany({
-      where: { userId, isActive: true, phone: { not: null }, birthDate: { not: null } },
+      where: { userId, isActive: true, birthDate: { not: null } },
       select: { id: true, name: true, phone: true, birthDate: true },
     });
 
@@ -145,7 +163,6 @@ export async function runReminderCron() {
         userId,
         startsAt: { gte: windowStart, lte: windowEnd },
         status: { not: "CANCELED" },
-        patient: { phone: { not: null } },
       },
       include: { patient: { select: { id: true, name: true, phone: true } } },
     });

@@ -4,7 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
-import { Plus, X, Trash2, Calendar, MessageSquare } from "lucide-react";
+import { Plus, X, Trash2, Calendar, MessageSquare, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import CalendarSidebar from "../components/calendar/CalendarSidebar";
@@ -13,9 +13,9 @@ import api from "../services/api";
 
 const PROFESSIONALS = ["Dra Ana", "Dra Julia", "Dra Camila"];
 const PROFESSIONAL_COLORS = {
-  "Dra Ana":    "#314D3E",
-  "Dra Julia":  "#7C9A92",
-  "Dra Camila": "#C4A882",
+  "Dra Ana":    "#1F4D46",
+  "Dra Julia":  "#6F7F73",
+  "Dra Camila": "#C2A56B",
 };
 const STATUS_COLORS = {
   SCHEDULED:   "#C4895A",
@@ -32,6 +32,8 @@ const STATUS_OPTIONS = [
   { value: "CANCELED",    label: "Cancelado" },
 ];
 
+const PAYMENT_METHODS = ["Dinheiro", "PIX", "Cartão de crédito", "Cartão de débito", "Transferência"];
+
 function emptyForm() {
   return {
     title: "",
@@ -41,6 +43,11 @@ function emptyForm() {
     notes: "",
     status: "SCHEDULED",
     selectedDate: "",
+    txAmount: "",
+    txPaymentMethod: "",
+    txInstallments: "1",
+    txDueDate: "",
+    txNotes: "",
   };
 }
 
@@ -80,9 +87,29 @@ export default function Agenda() {
   const [sendWhatsApp, setSendWhatsApp] = useState(false);
   const [whatsappMessage, setWhatsappMessage] = useState("");
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+  const [patientSearch, setPatientSearch] = useState("");
+  const [patientResults, setPatientResults] = useState([]);
+  const [showPatientDrop, setShowPatientDrop] = useState(false);
 
   function f(field) {
     return (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  }
+
+  async function searchPatients(q) {
+    setPatientSearch(q);
+    setForm((p) => ({ ...p, patientId: "" }));
+    if (q.length < 1) { setPatientResults([]); setShowPatientDrop(false); return; }
+    try {
+      const res = await api.get("/patients", { params: { search: q, status: "active" } });
+      setPatientResults(res.data.data ?? []);
+      setShowPatientDrop(true);
+    } catch { setPatientResults([]); }
+  }
+
+  function selectPatient(p) {
+    setForm((prev) => ({ ...prev, patientId: p.id }));
+    setPatientSearch(p.name);
+    setShowPatientDrop(false);
   }
 
   function interpolate(body, vars) {
@@ -108,7 +135,7 @@ export default function Agenda() {
             STATUS_COLORS[a.status] ??
             STATUS_COLORS[a.status?.toUpperCase()] ??
             PROFESSIONAL_COLORS[a.professional] ??
-            "#314D3E";
+            "#1F4D46";
           return {
             id: a.id,
             title: a.title || "Agendamento",
@@ -122,10 +149,11 @@ export default function Agenda() {
               notes: a.notes,
               status: a.status,
               statusColor,
-              professionalColor: PROFESSIONAL_COLORS[a.professional] ?? "#314D3E",
+              professionalColor: PROFESSIONAL_COLORS[a.professional] ?? "#1F4D46",
               patientName: a.patient?.name ?? null,
               patientPhone: a.patient?.phone ?? null,
               patientId: a.patientId ?? null,
+              transaction: a.transaction ?? null,
             },
           };
         })
@@ -171,6 +199,21 @@ export default function Agenda() {
     return () => clearInterval(timer);
   }, []);
 
+  // auto-preenche valor ao selecionar procedimento
+  useEffect(() => {
+    if (!editing && form.procedureType) {
+      const proc = procedures.find((p) => p.name === form.procedureType);
+      if (proc?.price) setForm((prev) => ({ ...prev, txAmount: String(proc.price) }));
+    }
+  }, [form.procedureType]);
+
+  useEffect(() => {
+    if (!editing && sendWhatsApp && form.patientId && form.selectedDate) {
+      const patientName = patients.find((p) => p.id === form.patientId)?.name;
+      setWhatsappMessage(buildWhatsAppMessage(confirmTemplate, patientName, form.selectedDate));
+    }
+  }, [form.patientId, form.selectedDate]);
+
   useEffect(() => {
     setEvents(
       allEvents.filter(
@@ -196,6 +239,9 @@ export default function Agenda() {
     setForm({ ...emptyForm(), selectedDate: formatForInput(date) });
     setSendWhatsApp(confirmTemplate?.isActive ?? false);
     setWhatsappMessage("");
+    setPatientSearch("");
+    setPatientResults([]);
+    setShowPatientDrop(false);
     setShowModal(true);
   }
 
@@ -203,7 +249,7 @@ export default function Agenda() {
     setEditing(event);
     setForm({
       title: event.title,
-      patientId: "",
+      patientId: event.extendedProps.patientId || "",
       professional: event.extendedProps.professional || "",
       procedureType: event.extendedProps.procedureType || "",
       notes: event.extendedProps.notes || "",
@@ -218,9 +264,8 @@ export default function Agenda() {
 
   async function handleSave() {
     try {
-      let savedAppointment;
       if (editing) {
-        savedAppointment = await api.put(`/appointments/${editing.id}`, {
+        await api.put(`/appointments/${editing.id}`, {
           title: form.title,
           startsAt: form.selectedDate,
           endsAt: form.selectedDate,
@@ -233,7 +278,7 @@ export default function Agenda() {
       } else {
         const start = new Date(form.selectedDate);
         const end = new Date(start.getTime() + 60 * 60 * 1000);
-        savedAppointment = await api.post("/appointments", {
+        await api.post("/appointments", {
           title: form.title,
           startsAt: start,
           endsAt: end,
@@ -243,12 +288,16 @@ export default function Agenda() {
           notes: form.notes,
           procedureType: form.procedureType,
           status: form.status,
+          txAmount: form.txAmount || undefined,
+          txPaymentMethod: form.txPaymentMethod || undefined,
+          txInstallments: Number(form.txInstallments) > 1 ? Number(form.txInstallments) : undefined,
+          txDueDate: form.txDueDate || undefined,
+          txNotes: form.txNotes || undefined,
         });
         toast.success("Agendamento criado");
       }
 
       if (sendWhatsApp && whatsappMessage) {
-        const appt = savedAppointment.data;
         const phone = editing
           ? editing.extendedProps.patientPhone
           : patients.find((p) => p.id === form.patientId)?.phone;
@@ -337,12 +386,12 @@ export default function Agenda() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-3xl font-bold text-[#314D3E]">Agenda</h1>
-                <span className="bg-[#EFE7DA] text-[#314D3E] border border-[#D6C1A3] text-xs font-semibold px-2.5 py-1 rounded-full">
+                <h1 className="text-3xl font-bold text-[#1F4D46]">Agenda</h1>
+                <span className="bg-[#E8E0D2] text-[#1F4D46] border border-[#C2A56B] text-xs font-semibold px-2.5 py-1 rounded-full">
                   Agora {formatTime(now)}
                 </span>
                 {todayCount > 0 && (
-                  <span className="bg-[#314D3E] text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                  <span className="bg-[#1F4D46] text-white text-xs font-semibold px-2.5 py-1 rounded-full">
                     {todayCount} hoje
                   </span>
                 )}
@@ -351,14 +400,14 @@ export default function Agenda() {
             </div>
             <button
               onClick={() => openCreate()}
-              className="bg-[#314D3E] hover:bg-[#465634] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
+              className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
             >
               <Plus size={16} /> Novo agendamento
             </button>
           </div>
 
           {/* CALENDÁRIO */}
-          <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-4 shadow-sm flex-1 overflow-hidden">
+          <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-4 shadow-sm flex-1 overflow-hidden">
             <FullCalendar
               ref={calendarRef}
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -394,12 +443,18 @@ export default function Agenda() {
               }}
               eventContent={(info) => {
                 const isMonth = info.view.type === "dayGridMonth";
+                const { patientName, procedureType, professional, professionalColor } = info.event.extendedProps;
                 if (isMonth) {
                   return (
-                    <div className="px-1.5 flex items-center gap-1 w-full overflow-hidden">
-                      <span className="text-[11px] font-semibold truncate text-white leading-5">
+                    <div className="px-1.5 py-0.5 w-full overflow-hidden">
+                      <p className="text-[11px] font-semibold truncate text-white leading-tight">
                         {info.event.title}
-                      </span>
+                      </p>
+                      {patientName && (
+                        <p className="text-[9px] truncate text-white/70 leading-tight">
+                          {patientName}
+                        </p>
+                      )}
                     </div>
                   );
                 }
@@ -408,19 +463,24 @@ export default function Agenda() {
                     <p className="font-semibold truncate leading-tight text-white">
                       {info.event.title}
                     </p>
-                    {info.event.extendedProps.procedureType && (
-                      <p className="truncate leading-tight text-white/75 text-[10px]">
-                        {info.event.extendedProps.procedureType}
+                    {patientName && (
+                      <p className="truncate leading-tight text-white/80 text-[10px]">
+                        {patientName}
                       </p>
                     )}
-                    {info.event.extendedProps.professional && (
+                    {procedureType && (
+                      <p className="truncate leading-tight text-white/60 text-[10px]">
+                        {procedureType}
+                      </p>
+                    )}
+                    {professional && (
                       <div className="flex items-center gap-1 mt-auto">
                         <div
                           className="w-2 h-2 rounded-full shrink-0"
-                          style={{ backgroundColor: info.event.extendedProps.professionalColor }}
+                          style={{ backgroundColor: professionalColor }}
                         />
                         <p className="truncate text-white/70 text-[10px]">
-                          {info.event.extendedProps.professional}
+                          {professional}
                         </p>
                       </div>
                     )}
@@ -438,10 +498,10 @@ export default function Agenda() {
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-[#EFE7DA] rounded-lg flex items-center justify-center">
-                  <Calendar size={15} className="text-[#314D3E]" />
+                <div className="w-8 h-8 bg-[#E8E0D2] rounded-lg flex items-center justify-center">
+                  <Calendar size={15} className="text-[#1F4D46]" />
                 </div>
-                <h2 className="text-lg font-bold text-[#314D3E]">
+                <h2 className="text-lg font-bold text-[#1F4D46]">
                   {editing ? "Editar agendamento" : "Novo agendamento"}
                 </h2>
               </div>
@@ -457,23 +517,52 @@ export default function Agenda() {
                   value={form.title}
                   onChange={f("title")}
                   placeholder="Ex: Toxina botulínica"
-                  className="w-full border border-[#D6C1A3] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20"
+                  className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
                 />
               </div>
 
               {!editing && (
+                <div className="relative">
+                  <label className="text-xs font-medium text-gray-500 block mb-1.5">Paciente</label>
+                  <input
+                    value={patientSearch}
+                    onChange={(e) => searchPatients(e.target.value)}
+                    onFocus={() => patientSearch && setShowPatientDrop(true)}
+                    onBlur={() => setTimeout(() => setShowPatientDrop(false), 150)}
+                    placeholder="Buscar por nome ou telefone…"
+                    className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                  />
+                  {form.patientId && (
+                    <span className="absolute right-3 top-9 text-[10px] text-green-600 font-medium">✓ selecionado</span>
+                  )}
+                  {showPatientDrop && patientResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-[#C2A56B] rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                      {patientResults.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onMouseDown={() => selectPatient(p)}
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#E8E0D2] transition border-b border-[#F0E8DC] last:border-0"
+                        >
+                          <p className="font-medium text-[#1F4D46]">{p.name}</p>
+                          {p.phone && <p className="text-xs text-gray-400">{p.phone}</p>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {showPatientDrop && patientResults.length === 0 && patientSearch.length > 1 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-[#C2A56B] rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400">
+                      Nenhum paciente encontrado
+                    </div>
+                  )}
+                </div>
+              )}
+              {editing && editing.extendedProps.patientName && (
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1.5">Paciente</label>
-                  <select
-                    value={form.patientId}
-                    onChange={f("patientId")}
-                    className="w-full border border-[#D6C1A3] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20"
-                  >
-                    <option value="">Selecione o paciente</option>
-                    {patients.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
+                  <div className="w-full border border-[#D8CDB9] rounded-xl p-3 text-sm bg-[#F5F1EA] text-[#1F4D46] font-medium">
+                    {editing.extendedProps.patientName}
+                  </div>
                 </div>
               )}
 
@@ -483,7 +572,7 @@ export default function Agenda() {
                   type="datetime-local"
                   value={form.selectedDate}
                   onChange={f("selectedDate")}
-                  className="w-full border border-[#D6C1A3] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20"
+                  className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
                 />
               </div>
 
@@ -497,8 +586,8 @@ export default function Agenda() {
                       onClick={() => setForm((prev) => ({ ...prev, professional: name }))}
                       className={`flex-1 py-2 rounded-xl text-xs font-medium transition border ${
                         form.professional === name
-                          ? "border-[#314D3E] bg-[#314D3E] text-white"
-                          : "border-[#D6C1A3] text-[#314D3E] hover:bg-[#EFE7DA]"
+                          ? "border-[#1F4D46] bg-[#1F4D46] text-white"
+                          : "border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2]"
                       }`}
                     >
                       {name}
@@ -512,7 +601,7 @@ export default function Agenda() {
                 <select
                   value={form.procedureType}
                   onChange={f("procedureType")}
-                  className="w-full border border-[#D6C1A3] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20"
+                  className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
                 >
                   <option value="">Selecione o procedimento</option>
                   {procedures.map((p) => (
@@ -533,8 +622,8 @@ export default function Agenda() {
                       onClick={() => setForm((prev) => ({ ...prev, status: value }))}
                       className={`py-2 rounded-xl text-xs font-medium transition border ${
                         form.status === value
-                          ? "border-[#314D3E] bg-[#314D3E] text-white"
-                          : "border-[#D6C1A3] text-[#314D3E] hover:bg-[#EFE7DA]"
+                          ? "border-[#1F4D46] bg-[#1F4D46] text-white"
+                          : "border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2]"
                       }`}
                     >
                       {label}
@@ -550,8 +639,197 @@ export default function Agenda() {
                   onChange={f("notes")}
                   placeholder="Informações adicionais…"
                   rows={3}
-                  className="w-full border border-[#D6C1A3] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20"
+                  className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
                 />
+              </div>
+
+              {/* INFORMAÇÕES FINANCEIRAS (só na criação) */}
+              {!editing && (
+                <div className="border-t border-[#D8CDB9] pt-4 space-y-3">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+                    <DollarSign size={12} /> Financeiro
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                        Valor (R$)
+                        {form.procedureType && procedures.find(p => p.name === form.procedureType)?.price && (
+                          <span className="ml-1 text-[10px] text-emerald-600 font-normal">preenchido automaticamente</span>
+                        )}
+                      </label>
+                      <input
+                        type="number" min="0" step="0.01"
+                        value={form.txAmount}
+                        onChange={f("txAmount")}
+                        placeholder="0,00"
+                        className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1.5">Forma de pagamento</label>
+                      <select
+                        value={form.txPaymentMethod}
+                        onChange={f("txPaymentMethod")}
+                        className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                      >
+                        <option value="">Selecione</option>
+                        {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1.5">Parcelas</label>
+                      <input
+                        type="number" min="1" max="60"
+                        value={form.txInstallments}
+                        onChange={f("txInstallments")}
+                        className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                        {Number(form.txInstallments) > 1 ? "Vencimento 1ª parcela" : "Vencimento"}
+                      </label>
+                      <input
+                        type="date"
+                        value={form.txDueDate}
+                        onChange={f("txDueDate")}
+                        className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                      />
+                    </div>
+                  </div>
+
+                  {Number(form.txInstallments) > 1 && form.txAmount && (
+                    <p className="text-[11px] text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2">
+                      {form.txInstallments}x de{" "}
+                      {(Number(form.txAmount) / Number(form.txInstallments)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      {" "}— vencimento mensal a partir da data informada
+                    </p>
+                  )}
+
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 block mb-1.5">Observação financeira</label>
+                    <input
+                      value={form.txNotes}
+                      onChange={f("txNotes")}
+                      placeholder="Ex: sinal pago, parcelar no retorno…"
+                      className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* SITUAÇÃO FINANCEIRA (só na edição) */}
+              {editing && (() => {
+                const tx = editing.extendedProps.transaction;
+                const STATUS_PILL = {
+                  pendente:   "bg-amber-100 text-amber-700",
+                  confirmado: "bg-emerald-100 text-emerald-700",
+                  cancelado:  "bg-gray-100 text-gray-500",
+                };
+                const fmtVal = (v) => Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+                return (
+                  <div className="border-t border-[#D8CDB9] pt-4">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <DollarSign size={12} /> Situação financeira
+                    </p>
+                    {tx ? (
+                      <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-xl px-4 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {tx.type === "receita"
+                            ? <TrendingUp size={14} className="text-emerald-600" />
+                            : <TrendingDown size={14} className="text-red-500" />}
+                          <div>
+                            <p className="text-sm font-semibold text-[#1F4D46]">{fmtVal(tx.amount)}</p>
+                            {tx.paymentMethod && <p className="text-xs text-gray-400">{tx.paymentMethod}</p>}
+                          </div>
+                        </div>
+                        <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${STATUS_PILL[tx.status] ?? STATUS_PILL.cancelado}`}>
+                          {tx.status === "pendente" ? "Pendente" : tx.status === "confirmado" ? "Confirmado" : "Cancelado"}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 bg-[#F5F1EA] border border-[#D8CDB9] rounded-xl px-4 py-3">
+                        Nenhuma transação vinculada. Ao concluir o agendamento, uma transação pendente será criada automaticamente.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* WHATSAPP */}
+              <div className="border-t border-[#D8CDB9] pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !sendWhatsApp;
+                    setSendWhatsApp(next);
+                    if (next && !whatsappMessage) {
+                      const patientName = editing
+                        ? editing.extendedProps.patientName
+                        : patients.find((p) => p.id === form.patientId)?.name;
+                      const date = form.selectedDate || editing?.start;
+                      setWhatsappMessage(buildWhatsAppMessage(confirmTemplate, patientName, date));
+                    }
+                  }}
+                  className="flex items-center justify-between w-full"
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium text-[#1F4D46]">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${sendWhatsApp ? "bg-green-100" : "bg-[#E8E0D2]"}`}>
+                      <MessageSquare size={15} className={sendWhatsApp ? "text-green-600" : "text-[#1F4D46]"} />
+                    </div>
+                    Enviar notificação via WhatsApp
+                  </div>
+                  <div className={`w-10 h-6 rounded-full transition-colors relative ${sendWhatsApp ? "bg-green-500" : "bg-gray-200"}`}>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${sendWhatsApp ? "translate-x-4" : "translate-x-0.5"}`} />
+                  </div>
+                </button>
+
+                {sendWhatsApp && (
+                  <div className="mt-3 space-y-2">
+                    {!editing && !form.patientId ? (
+                      <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                        Selecione o paciente para pré-preencher a mensagem.
+                      </p>
+                    ) : null}
+                    <div className="relative">
+                      <textarea
+                        value={whatsappMessage}
+                        onChange={(e) => setWhatsappMessage(e.target.value)}
+                        rows={4}
+                        placeholder="Mensagem personalizada…"
+                        className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500/20 bg-green-50/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const patientName = editing
+                            ? editing.extendedProps.patientName
+                            : patients.find((p) => p.id === form.patientId)?.name;
+                          const date = form.selectedDate || editing?.start;
+                          setWhatsappMessage(buildWhatsAppMessage(confirmTemplate, patientName, date));
+                        }}
+                        className="absolute bottom-2 right-2 text-[10px] text-gray-400 hover:text-[#1F4D46] transition"
+                      >
+                        ↺ regenerar
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-gray-400">
+                      {editing ? "Paciente:" : "Para:"} <span className="font-medium text-[#1F4D46]">
+                        {editing
+                          ? (editing.extendedProps.patientName || "—")
+                          : (patients.find((p) => p.id === form.patientId)?.name || "—")}
+                      </span>
+                      {" · "}
+                      {editing
+                        ? (editing.extendedProps.patientPhone || "sem telefone")
+                        : (patients.find((p) => p.id === form.patientId)?.phone || "sem telefone")}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -569,15 +847,16 @@ export default function Agenda() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="border border-[#D6C1A3] px-4 py-2 rounded-xl text-sm hover:bg-[#EFE7DA] transition"
+                  className="border border-[#C2A56B] px-4 py-2 rounded-xl text-sm hover:bg-[#E8E0D2] transition"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSave}
-                  className="bg-[#314D3E] hover:bg-[#465634] text-white px-5 py-2 rounded-xl text-sm font-medium transition"
+                  disabled={sendingWhatsApp}
+                  className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-5 py-2 rounded-xl text-sm font-medium transition disabled:opacity-60"
                 >
-                  Salvar
+                  {sendingWhatsApp ? "Enviando…" : "Salvar"}
                 </button>
               </div>
             </div>

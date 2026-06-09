@@ -20,13 +20,16 @@ import Products from "../pages/Products";
 import Financeiro from "../pages/Financeiro";
 import Clube from "../pages/Clube";
 import Documents from "../pages/Documents";
-import Relatorios from "../pages/Relatorios";
+import Analytics from "../pages/Relatorios";
+import Faturamento from "../pages/Faturamento";
 import EditPatient from "../pages/EditPatient";
 import Automacoes from "../pages/Automacoes";
+import LandingPage from "../pages/LandingPage";
 
 export default function AppRoutes() {
   return (
     <Routes>
+      <Route path="/landing" element={<LandingPage />} />
       <Route
         path="/"
         element={<Login />}
@@ -137,10 +140,20 @@ export default function AppRoutes() {
       />
 
       <Route
-        path="/relatorios"
+        path="/analytics"
         element={
           <PrivateRoute>
-            <Relatorios />
+            <Analytics />
+          </PrivateRoute>
+        }
+      />
+      <Route path="/relatorios" element={<Navigate to="/analytics" />} />
+
+      <Route
+        path="/faturamento"
+        element={
+          <PrivateRoute>
+            <Faturamento />
           </PrivateRoute>
         }
       />

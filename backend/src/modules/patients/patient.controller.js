@@ -81,7 +81,7 @@ import * as patientService from "./patient.service.js";
       const patient = await patientService.update(
         req.params.id,
         req.body,
-        req.user
+        req.user.id
       );
     
       return res.json(patient);
@@ -96,7 +96,7 @@ import * as patientService from "./patient.service.js";
   try {
     const response = await patientService.remove(
       req.params.id,
-      req.user
+      req.user.id
     );
 
     return res.json(response);

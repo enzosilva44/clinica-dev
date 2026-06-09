@@ -166,34 +166,39 @@ export async function findOne(
   return patient;
 }
 
-export async function remove(
-  patientId,
-  userId
-) {
-  const patient =
-    await prisma.patient.findFirst({
-      where: {
-        id: patientId,
-
-        userId,
-
-        isActive: true,
-      },
-    });
-
-  if (!patient) {
-    throw new Error(
-      "Paciente não encontrado"
-    );
-  }
+export async function update(patientId, data, userId) {
+  const patient = await prisma.patient.findFirst({
+    where: { id: patientId, userId },
+  });
+  if (!patient) throw new Error("Paciente não encontrado");
 
   return prisma.patient.update({
-    where: {
-      id: patientId,
-    },
-
+    where: { id: patientId },
     data: {
-      isActive: false,
+      name: data.name,
+      email: data.email || null,
+      phone: data.phone,
+      birthDate: data.birthDate && data.birthDate !== "" ? new Date(data.birthDate) : null,
+      cpf: data.cpf || null,
+      rg: data.rg || null,
+      street: data.street || null,
+      city: data.city || null,
+      state: data.state || null,
+      country: data.country || null,
+      zipCode: data.zipCode || null,
+      observations: data.observations || null,
     },
+  });
+}
+
+export async function remove(patientId, userId) {
+  const patient = await prisma.patient.findFirst({
+    where: { id: patientId, userId, isActive: true },
+  });
+  if (!patient) throw new Error("Paciente não encontrado");
+
+  return prisma.patient.update({
+    where: { id: patientId },
+    data: { isActive: false },
   });
 }

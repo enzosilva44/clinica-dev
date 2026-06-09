@@ -1,5 +1,20 @@
 import { prisma } from "../../config/prisma.js";
 
+export async function findAll(userId, { productId, startDate, endDate } = {}) {
+  const where = { userId };
+  if (productId) where.productId = productId;
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) where.createdAt.gte = new Date(startDate);
+    if (endDate) where.createdAt.lte = new Date(endDate + "T23:59:59.999Z");
+  }
+  return prisma.productMovement.findMany({
+    where,
+    include: { product: { select: { name: true, unit: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export async function findByProduct(productId, userId) {
   const product = await prisma.product.findFirst({ where: { id: productId, userId } });
   if (!product) throw new Error("Produto não encontrado");

@@ -2,7 +2,7 @@ import { prisma } from "../../config/prisma.js";
 
 const EXTRA_FIELDS = [
   "productName","applicationDate","dilutionDate","dilutionVolume",
-  "lotNumber","expiryDate","vialPresentation","clinicalNotes","backgroundPhotoId",
+  "lotNumber","expiryDate","vialPresentation","clinicalNotes","backgroundPhotoId","baseImage",
 ];
 
 function pickExtras(data, existing = {}) {

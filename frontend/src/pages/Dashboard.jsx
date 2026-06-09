@@ -8,33 +8,17 @@ import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 
-const QUOTES = [
+const FALLBACK_QUOTES = [
   "Cada atendimento é uma oportunidade de transformar autoestima em confiança.",
-  "A beleza começa quando você decide cuidar de verdade.",
-  "O sorriso de um paciente satisfeito é a melhor recompensa.",
   "Excelência não é um ato, é um hábito cultivado dia a dia.",
-  "Cada detalhe importa quando o resultado é a felicidade do paciente.",
-  "A confiança se conquista procedimento a procedimento.",
-  "Transformar vidas começa com um gesto genuíno de cuidado.",
-  "O verdadeiro sucesso é o bem-estar de quem confiou em você.",
-  "Resultados excepcionais nascem de cuidados excepcionais.",
-  "Hoje é um novo dia para fazer a diferença na vida de alguém.",
-  "A perfeição está nos detalhes, e você domina cada um deles.",
   "Harmonia entre arte e ciência — é isso que você pratica todos os dias.",
-  "Seja a razão de alguém sorrir hoje.",
-  "Quem cuida bem dos outros, cuida do mundo.",
-  "Sua dedicação é o melhor tratamento que um paciente pode receber.",
-  "Grandes resultados começam com grandes intenções.",
-  "A saúde e a beleza caminham juntas quando há amor no que se faz.",
-  "Cada paciente que sai feliz carrega um pouco da sua essência.",
-  "O cuidado genuíno é o diferencial que nenhum protocolo ensina.",
   "Você não apenas realiza procedimentos — você transforma histórias.",
 ];
 
 const PROFESSIONAL_COLORS = {
-  "Dra Ana":    "#314D3E",
-  "Dra Julia":  "#7C9A92",
-  "Dra Camila": "#C4A882",
+  "Dra Ana":    "#1F4D46",
+  "Dra Julia":  "#6F7F73",
+  "Dra Camila": "#C2A56B",
 };
 
 function getGreeting() {
@@ -50,13 +34,15 @@ function getFirstName(name = "") {
   return parts[0];
 }
 
-function getDailyQuote() {
+function getFallbackQuote() {
   const day = Math.floor(Date.now() / 86400000);
-  return QUOTES[day % QUOTES.length];
+  return FALLBACK_QUOTES[day % FALLBACK_QUOTES.length];
 }
 
+const TODAY_KEY = `daily_insight_${new Date().toISOString().slice(0, 10)}`;
+
 function professionalColor(name) {
-  return PROFESSIONAL_COLORS[name] ?? "#314D3E";
+  return PROFESSIONAL_COLORS[name] ?? "#1F4D46";
 }
 
 const QUICK_ACCESS = [
@@ -71,12 +57,23 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dailyInsight, setDailyInsight] = useState(localStorage.getItem(TODAY_KEY) || "");
 
   useEffect(() => {
     api.get("/dashboard/stats")
       .then((res) => setStats(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (dailyInsight) return;
+    api.get("/ai/daily-insight")
+      .then((res) => {
+        setDailyInsight(res.data.phrase);
+        localStorage.setItem(TODAY_KEY, res.data.phrase);
+      })
+      .catch(() => setDailyInsight(getFallbackQuote()));
   }, []);
 
   const today = new Date().toLocaleDateString("pt-BR", {
@@ -91,7 +88,7 @@ export default function Dashboard() {
   return (
     <MainLayout>
       {/* GREETING */}
-      <div className="relative bg-[#314D3E] rounded-2xl px-5 py-6 md:px-8 md:py-7 mb-6 overflow-hidden shadow-sm">
+      <div className="relative bg-[#1F4D46] rounded-2xl px-5 py-6 md:px-8 md:py-7 mb-6 overflow-hidden shadow-sm">
         <div className="relative z-10">
           <p className="text-white/50 text-xs font-medium capitalize tracking-widest mb-2">
             {today}
@@ -101,7 +98,7 @@ export default function Dashboard() {
             {getFirstName(user?.name)}!
           </h1>
           <p className="text-white/60 mt-3 text-sm max-w-lg leading-relaxed italic">
-            "{getDailyQuote()}"
+            {dailyInsight ? `"${dailyInsight}"` : <span className="animate-pulse">Gerando frase do dia…</span>}
           </p>
         </div>
         {/* decorativo */}
@@ -119,28 +116,28 @@ export default function Dashboard() {
           <button
             key={to}
             onClick={() => navigate(to)}
-            className="group bg-[#FAF7F2] border border-[#E5D8C5] hover:border-[#314D3E]/30 hover:bg-white rounded-2xl p-4 flex items-center justify-between transition-all shadow-sm text-left"
+            className="group bg-[#F5F1EA] border border-[#D8CDB9] hover:border-[#1F4D46]/30 hover:bg-white rounded-2xl p-4 flex items-center justify-between transition-all shadow-sm text-left"
           >
             <div>
-              <div className="w-9 h-9 bg-[#EFE7DA] group-hover:bg-[#314D3E] rounded-xl flex items-center justify-center mb-3 transition-colors">
-                <Icon size={17} className="text-[#314D3E] group-hover:text-white transition-colors" />
+              <div className="w-9 h-9 bg-[#E8E0D2] group-hover:bg-[#1F4D46] rounded-xl flex items-center justify-center mb-3 transition-colors">
+                <Icon size={17} className="text-[#1F4D46] group-hover:text-white transition-colors" />
               </div>
-              <p className="font-semibold text-sm text-[#314D3E]">{label}</p>
+              <p className="font-semibold text-sm text-[#1F4D46]">{label}</p>
               <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
             </div>
-            <ChevronRight size={15} className="text-gray-300 group-hover:text-[#314D3E] transition-colors shrink-0" />
+            <ChevronRight size={15} className="text-gray-300 group-hover:text-[#1F4D46] transition-colors shrink-0" />
           </button>
         ))}
       </div>
 
       {/* ANIVERSARIANTES DO MÊS */}
-      <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6 mb-6">
+      <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-6 mb-6">
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 bg-[#EFE7DA] rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#E8E0D2] rounded-lg flex items-center justify-center">
               <Cake size={15} className="text-[#C4895A]" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#314D3E] leading-none">Aniversariantes</h2>
+              <h2 className="text-base font-bold text-[#1F4D46] leading-none">Aniversariantes</h2>
               <p className="text-xs text-gray-400 mt-0.5 capitalize">{currentMonthName}</p>
             </div>
           </div>
@@ -148,7 +145,7 @@ export default function Dashboard() {
           {loading ? (
             <div className="flex gap-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 w-28 bg-[#EFE7DA] rounded-xl animate-pulse shrink-0" />
+                <div key={i} className="h-16 w-28 bg-[#E8E0D2] rounded-xl animate-pulse shrink-0" />
               ))}
             </div>
           ) : (
@@ -160,14 +157,14 @@ export default function Dashboard() {
                   className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border transition text-left ${
                     p.isToday
                       ? "bg-[#C4895A] border-[#C4895A] shadow-sm"
-                      : "bg-white border-[#E5D8C5] hover:border-[#C4895A]/40 hover:bg-[#FDF6EE]"
+                      : "bg-white border-[#D8CDB9] hover:border-[#C4895A]/40 hover:bg-[#FDF6EE]"
                   }`}
                 >
                   <div className={`text-lg leading-none ${p.isToday ? "animate-bounce" : ""}`}>
                     🎂
                   </div>
                   <div>
-                    <p className={`text-xs font-semibold leading-tight truncate max-w-27.5 ${p.isToday ? "text-white" : "text-[#314D3E]"}`}>
+                    <p className={`text-xs font-semibold leading-tight truncate max-w-27.5 ${p.isToday ? "text-white" : "text-[#1F4D46]"}`}>
                       {p.name.split(" ")[0]}
                     </p>
                     <p className={`text-[10px] mt-0.5 ${p.isToday ? "text-white/80" : "text-gray-400"}`}>
@@ -187,14 +184,14 @@ export default function Dashboard() {
         </div>
 
       {/* AGENDA DE HOJE */}
-      <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6">
+      <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#314D3E] rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#1F4D46] rounded-lg flex items-center justify-center">
               <Calendar size={15} className="text-white" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#314D3E] leading-none">Agenda de hoje</h2>
+              <h2 className="text-base font-bold text-[#1F4D46] leading-none">Agenda de hoje</h2>
               {hasSchedule && (
                 <p className="text-xs text-gray-400 mt-0.5">
                   {todaySchedule.length} {todaySchedule.length === 1 ? "consulta" : "consultas"} agendadas
@@ -204,7 +201,7 @@ export default function Dashboard() {
           </div>
           <button
             onClick={() => navigate("/agenda")}
-            className="text-xs text-[#314D3E] hover:opacity-70 transition flex items-center gap-1 font-medium"
+            className="text-xs text-[#1F4D46] hover:opacity-70 transition flex items-center gap-1 font-medium"
           >
             Ver agenda completa <ArrowRight size={13} />
           </button>
@@ -213,19 +210,19 @@ export default function Dashboard() {
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-[#EFE7DA] rounded-xl animate-pulse" />
+              <div key={i} className="h-16 bg-[#E8E0D2] rounded-xl animate-pulse" />
             ))}
           </div>
         ) : !hasSchedule ? (
           <div className="text-center py-10">
-            <div className="w-12 h-12 bg-[#EFE7DA] rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <Calendar size={22} className="text-[#D6C1A3]" />
+            <div className="w-12 h-12 bg-[#E8E0D2] rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Calendar size={22} className="text-[#C2A56B]" />
             </div>
             <p className="text-gray-500 text-sm font-medium">Nenhuma consulta hoje</p>
             <p className="text-gray-400 text-xs mt-1">Aproveite para organizar a semana</p>
             <button
               onClick={() => navigate("/agenda")}
-              className="mt-4 bg-[#314D3E] hover:bg-[#465634] text-white px-4 py-2 rounded-xl text-xs font-medium transition"
+              className="mt-4 bg-[#1F4D46] hover:bg-[#285A50] text-white px-4 py-2 rounded-xl text-xs font-medium transition"
             >
               Abrir agenda
             </button>
@@ -251,7 +248,7 @@ export default function Dashboard() {
                 <div
                   key={appt.id}
                   className={`flex items-center gap-4 bg-white border rounded-xl px-4 py-3.5 transition ${
-                    isPast ? "opacity-45" : "border-[#E5D8C5]"
+                    isPast ? "opacity-45" : "border-[#D8CDB9]"
                   } ${isNow ? "border-l-4 shadow-sm" : ""}`}
                   style={isNow ? { borderLeftColor: color } : {}}
                 >
@@ -263,18 +260,18 @@ export default function Dashboard() {
 
                   {/* Horário */}
                   <div className="text-right shrink-0 w-16">
-                    <p className="text-sm font-bold text-[#314D3E]">{time}</p>
+                    <p className="text-sm font-bold text-[#1F4D46]">{time}</p>
                     {endTime && (
                       <p className="text-xs text-gray-400">{endTime}</p>
                     )}
                   </div>
 
                   {/* Divider */}
-                  <div className="w-px h-8 bg-[#E5D8C5] shrink-0" />
+                  <div className="w-px h-8 bg-[#D8CDB9] shrink-0" />
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[#314D3E] text-sm truncate">
+                    <p className="font-semibold text-[#1F4D46] text-sm truncate">
                       {appt.patient?.name ?? appt.title}
                     </p>
                     <p className="text-xs text-gray-400 truncate">

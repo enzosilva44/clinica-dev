@@ -18,6 +18,7 @@ import budgetRoutes from "./modules/budgets/budget.routes.js";
 import reportsRoutes from "./modules/reports/reports.routes.js";
 import photoRoutes from "./modules/photos/photo.routes.js";
 import automationRoutes from "./modules/automations/automation.routes.js";
+import billingRoutes from "./modules/billing/billing.routes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -45,6 +46,7 @@ app.use("/budgets", budgetRoutes);
 app.use("/reports", reportsRoutes);
 app.use("/photos", photoRoutes);
 app.use("/automations", automationRoutes);
+app.use("/billing", billingRoutes);
 
 app.get("/", (req, res) => {
   res.json({

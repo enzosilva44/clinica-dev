@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { prisma } from "../../config/prisma.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { requestOtp, validateOtp } from "../signature/otp.service.js";
 
 const router = Router();
 
@@ -67,6 +68,16 @@ async function generateSignedPdf({ patientDocument, fields, fieldValues, audit }
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const pages = pdfDoc.getPages();
 
+  // Se não tiver campos configurados, adiciona posições padrão na última página
+  const effectiveFields = [...fields];
+  const lastPageIdx = pages.length;
+  if (!effectiveFields.some((f) => f.type === "patient_sig")) {
+    effectiveFields.push({ id: "_default_pat", type: "patient_sig",  page: lastPageIdx, x: 30, y: 88 });
+  }
+  if (audit.professionalSignature && !effectiveFields.some((f) => f.type === "professional_sig")) {
+    effectiveFields.push({ id: "_default_pro", type: "professional_sig", page: lastPageIdx, x: 70, y: 88 });
+  }
+
   const professionalSignatureBytes = dataUrlToBytes(audit.professionalSignature);
   const patientSignatureBytes = dataUrlToBytes(audit.patientSignature);
   const professionalSignatureImage = professionalSignatureBytes
@@ -76,7 +87,7 @@ async function generateSignedPdf({ patientDocument, fields, fieldValues, audit }
     ? await pdfDoc.embedPng(patientSignatureBytes)
     : null;
 
-  for (const field of fields) {
+  for (const field of effectiveFields) {
     const page = pages[(field.page ?? 1) - 1];
     if (!page) continue;
 
@@ -87,36 +98,37 @@ async function generateSignedPdf({ patientDocument, fields, fieldValues, audit }
 
     if (isSignature) {
       const image = field.type === "professional_sig" ? professionalSignatureImage : patientSignatureImage;
-      const label = field.type === "professional_sig" ? "Assinatura profissional" : "Assinatura paciente";
-      const sigWidth = 190;
-      const sigHeight = 70;
+      const label = field.type === "professional_sig" ? "Assinatura do profissional" : "Assinatura do paciente";
+      const sigWidth  = 180;
+      const sigHeight = 55;
+      const labelH    = 14;
 
-      page.drawRectangle({
-        x: centerX - sigWidth / 2,
-        y: centerY - sigHeight / 2,
-        width: sigWidth,
-        height: sigHeight,
-        borderColor: rgb(0.2, 0.3, 0.24),
-        borderWidth: 0.5,
-        color: rgb(1, 1, 1),
-        opacity: 0.85,
-      });
-
+      // Só a imagem da assinatura, sem fundo nem borda
       if (image) {
         page.drawImage(image, {
-          x: centerX - sigWidth / 2 + 6,
-          y: centerY - sigHeight / 2 + 10,
-          width: sigWidth - 12,
-          height: sigHeight - 20,
+          x:      centerX - sigWidth / 2,
+          y:      centerY - sigHeight / 2 + labelH,
+          width:  sigWidth,
+          height: sigHeight,
         });
       }
 
+      // Linha separadora fina abaixo da assinatura
+      page.drawLine({
+        start: { x: centerX - sigWidth / 2,     y: centerY - sigHeight / 2 + labelH },
+        end:   { x: centerX + sigWidth / 2,     y: centerY - sigHeight / 2 + labelH },
+        thickness: 0.4,
+        color: rgb(0.6, 0.6, 0.6),
+        opacity: 0.5,
+      });
+
+      // Legenda discreta abaixo da linha
       page.drawText(label, {
-        x: centerX - sigWidth / 2 + 6,
-        y: centerY - sigHeight / 2 + 3,
+        x:    centerX - sigWidth / 2,
+        y:    centerY - sigHeight / 2 + 3,
         size: 6,
         font: regularFont,
-        color: rgb(0.25, 0.25, 0.25),
+        color: rgb(0.4, 0.4, 0.4),
       });
       continue;
     }
@@ -149,18 +161,41 @@ async function generateSignedPdf({ patientDocument, fields, fieldValues, audit }
   const auditPage = pdfDoc.addPage();
   const { width, height } = auditPage.getSize();
   let y = height - 56;
+
+  const geoLine = audit.geolocationConsent && audit.latitude
+    ? `Lat: ${audit.latitude}, Lng: ${audit.longitude}`
+    : audit.geolocationConsent ? "Localização autorizada mas indisponível" : "GEOLOCATION_DENIED";
+
   const lines = [
-    ["Registro de Auditoria de Assinatura Eletrônica", true],
+    ["Certificado de Evidências — Assinatura Eletrônica Avançada", true],
+    ["", false],
+    ["DADOS DO ASSINANTE", true],
+    [`Nome: ${audit.signerName || "-"}`],
+    [`CPF: ${audit.signerCpf || "-"}`],
+    [`E-mail: ${audit.signerEmail || "-"}`],
+    [`Telefone: ${audit.signerPhone || "-"}`],
+    ["", false],
+    ["DADOS DA ASSINATURA", true],
     [`Documento: ${patientDocument.document.name}`],
     [`Paciente: ${patientDocument.patient.name}`],
-    [`Nome informado: ${audit.signerName || "-"}`],
-    [`CPF informado: ${audit.signerCpf || "-"}`],
-    [`Profissional/usuário: ${patientDocument.user.name} (${patientDocument.user.email})`],
+    [`Profissional responsável: ${patientDocument.user.name} (${patientDocument.user.email})`],
+    [`Aceite dos termos: ${audit.acceptedTerms ? "SIM" : "NÃO"} — ${audit.acceptedAt ? new Date(audit.acceptedAt).toISOString() : "-"}`],
     [`Data/Hora UTC: ${audit.signedAt.toISOString()}`],
+    [`Fuso horário do assinante: ${audit.signerTimezone || "-"}`],
+    [`Método OTP: ${audit.otpMethod || "-"} — validado em: ${audit.otpValidatedAt ? new Date(audit.otpValidatedAt).toISOString() : "-"}`],
+    ["", false],
+    ["EVIDÊNCIAS TÉCNICAS", true],
     [`IP: ${audit.signerIp || "-"}`],
-    [`User-Agent: ${audit.signerUserAgent || "-"}`],
-    [`Hash SHA-256 do PDF original: ${originalHash}`],
-    [`Método: assinatura eletrônica interna com imagem biométrica desenhada em tela e trilha de auditoria.`],
+    [`Navegador/Dispositivo: ${(audit.signerUserAgent || "-").slice(0, 90)}`],
+    [`Geolocalização: ${geoLine}`],
+    ["", false],
+    ["INTEGRIDADE", true],
+    [`Hash SHA-256 do documento original: ${originalHash}`],
+    ["", false],
+    ["DECLARAÇÃO", true],
+    [`Este documento foi assinado eletronicamente através do sistema Iasoclin utilizando`],
+    [`mecanismos de autenticação e auditoria compatíveis com assinatura eletrônica avançada`],
+    [`para documentos privados (Lei 14.063/2020).`],
   ];
 
   auditPage.drawText("Iasoclin", {
@@ -172,16 +207,19 @@ async function generateSignedPdf({ patientDocument, fields, fieldValues, audit }
   });
   y -= 36;
 
-  for (const [line, isTitle] of lines) {
+  for (const entry of lines) {
+    const [line, isTitle] = Array.isArray(entry) ? entry : [entry, false];
+    if (!line) { y -= 10; continue; }
     auditPage.drawText(line, {
       x: 48,
       y,
-      size: isTitle ? 13 : 9,
+      size: isTitle ? 10 : 8,
       font: isTitle ? boldFont : regularFont,
       color: isTitle ? rgb(0.19, 0.3, 0.24) : rgb(0.1, 0.1, 0.1),
       maxWidth: width - 96,
     });
-    y -= isTitle ? 28 : 18;
+    y -= isTitle ? 20 : 14;
+    if (y < 48) break;
   }
 
   const signedBytes = await pdfDoc.save();
@@ -394,24 +432,46 @@ router.put("/patient-doc/:id/sign", authMiddleware, async (req, res) => {
     });
     if (!pd) return res.status(404).json({ error: "Not found" });
 
-    const signedAt = new Date();
-    const fieldValues = req.body.fieldValues ?? {};
-    const professionalSignature = req.body.professionalSignature ?? null;
-    const patientSignature = req.body.patientSignature ?? null;
-    const signerName = req.body.signerName ?? null;
-    const signerCpf = req.body.signerCpf ?? null;
-    const signerIp = getClientIp(req);
-    const signerUserAgent = req.headers["user-agent"] ?? null;
-    const fields = pd.document.fields ?? [];
+    // Verificar OTP validado (janela de 15 minutos)
+    const OTP_WINDOW_MS = 15 * 60 * 1000;
+    if (!pd.otpValidatedAt || Date.now() - new Date(pd.otpValidatedAt).getTime() > OTP_WINDOW_MS) {
+      return res.status(403).json({ error: "Validação OTP expirada. Solicite um novo código." });
+    }
+
+    const {
+      fieldValues = {},
+      professionalSignature = null,
+      patientSignature = null,
+      signerName,
+      signerCpf,
+      signerEmail,
+      signerPhone,
+      signerTimezone,
+      acceptedTerms = false,
+      acceptedAt,
+      latitude,
+      longitude,
+      geolocationConsent = false,
+    } = req.body;
+
     if (!signerName || !signerCpf) {
       return res.status(400).json({ error: "Nome e CPF do assinante são obrigatórios" });
     }
-    if (Array.isArray(fields) && fields.some((field) => field.type === "professional_sig") && !professionalSignature) {
+    if (!acceptedTerms) {
+      return res.status(400).json({ error: "O assinante deve aceitar os termos antes de assinar." });
+    }
+
+    const fields = pd.document.fields ?? [];
+    if (Array.isArray(fields) && fields.some((f) => f.type === "professional_sig") && !professionalSignature) {
       return res.status(400).json({ error: "Assinatura do profissional é obrigatória" });
     }
-    if (Array.isArray(fields) && fields.some((field) => field.type === "patient_sig") && !patientSignature) {
+    if (Array.isArray(fields) && fields.some((f) => f.type === "patient_sig") && !patientSignature) {
       return res.status(400).json({ error: "Assinatura do paciente é obrigatória" });
     }
+
+    const signedAt      = new Date();
+    const signerIp      = getClientIp(req);
+    const signerUserAgent = req.headers["user-agent"] ?? null;
 
     const audit = {
       event: "patient_document_signed",
@@ -421,11 +481,20 @@ router.put("/patient-doc/:id/sign", authMiddleware, async (req, res) => {
       userId: pd.userId,
       signerName,
       signerCpf,
+      signerEmail: signerEmail ?? pd.signerEmail,
+      signerPhone: signerPhone ?? pd.signerPhone,
+      signerTimezone,
       signerIp,
       signerUserAgent,
+      acceptedTerms,
+      acceptedAt: acceptedAt ?? signedAt.toISOString(),
+      otpMethod: pd.otpMethod,
+      otpValidatedAt: pd.otpValidatedAt,
+      latitude,
+      longitude,
+      geolocationConsent,
       signedAt,
       fieldsCount: Array.isArray(fields) ? fields.length : 0,
-      fieldValueIds: Object.keys(fieldValues),
       hasProfessionalSignature: Boolean(professionalSignature),
       hasPatientSignature: Boolean(patientSignature),
       professionalSignature,
@@ -440,24 +509,14 @@ router.put("/patient-doc/:id/sign", authMiddleware, async (req, res) => {
     });
 
     const auditTrail = {
-      event: audit.event,
-      patientDocumentId: audit.patientDocumentId,
-      documentId: audit.documentId,
-      patientId: audit.patientId,
-      userId: audit.userId,
-      signerName,
-      signerCpf,
-      signerIp,
-      signerUserAgent,
+      ...audit,
       signedAt: signedAt.toISOString(),
-      fieldsCount: audit.fieldsCount,
-      fieldValueIds: audit.fieldValueIds,
-      hasProfessionalSignature: audit.hasProfessionalSignature,
-      hasPatientSignature: audit.hasPatientSignature,
       originalHash: signedPdf.originalHash,
       signedHash: signedPdf.signedHash,
       signedFilePath: signedPdf.signedFilePath,
     };
+    delete auditTrail.professionalSignature;
+    delete auditTrail.patientSignature;
 
     const updated = await prisma.patientDocument.update({
       where: { id: pd.id },
@@ -469,8 +528,17 @@ router.put("/patient-doc/:id/sign", authMiddleware, async (req, res) => {
         patientSignature,
         signerName,
         signerCpf,
+        signerEmail: signerEmail ?? pd.signerEmail,
+        signerPhone: signerPhone ?? pd.signerPhone,
+        signerTimezone,
         signerIp,
         signerUserAgent,
+        acceptedTerms,
+        acceptedAt: acceptedAt ? new Date(acceptedAt) : signedAt,
+        otpMethod: pd.otpMethod,
+        latitude:  latitude  ?? null,
+        longitude: longitude ?? null,
+        geolocationConsent,
         originalHash: signedPdf.originalHash,
         signedHash: signedPdf.signedHash,
         signedFilePath: signedPdf.signedFilePath,
@@ -499,6 +567,66 @@ router.delete("/patient-doc/:id", authMiddleware, async (req, res) => {
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// ── OTP: Solicitar código ─────────────────────────────────────────────────────
+router.post("/patient-doc/:id/request-otp", authMiddleware, async (req, res) => {
+  try {
+    const pd = await prisma.patientDocument.findFirst({
+      where: { id: req.params.id, userId: req.user.id },
+      include: { document: true },
+    });
+    if (!pd) return res.status(404).json({ error: "Not found" });
+
+    const { method = "email", email, phone } = req.body;
+    const target = method === "email" ? email : phone;
+    if (!target) return res.status(400).json({ error: `${method === "email" ? "E-mail" : "Telefone"} é obrigatório` });
+
+    const result = await requestOtp({
+      context:      pd.id,
+      method,
+      target,
+      documentName: pd.document.name,
+    });
+
+    // Persiste email/telefone informado para auditoria
+    await prisma.patientDocument.update({
+      where: { id: pd.id },
+      data: {
+        signerEmail: method === "email"     ? email : pd.signerEmail,
+        signerPhone: method !== "email"     ? phone : pd.signerPhone,
+        otpMethod:   method,
+      },
+    });
+
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// ── OTP: Validar código ───────────────────────────────────────────────────────
+router.post("/patient-doc/:id/validate-otp", authMiddleware, async (req, res) => {
+  try {
+    const pd = await prisma.patientDocument.findFirst({
+      where: { id: req.params.id, userId: req.user.id },
+    });
+    if (!pd) return res.status(404).json({ error: "Not found" });
+
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: "Código é obrigatório" });
+
+    await validateOtp({ context: pd.id, code });
+
+    await prisma.patientDocument.update({
+      where: { id: pd.id },
+      data:  { otpValidatedAt: new Date() },
+    });
+
+    res.json({ valid: true });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
   }
 });
 

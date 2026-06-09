@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, TrendingDown, Users, CalendarCheck, DollarSign, BarChart2, Download } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, CalendarCheck, DollarSign, BarChart2, Download, Sparkles, Send, Bot, User } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 import toast from "react-hot-toast";
@@ -29,7 +29,7 @@ const STATUS_COLORS = {
   CANCELED: "#B05248",
 };
 
-const PAYMENT_COLORS = ["#314D3E", "#4A8EC2", "#C4895A", "#3A9B6F", "#9B6BB5", "#7C9A92"];
+const PAYMENT_COLORS = ["#1F4D46", "#4A8EC2", "#C4895A", "#3A9B6F", "#9B6BB5", "#6F7F73"];
 
 function fmt(value) {
   return value?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) ?? "R$ 0,00";
@@ -50,8 +50,8 @@ function monthLabel(key) {
 const CustomTooltipCurrency = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-[#E5D8C5] rounded-xl p-3 shadow-lg text-xs">
-      <p className="font-semibold text-[#314D3E] mb-1.5">{monthLabel(label)}</p>
+    <div className="bg-white border border-[#D8CDB9] rounded-xl p-3 shadow-lg text-xs">
+      <p className="font-semibold text-[#1F4D46] mb-1.5">{monthLabel(label)}</p>
       {payload.map((p) => (
         <p key={p.dataKey} style={{ color: p.color }} className="font-medium">
           {p.name}: {fmt(p.value)}
@@ -64,8 +64,8 @@ const CustomTooltipCurrency = ({ active, payload, label }) => {
 const CustomTooltipCount = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-[#E5D8C5] rounded-xl p-3 shadow-lg text-xs">
-      <p className="font-semibold text-[#314D3E] mb-1">{monthLabel(label)}</p>
+    <div className="bg-white border border-[#D8CDB9] rounded-xl p-3 shadow-lg text-xs">
+      <p className="font-semibold text-[#1F4D46] mb-1">{monthLabel(label)}</p>
       {payload.map((p) => (
         <p key={p.dataKey} style={{ color: p.color }} className="font-medium">
           {p.name}: {p.value}
@@ -75,9 +75,9 @@ const CustomTooltipCount = ({ active, payload, label }) => {
   );
 };
 
-function KpiCard({ icon: Icon, label, value, sub, subUp, color = "#314D3E", loading }) {
+function KpiCard({ icon: Icon, label, value, sub, subUp, color = "#1F4D46", loading }) {
   return (
-    <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5 flex flex-col gap-3">
+    <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${color}18` }}>
           <Icon size={16} style={{ color }} />
@@ -91,9 +91,9 @@ function KpiCard({ icon: Icon, label, value, sub, subUp, color = "#314D3E", load
       </div>
       <div>
         {loading ? (
-          <div className="h-7 w-24 bg-[#EFE7DA] rounded-lg animate-pulse" />
+          <div className="h-7 w-24 bg-[#E8E0D2] rounded-lg animate-pulse" />
         ) : (
-          <p className="text-2xl font-black text-[#314D3E] leading-none">{value}</p>
+          <p className="text-2xl font-black text-[#1F4D46] leading-none">{value}</p>
         )}
         <p className="text-xs text-gray-400 mt-1.5 font-medium">{label}</p>
       </div>
@@ -163,19 +163,19 @@ export default function Relatorios() {
       {/* Header */}
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[#314D3E]">Relatórios</h1>
+          <h1 className="text-3xl font-bold text-[#1F4D46]">Analytics</h1>
           <p className="text-gray-500 mt-1">Visão analítica da sua clínica</p>
         </div>
         <button
           onClick={() => toast("Exportação em breve")}
-          className="flex items-center gap-2 border border-[#D6C1A3] hover:bg-[#EFE7DA] px-4 py-2.5 rounded-xl text-sm font-medium text-[#314D3E] transition"
+          className="flex items-center gap-2 border border-[#C2A56B] hover:bg-[#E8E0D2] px-4 py-2.5 rounded-xl text-sm font-medium text-[#1F4D46] transition"
         >
           <Download size={15} /> Exportar PDF
         </button>
       </div>
 
       {/* Period selector */}
-      <div className="bg-white border border-[#E5D8C5] rounded-2xl p-4 mb-7 flex flex-wrap items-center gap-3">
+      <div className="bg-white border border-[#D8CDB9] rounded-2xl p-4 mb-7 flex flex-wrap items-center gap-3">
         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide shrink-0">Período</span>
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((p, i) => (
@@ -184,8 +184,8 @@ export default function Relatorios() {
               onClick={() => { setPreset(i); setCustomMode(false); }}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition border ${
                 !customMode && preset === i
-                  ? "bg-[#314D3E] text-white border-[#314D3E]"
-                  : "border-[#D6C1A3] text-[#314D3E] hover:bg-[#EFE7DA]"
+                  ? "bg-[#1F4D46] text-white border-[#1F4D46]"
+                  : "border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2]"
               }`}
             >
               {p.label}
@@ -195,8 +195,8 @@ export default function Relatorios() {
             onClick={() => setCustomMode(true)}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition border ${
               customMode
-                ? "bg-[#314D3E] text-white border-[#314D3E]"
-                : "border-[#D6C1A3] text-[#314D3E] hover:bg-[#EFE7DA]"
+                ? "bg-[#1F4D46] text-white border-[#1F4D46]"
+                : "border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2]"
             }`}
           >
             Personalizado
@@ -208,23 +208,28 @@ export default function Relatorios() {
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="border border-[#D6C1A3] rounded-xl px-3 py-1.5 text-xs text-[#314D3E] focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20"
+              className="border border-[#C2A56B] rounded-xl px-3 py-1.5 text-xs text-[#1F4D46] focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
             />
             <span className="text-gray-400 text-xs">até</span>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="border border-[#D6C1A3] rounded-xl px-3 py-1.5 text-xs text-[#314D3E] focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20"
+              className="border border-[#C2A56B] rounded-xl px-3 py-1.5 text-xs text-[#1F4D46] focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
             />
             <button
               onClick={applyCustom}
-              className="bg-[#314D3E] text-white px-4 py-1.5 rounded-xl text-xs font-semibold hover:bg-[#465634] transition"
+              className="bg-[#1F4D46] text-white px-4 py-1.5 rounded-xl text-xs font-semibold hover:bg-[#285A50] transition"
             >
               Aplicar
             </button>
           </div>
         )}
+      </div>
+
+      {/* AI Chat */}
+      <div className="mb-7">
+        <AiChat />
       </div>
 
       {/* KPI Cards */}
@@ -266,12 +271,12 @@ export default function Relatorios() {
       {/* ROW 1: Receita x Despesas + Status agendamentos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
         {/* Receita x Despesas */}
-        <div className="lg:col-span-2 bg-white border border-[#E5D8C5] rounded-2xl p-5">
+        <div className="lg:col-span-2 bg-white border border-[#D8CDB9] rounded-2xl p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-bold text-[#314D3E]">Receita × Despesas</h3>
+              <h3 className="text-sm font-bold text-[#1F4D46]">Receita × Despesas</h3>
               <p className="text-xs text-gray-400 mt-0.5">
-                Lucro líquido: <span className="font-semibold text-[#314D3E]">{fmt(f?.netProfit)}</span>
+                Lucro líquido: <span className="font-semibold text-[#1F4D46]">{fmt(f?.netProfit)}</span>
               </p>
             </div>
             <div className="flex items-center gap-3 text-xs">
@@ -284,7 +289,7 @@ export default function Relatorios() {
             </div>
           </div>
           {loading ? (
-            <div className="h-48 bg-[#FAF7F2] rounded-xl animate-pulse" />
+            <div className="h-48 bg-[#F5F1EA] rounded-xl animate-pulse" />
           ) : revenueChart.length === 0 ? (
             <EmptyChart />
           ) : (
@@ -312,13 +317,13 @@ export default function Relatorios() {
         </div>
 
         {/* Status agendamentos */}
-        <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-[#314D3E] mb-1">Agendamentos por status</h3>
+        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-[#1F4D46] mb-1">Agendamentos por status</h3>
           <p className="text-xs text-gray-400 mb-4">
             {a?.cancellationRate ?? 0}% taxa de cancelamento
           </p>
           {loading ? (
-            <div className="h-48 bg-[#FAF7F2] rounded-xl animate-pulse" />
+            <div className="h-48 bg-[#F5F1EA] rounded-xl animate-pulse" />
           ) : statusPieData.length === 0 ? (
             <EmptyChart />
           ) : (
@@ -335,10 +340,10 @@ export default function Relatorios() {
                     dataKey="value"
                   >
                     {statusPieData.map((entry) => (
-                      <Cell key={entry.key} fill={STATUS_COLORS[entry.key] ?? "#D6C1A3"} />
+                      <Cell key={entry.key} fill={STATUS_COLORS[entry.key] ?? "#C2A56B"} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v, n) => [v, n]} contentStyle={{ fontSize: 11, borderRadius: 10, border: "1px solid #E5D8C5" }} />
+                  <Tooltip formatter={(v, n) => [v, n]} contentStyle={{ fontSize: 11, borderRadius: 10, border: "1px solid #D8CDB9" }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-2 mt-2">
@@ -348,7 +353,7 @@ export default function Relatorios() {
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[entry.key] }} />
                       <span className="text-xs text-gray-600">{entry.name}</span>
                     </div>
-                    <span className="text-xs font-bold text-[#314D3E]">{entry.value}</span>
+                    <span className="text-xs font-bold text-[#1F4D46]">{entry.value}</span>
                   </div>
                 ))}
               </div>
@@ -360,10 +365,10 @@ export default function Relatorios() {
       {/* ROW 2: Formas de pagamento + Top procedimentos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {/* Formas de pagamento */}
-        <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-[#314D3E] mb-5">Receita por forma de pagamento</h3>
+        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-[#1F4D46] mb-5">Receita por forma de pagamento</h3>
           {loading ? (
-            <div className="h-48 bg-[#FAF7F2] rounded-xl animate-pulse" />
+            <div className="h-48 bg-[#F5F1EA] rounded-xl animate-pulse" />
           ) : !f?.byPaymentMethod?.length ? (
             <EmptyChart />
           ) : (
@@ -376,10 +381,10 @@ export default function Relatorios() {
                       <span className="text-xs font-medium text-gray-600 capitalize">{item.method}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-400">{pct.toFixed(1)}%</span>
-                        <span className="text-xs font-bold text-[#314D3E]">{fmt(item.total)}</span>
+                        <span className="text-xs font-bold text-[#1F4D46]">{fmt(item.total)}</span>
                       </div>
                     </div>
-                    <div className="h-2 bg-[#EFE7DA] rounded-full overflow-hidden">
+                    <div className="h-2 bg-[#E8E0D2] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{ width: `${pct}%`, backgroundColor: PAYMENT_COLORS[i % PAYMENT_COLORS.length] }}
@@ -388,19 +393,19 @@ export default function Relatorios() {
                   </div>
                 );
               })}
-              <div className="pt-3 border-t border-[#EFE7DA] flex items-center justify-between">
+              <div className="pt-3 border-t border-[#E8E0D2] flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-500">Ticket médio</span>
-                <span className="text-sm font-black text-[#314D3E]">{fmt(f.avgTicket)}</span>
+                <span className="text-sm font-black text-[#1F4D46]">{fmt(f.avgTicket)}</span>
               </div>
             </div>
           )}
         </div>
 
         {/* Top procedimentos */}
-        <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-[#314D3E] mb-5">Procedimentos mais realizados</h3>
+        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-[#1F4D46] mb-5">Procedimentos mais realizados</h3>
           {loading ? (
-            <div className="h-48 bg-[#FAF7F2] rounded-xl animate-pulse" />
+            <div className="h-48 bg-[#F5F1EA] rounded-xl animate-pulse" />
           ) : !pr?.top?.length ? (
             <EmptyChart label="Nenhum procedimento registrado no período" />
           ) : (
@@ -412,14 +417,14 @@ export default function Relatorios() {
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium text-gray-600 truncate max-w-[65%]">{item.name}</span>
-                      <span className="text-xs font-bold text-[#314D3E] shrink-0">{item.count}x</span>
+                      <span className="text-xs font-bold text-[#1F4D46] shrink-0">{item.count}x</span>
                     </div>
-                    <div className="h-2 bg-[#EFE7DA] rounded-full overflow-hidden">
+                    <div className="h-2 bg-[#E8E0D2] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{
                           width: `${pct}%`,
-                          backgroundColor: i === 0 ? "#314D3E" : i === 1 ? "#4A8EC2" : "#7C9A92",
+                          backgroundColor: i === 0 ? "#1F4D46" : i === 1 ? "#4A8EC2" : "#6F7F73",
                         }}
                       />
                     </div>
@@ -434,11 +439,11 @@ export default function Relatorios() {
       {/* ROW 3: Agendamentos por mês + Novos pacientes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {/* Agendamentos por mês */}
-        <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-[#314D3E] mb-1">Atendimentos por mês</h3>
+        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-[#1F4D46] mb-1">Atendimentos por mês</h3>
           <p className="text-xs text-gray-400 mb-4">Agendamentos realizados (excl. cancelados)</p>
           {loading ? (
-            <div className="h-44 bg-[#FAF7F2] rounded-xl animate-pulse" />
+            <div className="h-44 bg-[#F5F1EA] rounded-xl animate-pulse" />
           ) : apptChart.length === 0 ? (
             <EmptyChart />
           ) : (
@@ -448,28 +453,28 @@ export default function Relatorios() {
                 <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "#9CA3AF" }} axisLine={false} tickLine={false} width={28} />
                 <Tooltip content={<CustomTooltipCount />} />
-                <Bar dataKey="count" name="Atendimentos" fill="#314D3E" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="count" name="Atendimentos" fill="#1F4D46" radius={[4, 4, 0, 0]} maxBarSize={36} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </div>
 
         {/* Novos pacientes */}
-        <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
+        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
           <div className="flex items-start justify-between mb-1">
             <div>
-              <h3 className="text-sm font-bold text-[#314D3E]">Novos pacientes por mês</h3>
+              <h3 className="text-sm font-bold text-[#1F4D46]">Novos pacientes por mês</h3>
               <p className="text-xs text-gray-400 mt-0.5">Total ativo: {p?.totalActive ?? "—"} pacientes</p>
             </div>
             {p?.totalActiveClub != null && p.totalActiveClub > 0 && (
-              <span className="text-xs bg-[#EFE7DA] text-[#314D3E] font-semibold px-2.5 py-1 rounded-full shrink-0">
+              <span className="text-xs bg-[#E8E0D2] text-[#1F4D46] font-semibold px-2.5 py-1 rounded-full shrink-0">
                 {p.totalActiveClub} no clube
               </span>
             )}
           </div>
           <div className="mb-4" />
           {loading ? (
-            <div className="h-44 bg-[#FAF7F2] rounded-xl animate-pulse" />
+            <div className="h-44 bg-[#F5F1EA] rounded-xl animate-pulse" />
           ) : patientsChart.length === 0 ? (
             <EmptyChart />
           ) : (
@@ -489,10 +494,10 @@ export default function Relatorios() {
       {/* ROW 4: Dias da semana + Profissionais */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Dias da semana */}
-        <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-[#314D3E] mb-5">Atendimentos por dia da semana</h3>
+        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-[#1F4D46] mb-5">Atendimentos por dia da semana</h3>
           {loading ? (
-            <div className="h-36 bg-[#FAF7F2] rounded-xl animate-pulse" />
+            <div className="h-36 bg-[#F5F1EA] rounded-xl animate-pulse" />
           ) : (
             (() => {
               const wd = a?.byWeekday ?? [];
@@ -510,7 +515,7 @@ export default function Relatorios() {
                           style={{
                             height: `${Math.max(pct, d.count > 0 ? 10 : 4)}%`,
                             minHeight: "4px",
-                            backgroundColor: isTop ? "#314D3E" : d.count > 0 ? "#7C9A92" : "#EFE7DA",
+                            backgroundColor: isTop ? "#1F4D46" : d.count > 0 ? "#6F7F73" : "#E8E0D2",
                           }}
                         />
                         <span className="text-[10px] font-medium text-gray-400">{d.label}</span>
@@ -524,10 +529,10 @@ export default function Relatorios() {
         </div>
 
         {/* Top profissionais */}
-        <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-[#314D3E] mb-5">Atendimentos por profissional</h3>
+        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-[#1F4D46] mb-5">Atendimentos por profissional</h3>
           {loading ? (
-            <div className="h-36 bg-[#FAF7F2] rounded-xl animate-pulse" />
+            <div className="h-36 bg-[#F5F1EA] rounded-xl animate-pulse" />
           ) : !a?.byProfessional?.length ? (
             <EmptyChart label="Nenhum profissional identificado" />
           ) : (
@@ -539,14 +544,14 @@ export default function Relatorios() {
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium text-gray-600 truncate max-w-[70%]">{item.name}</span>
-                      <span className="text-xs font-bold text-[#314D3E]">{item.count} atend.</span>
+                      <span className="text-xs font-bold text-[#1F4D46]">{item.count} atend.</span>
                     </div>
-                    <div className="h-2 bg-[#EFE7DA] rounded-full overflow-hidden">
+                    <div className="h-2 bg-[#E8E0D2] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{
                           width: `${pct}%`,
-                          backgroundColor: i === 0 ? "#314D3E" : "#7C9A92",
+                          backgroundColor: i === 0 ? "#1F4D46" : "#6F7F73",
                         }}
                       />
                     </div>
@@ -564,8 +569,145 @@ export default function Relatorios() {
 function EmptyChart({ label = "Sem dados no período selecionado" }) {
   return (
     <div className="flex flex-col items-center justify-center h-36 gap-2">
-      <BarChart2 size={28} className="text-[#D6C1A3]" />
+      <BarChart2 size={28} className="text-[#C2A56B]" />
       <p className="text-xs text-gray-400 text-center">{label}</p>
+    </div>
+  );
+}
+
+const SUGGESTIONS = [
+  "Quantos pacientes ativos eu tenho?",
+  "Quais pacientes não voltam há mais de 60 dias?",
+  "Qual meu procedimento mais realizado?",
+  "Qual foi minha receita este mês?",
+  "Liste pacientes com mais de 40 anos",
+  "Quantos agendamentos foram cancelados?",
+];
+
+function AiChat() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  async function send(text) {
+    const userText = (text || input).trim();
+    if (!userText || loading) return;
+    setInput("");
+
+    const newMessages = [...messages, { role: "user", content: userText }];
+    setMessages(newMessages);
+    setLoading(true);
+
+    try {
+      const res = await api.post("/ai/chat-reports", {
+        messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+      });
+      setMessages([...newMessages, { role: "assistant", content: res.data.reply }]);
+    } catch {
+      toast.error("Erro ao consultar a IA");
+      setMessages(newMessages);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border border-[#D8CDB9] rounded-2xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#E8E0D2] bg-[#FAF8F5]">
+        <div className="w-8 h-8 rounded-xl bg-[#1F4D46] flex items-center justify-center">
+          <Sparkles size={14} className="text-[#C2A56B]" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-[#1F4D46]">Assistente IA</p>
+          <p className="text-xs text-gray-400">Pergunte sobre seus pacientes e dados da clínica</p>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="h-80 overflow-y-auto p-4 space-y-3 bg-[#FAFAF8]">
+        {messages.length === 0 && (
+          <div className="h-full flex flex-col items-center justify-center gap-4">
+            <p className="text-xs text-gray-400 font-medium">Sugestões de perguntas</p>
+            <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => send(s)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2] transition font-medium"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {messages.map((m, i) => (
+          <div key={i} className={`flex gap-2.5 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            {m.role === "assistant" && (
+              <div className="w-6 h-6 rounded-full bg-[#1F4D46] flex items-center justify-center shrink-0 mt-0.5">
+                <Bot size={12} className="text-white" />
+              </div>
+            )}
+            <div
+              className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                m.role === "user"
+                  ? "bg-[#1F4D46] text-white rounded-tr-sm"
+                  : "bg-white border border-[#E8E0D2] text-gray-700 rounded-tl-sm shadow-sm"
+              }`}
+            >
+              {m.content}
+            </div>
+            {m.role === "user" && (
+              <div className="w-6 h-6 rounded-full bg-[#C2A56B] flex items-center justify-center shrink-0 mt-0.5">
+                <User size={12} className="text-white" />
+              </div>
+            )}
+          </div>
+        ))}
+
+        {loading && (
+          <div className="flex gap-2.5 justify-start">
+            <div className="w-6 h-6 rounded-full bg-[#1F4D46] flex items-center justify-center shrink-0">
+              <Bot size={12} className="text-white" />
+            </div>
+            <div className="bg-white border border-[#E8E0D2] rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+              <div className="flex gap-1 items-center h-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1F4D46] animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1F4D46] animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1F4D46] animate-bounce" style={{ animationDelay: "300ms" }} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <div className="px-4 py-3 border-t border-[#E8E0D2] bg-white flex gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
+          placeholder="Pergunte sobre seus dados…"
+          disabled={loading}
+          className="flex-1 text-sm border border-[#D8CDB9] rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20 focus:border-[#1F4D46] transition disabled:opacity-50 bg-[#FAF8F5] placeholder-gray-300"
+        />
+        <button
+          onClick={() => send()}
+          disabled={!input.trim() || loading}
+          className="w-10 h-10 rounded-xl bg-[#1F4D46] hover:bg-[#285A50] text-white flex items-center justify-center transition disabled:opacity-40 shrink-0"
+        >
+          <Send size={15} />
+        </button>
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ export async function create(data, userId) {
       name: data.name,
       description: data.description,
       stock: data.stock ? Number(data.stock) : 0,
+      minStock: data.minStock != null ? Number(data.minStock) : null,
       unit: data.unit,
       userId,
     },
@@ -29,9 +30,18 @@ export async function update(id, userId, data) {
       name: data.name,
       description: data.description,
       stock: data.stock !== undefined ? Number(data.stock) : product.stock,
+      minStock: data.minStock != null ? Number(data.minStock) : product.minStock,
       unit: data.unit,
     },
   });
+}
+
+export async function findLowStock(userId) {
+  const products = await prisma.product.findMany({
+    where: { userId, minStock: { not: null } },
+    orderBy: { name: "asc" },
+  });
+  return products.filter((p) => (p.stock ?? 0) < p.minStock);
 }
 
 export async function remove(id, userId) {

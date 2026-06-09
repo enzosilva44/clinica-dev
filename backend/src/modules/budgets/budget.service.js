@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma.js";
+import { createPending } from "../financial/transaction.service.js";
 
 function normalizeItem(item) {
   const quantity = Math.max(Number(item.quantity) || 1, 1);
@@ -17,7 +18,7 @@ function normalizeItem(item) {
 export async function findByPatient(patientId, userId) {
   return prisma.budget.findMany({
     where: { patientId, userId },
-    include: { items: true },
+    include: { items: true, transactions: true },
     orderBy: { createdAt: "desc" },
   });
 }
@@ -31,7 +32,7 @@ export async function create(data, userId) {
   const discount = Math.max(Number(data.discount) || 0, 0);
   const total = Math.max(subtotal - discount, 0);
 
-  return prisma.budget.create({
+  const budget = await prisma.budget.create({
     data: {
       title: data.title,
       validUntil: data.validUntil ? new Date(data.validUntil) : null,
@@ -47,6 +48,20 @@ export async function create(data, userId) {
     },
     include: { items: true },
   });
+
+  await createPending(userId, {
+    budgetId: budget.id,
+    patientId: budget.patientId,
+    description: budget.title,
+    amount: budget.total,
+    category: "Procedimento",
+    paymentMethod: data.txPaymentMethod || null,
+    installments: data.txInstallments ? Number(data.txInstallments) : 1,
+    dueDate: data.txDueDate || null,
+    notes: data.txNotes || `Orçamento gerado em ${new Date(budget.createdAt).toLocaleDateString("pt-BR")}${budget.validUntil ? `, válido até ${new Date(budget.validUntil).toLocaleDateString("pt-BR")}` : ""}.`,
+  });
+
+  return budget;
 }
 
 export async function remove(id, userId) {

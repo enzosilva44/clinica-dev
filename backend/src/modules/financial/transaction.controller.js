@@ -19,10 +19,38 @@ export async function getSummary(req, res) {
   }
 }
 
+export async function getAnalytics(req, res) {
+  try {
+    const month = req.query.month || new Date().toISOString().slice(0, 7);
+    const data = await transactionService.getAnalytics(req.user.id, month);
+    return res.json(data);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+}
+
+export async function getUpcoming(req, res) {
+  try {
+    const data = await transactionService.getUpcoming(req.user.id);
+    return res.json(data);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+}
+
 export async function create(req, res) {
   try {
     const transaction = await transactionService.create(req.user.id, req.body);
     return res.status(201).json(transaction);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+}
+
+export async function update(req, res) {
+  try {
+    const transaction = await transactionService.update(req.params.id, req.user.id, req.body);
+    return res.json(transaction);
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }

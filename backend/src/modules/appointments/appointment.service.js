@@ -31,6 +31,26 @@ export async function create(data, user) {
     include: { patient: true },
   });
 
+  // busca preço do procedimento para já preencher o valor
+  let amount = 0;
+  if (appointment.procedureType) {
+    const procedure = await prisma.procedure.findFirst({
+      where: { name: appointment.procedureType, userId: user.id },
+    });
+    if (procedure?.price) amount = procedure.price;
+  }
+
+  await createPending(user.id, {
+    appointmentId: appointment.id,
+    patientId: appointment.patientId,
+    description: appointment.procedureType || appointment.title,
+    amount: data.txAmount !== undefined ? Number(data.txAmount) : amount,
+    paymentMethod: data.txPaymentMethod || null,
+    installments: data.txInstallments ? Number(data.txInstallments) : 1,
+    dueDate: data.txDueDate || null,
+    notes: data.txNotes || `Agendamento criado em ${new Date(appointment.startsAt).toLocaleDateString("pt-BR")} com ${appointment.professional || "profissional não informado"}.`,
+  });
+
   return appointment;
 }
 
@@ -42,6 +62,7 @@ export async function findAll(user) {
 
     include: {
       patient: true,
+      transaction: true,
     },
 
     orderBy: {

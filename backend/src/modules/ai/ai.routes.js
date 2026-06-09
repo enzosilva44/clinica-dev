@@ -5,6 +5,9 @@ import {
   generateEvolutionDraft,
   generateReturnSuggestions,
   chatHelp,
+  chatReports,
+  analyzeFinancialHealth,
+  generateDailyInsight,
 } from "./ai.service.js";
 
 const router = Router();
@@ -52,6 +55,40 @@ router.post("/chat", async (req, res) => {
     }
     const reply = await chatHelp(messages);
     res.json({ reply });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 5. Guardião Financeiro
+router.get("/financial-health", async (req, res) => {
+  try {
+    const result = await analyzeFinancialHealth(req.user.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 6. Chat de relatórios com tool use
+router.post("/chat-reports", async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: "messages obrigatório" });
+    }
+    const reply = await chatReports(req.user.id, messages);
+    res.json({ reply });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 7. Frase motivacional diária
+router.get("/daily-insight", async (req, res) => {
+  try {
+    const phrase = await generateDailyInsight(req.user.id);
+    res.json({ phrase });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

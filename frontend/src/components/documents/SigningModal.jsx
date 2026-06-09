@@ -2,515 +2,640 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import SignatureCanvas from "react-signature-canvas";
-import { X, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Shield, Mail, Phone, CheckCircle, Download, RefreshCw, Loader2, Trash2 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-const FIELD_TYPES = {
-  professional_sig: { label: "Profissional", color: "#314D3E", textColor: "white" },
-  patient_sig:      { label: "Paciente",      color: "#7C9A92", textColor: "white" },
-  text_name:        { label: "Nome",           color: "#C4895A", textColor: "white" },
-  text_date:        { label: "Data",           color: "#4A8EC2", textColor: "white" },
-  text_cpf:         { label: "CPF",            color: "#9B6BB5", textColor: "white" },
-};
-
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-export default function SigningModal({ patientDoc, patient, onClose, onSigned }) {
-  const isSigned = patientDoc.status === "signed";
-  const hasFinalPdf = Boolean(patientDoc.signedFilePath && patientDoc.signedHash);
-  const canEditSignature = !hasFinalPdf;
+const STEPS = [
+  { id: "signer",    label: "Identificação" },
+  { id: "preview",   label: "Leitura" },
+  { id: "accept",    label: "Aceite" },
+  { id: "otp-send",  label: "Validação" },
+  { id: "otp-code",  label: "Código" },
+  { id: "signature", label: "Assinatura" },
+  { id: "sign",      label: "Confirmar" },
+];
+
+function StepIndicator({ current }) {
+  const idx = STEPS.findIndex((s) => s.id === current);
+  return (
+    <div className="flex items-center gap-0 mb-6">
+      {STEPS.map((s, i) => (
+        <div key={s.id} className="flex items-center">
+          <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all ${
+            i < idx ? "bg-[#1F4D46] text-white" :
+            i === idx ? "bg-[#1F4D46] text-white ring-4 ring-[#1F4D46]/20" :
+            "bg-[#E8E0D2] text-gray-400"
+          }`}>
+            {i < idx ? <CheckCircle size={14} /> : i + 1}
+          </div>
+          {i < STEPS.length - 1 && (
+            <div className={`h-0.5 w-8 transition-all ${i < idx ? "bg-[#1F4D46]" : "bg-[#E8E0D2]"}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PdfViewer({ docId }) {
   const canvasRef = useRef(null);
-  const overlayRef = useRef(null);
   const viewerRef = useRef(null);
   const renderTaskRef = useRef(null);
-  const proSigRef = useRef(null);
-  const patSigRef = useRef(null);
-
   const [pdfDoc, setPdfDoc] = useState(null);
-  const [pdfLoading, setPdfLoading] = useState(true);
-  const [pdfError, setPdfError] = useState("");
   const [pageNum, setPageNum] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [fields, setFields] = useState(patientDoc.document.fields ?? []);
-  const [placing, setPlacing] = useState(null);
-  const [fieldValues, setFieldValues] = useState(patientDoc.fieldValues ?? {});
-  const [signerName, setSignerName] = useState(patientDoc.signerName ?? patient?.name ?? "");
-  const [signerCpf, setSignerCpf] = useState(patientDoc.signerCpf ?? patient?.cpf ?? patient?.document ?? "");
-  const [step, setStep] = useState(isSigned ? "fill" : "position"); // "position" | "fill"
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const url = `${API_BASE}/documents/${patientDoc.document.id}/file?token=${encodeURIComponent(token ?? "")}`;
-    pdfjsLib.getDocument({ url })
-      .promise.then((doc) => {
-        setPdfDoc(doc);
-        setTotalPages(doc.numPages);
-        setPdfError("");
-      })
-      .catch(() => {
-        setPdfError("Não foi possível carregar este PDF.");
-        toast.error("Erro ao carregar PDF");
-      })
-      .finally(() => setPdfLoading(false));
-  }, [patientDoc.document.id]);
+    const url = `${API_BASE}/documents/${docId}/file?token=${encodeURIComponent(token ?? "")}`;
+    pdfjsLib.getDocument({ url }).promise
+      .then((doc) => { setPdfDoc(doc); setTotalPages(doc.numPages); })
+      .catch(() => setError("Não foi possível carregar o PDF."))
+      .finally(() => setLoading(false));
+  }, [docId]);
 
   const renderPage = useCallback(async (num) => {
     if (!pdfDoc || !canvasRef.current) return;
     renderTaskRef.current?.cancel();
-
     try {
       const page = await pdfDoc.getPage(num);
       const canvas = canvasRef.current;
-      const viewerWidth = viewerRef.current?.clientWidth ?? 800;
-      const viewerHeight = viewerRef.current?.clientHeight ?? 900;
-      const viewport = page.getViewport({ scale: 1 });
-      const widthScale = (viewerWidth - 48) / viewport.width;
-      const heightScale = (viewerHeight - 48) / viewport.height;
-      const scale = Math.max(Math.min(widthScale, heightScale, 1.45), 0.45);
-      const scaledViewport = page.getViewport({ scale });
-
-      canvas.width = Math.floor(scaledViewport.width);
-      canvas.height = Math.floor(scaledViewport.height);
-      canvas.style.width = `${Math.floor(scaledViewport.width)}px`;
-      canvas.style.height = `${Math.floor(scaledViewport.height)}px`;
-
-      const context = canvas.getContext("2d");
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      renderTaskRef.current = page.render({ canvasContext: context, viewport: scaledViewport });
+      const viewerWidth = viewerRef.current?.clientWidth ?? 600;
+      const vp = page.getViewport({ scale: 1 });
+      const scale = Math.min((viewerWidth - 32) / vp.width, 1.5);
+      const sv = page.getViewport({ scale });
+      canvas.width = Math.floor(sv.width);
+      canvas.height = Math.floor(sv.height);
+      canvas.style.width = `${Math.floor(sv.width)}px`;
+      canvas.style.height = `${Math.floor(sv.height)}px`;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      renderTaskRef.current = page.render({ canvasContext: ctx, viewport: sv });
       await renderTaskRef.current.promise;
       renderTaskRef.current = null;
-      setPdfError("");
-    } catch (error) {
-      if (error?.name === "RenderingCancelledException") return;
-      setPdfError("Não foi possível renderizar este PDF.");
+    } catch (e) {
+      if (e?.name === "RenderingCancelledException") return;
     }
   }, [pdfDoc]);
 
   useEffect(() => { renderPage(pageNum); }, [pdfDoc, pageNum, renderPage]);
 
-  useEffect(() => {
-    if (!viewerRef.current) return;
-    const observer = new ResizeObserver(() => renderPage(pageNum));
-    observer.observe(viewerRef.current);
-    return () => observer.disconnect();
-  }, [pageNum, renderPage]);
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-center gap-3 py-2 border-b border-gray-100 shrink-0">
+        <button onClick={() => setPageNum((p) => Math.max(p - 1, 1))} disabled={pageNum === 1}
+          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
+          <ChevronLeft size={16} />
+        </button>
+        <span className="text-sm text-gray-500">Pág. {pageNum} / {totalPages}</span>
+        <button onClick={() => setPageNum((p) => Math.min(p + 1, totalPages))} disabled={pageNum === totalPages}
+          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
+          <ChevronRight size={16} />
+        </button>
+      </div>
+      <div ref={viewerRef} className="flex-1 overflow-auto flex justify-center p-4 bg-gray-50">
+        {loading && <div className="w-full max-w-lg h-125 bg-white rounded animate-pulse" />}
+        {error  && <p className="text-sm text-red-500 mt-8">{error}</p>}
+        <canvas ref={canvasRef} className={`shadow-md rounded bg-white ${loading || error ? "hidden" : ""}`} />
+      </div>
+    </div>
+  );
+}
 
-  function handleCanvasClick(e) {
-    if (!placing) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    const newField = { id: crypto.randomUUID(), type: placing, page: pageNum, x, y };
-    setFields((f) => [...f, newField]);
-    setPlacing(null);
+export default function SigningModal({ patientDoc, patient, onClose, onSigned }) {
+  const [step, setStep] = useState("signer");
+
+  // Dados do assinante
+  const [signerName,  setSignerName]  = useState(patientDoc.signerName  ?? patient?.name  ?? "");
+  const [signerCpf,   setSignerCpf]   = useState(patientDoc.signerCpf   ?? patient?.cpf   ?? patient?.document ?? "");
+  const [signerEmail, setSignerEmail] = useState(patientDoc.signerEmail  ?? patient?.email ?? "");
+  const [signerPhone, setSignerPhone] = useState(patientDoc.signerPhone  ?? patient?.phone ?? "");
+
+  // Aceite
+  const [accepted, setAccepted] = useState(false);
+  const [acceptedAt, setAcceptedAt] = useState(null);
+
+  // Geolocalização
+  const [geoConsent, setGeoConsent] = useState(false);
+  const [geoData, setGeoData] = useState(null);
+  const [geoStatus, setGeoStatus] = useState("idle"); // idle | requesting | granted | denied
+
+  // OTP
+  const [otpMethod, setOtpMethod] = useState("email");
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [maskedTarget, setMaskedTarget] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpValidating, setOtpValidating] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(0);
+  const timerRef = useRef(null);
+
+  // Assinaturas manuscritas
+  const patSigRef  = useRef(null);
+  const proSigRef  = useRef(null);
+  const [patSigEmpty,  setPatSigEmpty]  = useState(true);
+  const [proSigEmpty,  setProSigEmpty]  = useState(true);
+  const [patSigDataUrl, setPatSigDataUrl] = useState(null);
+  const [proSigDataUrl, setProSigDataUrl] = useState(null);
+
+  const needsProSig = (patientDoc.document.fields ?? []).some((f) => f.type === "professional_sig");
+
+  const [saving, setSaving] = useState(false);
+  const [signedDoc, setSignedDoc] = useState(null);
+
+  // Timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  function startTimer() {
+    setOtpTimer(60);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setOtpTimer((t) => { if (t <= 1) { clearInterval(timerRef.current); return 0; } return t - 1; });
+    }, 1000);
   }
 
-  function removeField(id) {
-    setFields((f) => f.filter((x) => x.id !== id));
+  useEffect(() => () => clearInterval(timerRef.current), []);
+
+  function requestGeo() {
+    setGeoStatus("requesting");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeoData({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        setGeoStatus("granted");
+      },
+      () => setGeoStatus("denied"),
+      { timeout: 8000 }
+    );
   }
 
-  async function handleSave() {
-    if (!signerName.trim()) {
-      toast.error("Informe o nome completo do assinante");
-      return;
+  async function handleSendOtp() {
+    const target = otpMethod === "email" ? signerEmail : signerPhone;
+    if (!target) { toast.error(`Informe o ${otpMethod === "email" ? "e-mail" : "telefone"}`); return; }
+    setOtpSending(true);
+    try {
+      const res = await api.post(`/documents/patient-doc/${patientDoc.id}/request-otp`, {
+        method: otpMethod,
+        email: otpMethod === "email" ? signerEmail : undefined,
+        phone: otpMethod !== "email"  ? signerPhone : undefined,
+      });
+      setMaskedTarget(res.data.maskedTarget);
+      setOtpSent(true);
+      startTimer();
+      setStep("otp-code");
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Erro ao enviar código");
+    } finally {
+      setOtpSending(false);
     }
-    if (!signerCpf.trim()) {
-      toast.error("Informe o CPF do assinante");
-      return;
-    }
+  }
 
-    const requiresProfessionalSignature = fields.some((f) => f.type === "professional_sig");
-    const requiresPatientSignature = fields.some((f) => f.type === "patient_sig");
-    const proSig = proSigRef.current
-      ? (proSigRef.current.isEmpty() ? patientDoc.professionalSignature ?? null : proSigRef.current.toDataURL())
-      : patientDoc.professionalSignature ?? null;
-    const patSig = patSigRef.current
-      ? (patSigRef.current.isEmpty() ? patientDoc.patientSignature ?? null : patSigRef.current.toDataURL())
-      : patientDoc.patientSignature ?? null;
+  async function handleValidateOtp() {
+    if (otpCode.length !== 6) { toast.error("Código deve ter 6 dígitos"); return; }
+    setOtpValidating(true);
+    try {
+      await api.post(`/documents/patient-doc/${patientDoc.id}/validate-otp`, { code: otpCode });
+      setStep("signature");
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Código inválido");
+    } finally {
+      setOtpValidating(false);
+    }
+  }
 
-    if (requiresProfessionalSignature && !proSig) {
-      toast.error("Faça a assinatura do profissional");
-      return;
-    }
-    if (requiresPatientSignature && !patSig) {
-      toast.error("Faça a assinatura do paciente");
-      return;
-    }
+  async function handleSign() {
+    if (!patSigDataUrl) { toast.error("A assinatura do paciente é obrigatória"); return; }
+    if (needsProSig && !proSigDataUrl) { toast.error("A assinatura do profissional é obrigatória"); return; }
+    const patSig = patSigDataUrl;
+    const proSig = proSigDataUrl ?? null;
 
     setSaving(true);
     try {
-      // Save field positions to document template
-      await api.put(`/documents/${patientDoc.document.id}`, { fields });
-
-      await api.put(`/documents/patient-doc/${patientDoc.id}/sign`, {
-        fieldValues,
+      const res = await api.put(`/documents/patient-doc/${patientDoc.id}/sign`, {
+        signerName:        signerName.trim(),
+        signerCpf:         signerCpf.trim(),
+        signerEmail:       signerEmail.trim(),
+        signerPhone:       signerPhone.trim(),
+        signerTimezone:    timezone,
+        acceptedTerms:     true,
+        acceptedAt:        acceptedAt,
+        latitude:          geoData?.latitude  ?? null,
+        longitude:         geoData?.longitude ?? null,
+        geolocationConsent: geoStatus !== "idle",
+        fieldValues:       patientDoc.fieldValues ?? {},
         professionalSignature: proSig,
-        patientSignature: patSig,
-        signerName: signerName.trim(),
-        signerCpf: signerCpf.trim(),
+        patientSignature:  patSig,
       });
-      toast.success("Documento assinado e salvo");
+      setSignedDoc(res.data);
+      toast.success("Documento assinado com sucesso!");
       onSigned?.();
-      onClose();
-    } catch {
-      toast.error("Erro ao salvar documento");
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Erro ao assinar documento");
     } finally {
       setSaving(false);
     }
   }
 
-  const pageFields = fields.filter((f) => f.page === pageNum);
-  const isSigType = (t) => t === "professional_sig" || t === "patient_sig";
-  const getSignature = (type) => (
-    type === "professional_sig"
-      ? patientDoc.professionalSignature
-      : patientDoc.patientSignature
-  );
+  function downloadSigned() {
+    const token = localStorage.getItem("token");
+    const url = `${API_BASE}/documents/patient-doc/${patientDoc.id}/file?token=${encodeURIComponent(token ?? "")}`;
+    window.open(url, "_blank");
+  }
+
+  const canGoToPreview = signerName.trim() && signerCpf.trim() && signerEmail.trim();
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-          <div>
-            <h2 className="text-base font-bold text-[#314D3E]">
-              {isSigned ? "Documento Assinado" : "Assinar Documento"}: {patientDoc.document.name}
-            </h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {hasFinalPdf
-                ? "Campos preenchidos e assinaturas salvas"
-                : isSigned
-                  ? "Finalize este documento para gerar PDF assinado e auditoria"
-                : step === "position"
-                  ? "Adicione campos e arraste para posicionar"
-                  : "Preencha os campos e assine"}
-            </p>
-          </div>
           <div className="flex items-center gap-2">
-            {canEditSignature && step === "position" && (
-              <button
-                onClick={() => setStep("fill")}
-                className="bg-[#314D3E] hover:bg-[#465634] text-white px-4 py-2 rounded-xl text-sm font-medium transition"
-              >
-                Próximo: Assinar →
-              </button>
-            )}
-            {canEditSignature && step === "fill" && (
-              <>
-                {!isSigned && (
-                  <button
-                    onClick={() => setStep("position")}
-                    className="border border-[#D6C1A3] px-4 py-2 rounded-xl text-sm hover:bg-[#EFE7DA] transition"
-                  >
-                    ← Voltar
-                  </button>
-                )}
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="bg-[#3A9B6F] hover:bg-[#2e7d57] disabled:opacity-40 text-white px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2"
-                >
-                  {saving ? "Salvando…" : isSigned ? "✓ Gerar PDF Assinado" : "✓ Salvar Documento"}
-                </button>
-              </>
-            )}
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition">
-              <X size={18} className="text-gray-400" />
-            </button>
+            <Shield size={16} className="text-[#1F4D46]" />
+            <h2 className="text-sm font-bold text-[#1F4D46]">Assinatura Eletrônica</h2>
+            <span className="text-xs text-gray-400 hidden sm:block">— {patientDoc.document.name}</span>
           </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition">
+            <X size={16} className="text-gray-400" />
+          </button>
         </div>
 
-        <div className="flex flex-1 min-h-0">
-          {/* SIDEBAR */}
-          <div className="w-72 shrink-0 border-r border-gray-100 p-4 overflow-y-auto flex flex-col gap-5">
-            {step === "position" ? (
-              <>
-                {/* Signatures */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Assinaturas</p>
-                  <div className="space-y-1.5">
-                    {["professional_sig", "patient_sig"].map((type) => {
-                      const ft = FIELD_TYPES[type];
-                      return (
-                        <button
-                          key={type}
-                          onClick={() => setPlacing(placing === type ? null : type)}
-                          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition border ${
-                            placing === type
-                              ? "text-white border-transparent"
-                              : "border-[#D6C1A3] text-[#314D3E] hover:bg-[#EFE7DA]"
-                          }`}
-                          style={placing === type ? { backgroundColor: ft.color, borderColor: ft.color } : {}}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 17l4-4 4 4 8-8"/></svg>
-                          {ft.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          <StepIndicator current={step} />
 
-                {/* Text fields */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Campos de Texto</p>
-                  <div className="space-y-1.5">
-                    {["text_name", "text_date", "text_cpf"].map((type) => {
-                      const ft = FIELD_TYPES[type];
-                      return (
-                        <button
-                          key={type}
-                          onClick={() => setPlacing(placing === type ? null : type)}
-                          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition border ${
-                            placing === type
-                              ? "text-white border-transparent"
-                              : "border-[#D6C1A3] text-[#314D3E] hover:bg-[#EFE7DA]"
-                          }`}
-                          style={placing === type ? { backgroundColor: ft.color, borderColor: ft.color } : {}}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
-                          {ft.label}
-                        </button>
-                      );
-                    })}
+          {/* ── ETAPA 1: Identificação ── */}
+          {step === "signer" && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-base font-bold text-[#1F4D46] mb-1">Identificação do Assinante</h3>
+                <p className="text-xs text-gray-400">Confirme os dados que serão registrados na auditoria.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { label: "Nome completo *", value: signerName, onChange: setSignerName, placeholder: "Nome completo" },
+                  { label: "CPF *", value: signerCpf, onChange: setSignerCpf, placeholder: "000.000.000-00" },
+                  { label: "E-mail *", value: signerEmail, onChange: setSignerEmail, placeholder: "email@exemplo.com", type: "email" },
+                  { label: "Telefone celular", value: signerPhone, onChange: setSignerPhone, placeholder: "(11) 99999-9999", type: "tel" },
+                ].map(({ label, value, onChange, placeholder, type = "text" }) => (
+                  <div key={label}>
+                    <label className="text-xs font-medium text-gray-500 block mb-1">{label}</label>
+                    <input
+                      type={type}
+                      value={value}
+                      onChange={(e) => onChange(e.target.value)}
+                      placeholder={placeholder}
+                      className="w-full border border-[#C2A56B] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                    />
                   </div>
-                </div>
-
-                {/* Placed fields */}
-                {fields.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                      Campos ({fields.length})
-                    </p>
-                    <div className="space-y-1">
-                      {fields.map((f) => {
-                        const ft = FIELD_TYPES[f.type];
-                        return (
-                          <div key={f.id} className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-gray-50">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: ft.color }} />
-                              <span className="text-xs text-gray-600 truncate">{ft.label}</span>
-                            </div>
-                            <button onClick={() => removeField(f.id)} className="text-red-300 hover:text-red-500 transition shrink-0">
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                {isSigned && (
-                  <div className={`rounded-xl border px-3 py-2 ${hasFinalPdf ? "border-green-100 bg-green-50" : "border-amber-100 bg-amber-50"}`}>
-                    <p className={`text-xs font-semibold ${hasFinalPdf ? "text-green-700" : "text-amber-700"}`}>
-                      {hasFinalPdf ? "Documento assinado" : "Assinatura antiga"}
-                    </p>
-                    <p className={`text-xs mt-0.5 ${hasFinalPdf ? "text-green-700/70" : "text-amber-700/70"}`}>
-                      {patientDoc.signedAt ? new Date(patientDoc.signedAt).toLocaleString("pt-BR") : "Assinatura salva"}
-                    </p>
-                    {!hasFinalPdf && (
-                      <p className="text-xs text-amber-700/70 mt-1">
-                        Gere o PDF final para salvar hash e auditoria.
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Identificação</p>
-                  <div className="space-y-2.5">
-                    <div>
-                      <label className="text-xs font-medium text-gray-500 block mb-1">Nome completo</label>
-                      <input
-                        value={signerName}
-                        onChange={(e) => setSignerName(e.target.value)}
-                        disabled={!canEditSignature}
-                        className="w-full border border-[#D6C1A3] rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20 disabled:bg-gray-50 disabled:text-gray-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-500 block mb-1">CPF</label>
-                      <input
-                        value={signerCpf}
-                        onChange={(e) => setSignerCpf(e.target.value)}
-                        disabled={!canEditSignature}
-                        className="w-full border border-[#D6C1A3] rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20 disabled:bg-gray-50 disabled:text-gray-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Fill mode: text fields */}
-                {fields.filter((f) => !isSigType(f.type)).length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Preencher</p>
-                    <div className="space-y-2.5">
-                      {fields.filter((f) => !isSigType(f.type)).map((f) => {
-                        const ft = FIELD_TYPES[f.type];
-                        return (
-                          <div key={f.id}>
-                            <label className="text-xs font-medium text-gray-500 block mb-1">{ft.label}</label>
-                            <input
-                              value={fieldValues[f.id] ?? ""}
-                              onChange={(e) => setFieldValues((v) => ({ ...v, [f.id]: e.target.value }))}
-                              disabled={!canEditSignature}
-                              placeholder={ft.label}
-                              className="w-full border border-[#D6C1A3] rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#314D3E]/20 disabled:bg-gray-50 disabled:text-gray-500"
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Signature pads */}
-                {fields.some((f) => f.type === "professional_sig") && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Assinatura Profissional</p>
-                    <div className="border border-[#D6C1A3] rounded-xl overflow-hidden bg-gray-50">
-                      {patientDoc.professionalSignature && !proSigRef.current ? (
-                        <img src={patientDoc.professionalSignature} alt="Assinatura profissional" className="w-full h-32 object-contain bg-white" />
-                      ) : (
-                        <SignatureCanvas
-                          ref={proSigRef}
-                          canvasProps={{ width: 256, height: 132, className: "w-full h-32" }}
-                          penColor="#314D3E"
-                        />
-                      )}
-                    </div>
-                    {!isSigned && (
-                      <button
-                        onClick={() => proSigRef.current?.clear()}
-                        className="text-xs text-gray-400 hover:text-gray-600 mt-1 transition"
-                      >
-                        Limpar
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {fields.some((f) => f.type === "patient_sig") && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Assinatura Paciente</p>
-                    <div className="border border-[#D6C1A3] rounded-xl overflow-hidden bg-gray-50">
-                      {patientDoc.patientSignature && !patSigRef.current ? (
-                        <img src={patientDoc.patientSignature} alt="Assinatura paciente" className="w-full h-32 object-contain bg-white" />
-                      ) : (
-                        <SignatureCanvas
-                          ref={patSigRef}
-                          canvasProps={{ width: 256, height: 132, className: "w-full h-32" }}
-                          penColor="#314D3E"
-                        />
-                      )}
-                    </div>
-                    {!isSigned && (
-                      <button
-                        onClick={() => patSigRef.current?.clear()}
-                        className="text-xs text-gray-400 hover:text-gray-600 mt-1 transition"
-                      >
-                        Limpar
-                      </button>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* PDF VIEWER */}
-          <div className="flex-1 flex flex-col min-h-0 bg-gray-100">
-            {/* Page nav */}
-            <div className="flex items-center justify-center gap-3 py-2.5 bg-white border-b border-gray-100 shrink-0">
+                ))}
+              </div>
               <button
-                onClick={() => setPageNum((p) => Math.max(p - 1, 1))}
-                disabled={pageNum === 1}
-                className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition"
+                onClick={() => setStep("preview")}
+                disabled={!canGoToPreview}
+                className="w-full bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-40 text-white py-3 rounded-xl text-sm font-semibold transition mt-2"
               >
-                <ChevronLeft size={16} />
-              </button>
-              <span className="text-sm font-medium text-gray-600">
-                Pág. {pageNum} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPageNum((p) => Math.min(p + 1, totalPages))}
-                disabled={pageNum === totalPages}
-                className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition"
-              >
-                <ChevronRight size={16} />
+                Prosseguir para leitura do documento →
               </button>
             </div>
+          )}
 
-            {/* Canvas + overlays */}
-            <div ref={viewerRef} className="flex-1 overflow-auto flex justify-center p-4">
-              <div
-                ref={overlayRef}
-                className="relative select-none"
-                style={{ cursor: placing ? "crosshair" : "default" }}
-                onClick={handleCanvasClick}
-              >
-                {pdfLoading && (
-                  <div className="w-[520px] max-w-full h-[680px] bg-white shadow-lg rounded-sm animate-pulse" />
-                )}
-
-                {pdfError && (
-                  <div className="w-[520px] max-w-full bg-white border border-red-100 shadow-lg rounded-sm p-6 text-center">
-                    <p className="text-sm font-semibold text-red-500">{pdfError}</p>
-                    <p className="text-xs text-gray-400 mt-1">Abra o arquivo pela Pasta Sanitária para confirmar se o PDF está válido.</p>
-                  </div>
-                )}
-
-                <canvas
-                  ref={canvasRef}
-                  className={`shadow-lg rounded-sm bg-white ${pdfLoading || pdfError ? "hidden" : "block"}`}
-                />
-
-                {/* Field overlays */}
-                {!pdfLoading && !pdfError && pageFields.map((f) => {
-                  const ft = FIELD_TYPES[f.type];
-                  const isSig = isSigType(f.type);
-                  const canvas = canvasRef.current;
-                  if (!canvas) return null;
-                  const left = (f.x / 100) * canvas.width;
-                  const top = (f.y / 100) * canvas.height;
-                  return (
-                    <div
-                      key={f.id}
-                      className="absolute border-2 rounded flex items-center justify-center"
-                      style={{
-                        left,
-                        top,
-                        width: isSig ? 220 : 120,
-                        height: isSig ? 82 : 28,
-                        borderColor: ft.color,
-                        backgroundColor: step === "fill" && isSig && getSignature(f.type) ? "transparent" : `${ft.color}22`,
-                        transform: "translate(-50%, -50%)",
-                        pointerEvents: "none",
-                      }}
-                    >
-                      {step === "fill" && isSig && getSignature(f.type) ? (
-                        <img src={getSignature(f.type)} alt={ft.label} className="h-full w-full object-contain" />
-                      ) : step === "fill" && !isSig && fieldValues[f.id] ? (
-                        <span className="text-xs font-medium px-1 truncate" style={{ color: ft.color }}>
-                          {fieldValues[f.id]}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-semibold px-1" style={{ color: ft.color }}>
-                          {ft.label}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
+          {/* ── ETAPA 2: Preview do PDF ── */}
+          {step === "preview" && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <h3 className="text-base font-bold text-[#1F4D46] mb-1">Leia o Documento</h3>
+                <p className="text-xs text-gray-400">Role até o fim antes de prosseguir.</p>
+              </div>
+              <div className="border border-[#D8CDB9] rounded-2xl overflow-hidden h-105">
+                <PdfViewer docId={patientDoc.document.id} />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setStep("signer")}
+                  className="flex-1 border border-[#C2A56B] py-2.5 rounded-xl text-sm hover:bg-[#E8E0D2] transition">
+                  ← Voltar
+                </button>
+                <button onClick={() => setStep("accept")}
+                  className="flex-1 bg-[#1F4D46] hover:bg-[#285A50] text-white py-2.5 rounded-xl text-sm font-semibold transition">
+                  Li o documento →
+                </button>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* ── ETAPA 3: Aceite + Geolocalização ── */}
+          {step === "accept" && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-base font-bold text-[#1F4D46] mb-1">Declaração de Aceite</h3>
+                <p className="text-xs text-gray-400">Confirme que leu e concorda com o conteúdo do documento.</p>
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer p-4 rounded-2xl border-2 transition"
+                style={{ borderColor: accepted ? "#1F4D46" : "#D8CDB9", backgroundColor: accepted ? "#F0F7F5" : "#FAFAF8" }}>
+                <input
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={(e) => {
+                    setAccepted(e.target.checked);
+                    if (e.target.checked) setAcceptedAt(new Date().toISOString());
+                  }}
+                  className="mt-0.5 accent-[#1F4D46] w-4 h-4 shrink-0"
+                />
+                <span className="text-sm text-gray-700 leading-relaxed">
+                  <strong>Declaro que li e concordo</strong> com o conteúdo do documento <em>"{patientDoc.document.name}"</em>, e autorizo sua assinatura eletrônica em meu nome.
+                </span>
+              </label>
+
+              {/* Geolocalização */}
+              <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-4">
+                <p className="text-xs font-semibold text-[#1F4D46] mb-2">Geolocalização (opcional)</p>
+                <p className="text-xs text-gray-500 mb-3">Registrar sua localização aumenta a validade jurídica do documento. Você pode recusar.</p>
+                {geoStatus === "idle" && (
+                  <div className="flex gap-2">
+                    <button onClick={() => { setGeoConsent(true); requestGeo(); }}
+                      className="flex-1 bg-[#1F4D46] text-white text-xs py-2 rounded-lg transition hover:bg-[#285A50]">
+                      Permitir localização
+                    </button>
+                    <button onClick={() => { setGeoConsent(false); setGeoStatus("denied"); }}
+                      className="flex-1 border border-[#C2A56B] text-xs py-2 rounded-lg transition hover:bg-[#E8E0D2]">
+                      Recusar
+                    </button>
+                  </div>
+                )}
+                {geoStatus === "requesting" && <p className="text-xs text-gray-400 animate-pulse">Aguardando permissão…</p>}
+                {geoStatus === "granted"  && <p className="text-xs text-green-600">✓ Localização registrada</p>}
+                {geoStatus === "denied"   && <p className="text-xs text-gray-400">Localização recusada — GEOLOCATION_DENIED registrado</p>}
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => setStep("preview")}
+                  className="flex-1 border border-[#C2A56B] py-2.5 rounded-xl text-sm hover:bg-[#E8E0D2] transition">
+                  ← Voltar
+                </button>
+                <button
+                  onClick={() => setStep("otp-send")}
+                  disabled={!accepted || geoStatus === "requesting"}
+                  className="flex-1 bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold transition"
+                >
+                  Prosseguir para validação →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── ETAPA 4: Escolha do método OTP ── */}
+          {step === "otp-send" && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-base font-bold text-[#1F4D46] mb-1">Validação de Identidade</h3>
+                <p className="text-xs text-gray-400">Enviaremos um código de 6 dígitos para confirmar sua identidade.</p>
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  { method: "email", icon: Mail, label: "E-mail", target: signerEmail, available: !!signerEmail },
+                  { method: "sms", icon: Phone, label: "SMS", target: signerPhone, available: false, badge: "Em breve" },
+                  { method: "whatsapp", icon: Phone, label: "WhatsApp", target: signerPhone, available: false, badge: "Em breve" },
+                ].map(({ method, icon: Icon, label, target, available, badge }) => (
+                  <button
+                    key={method}
+                    onClick={() => available && setOtpMethod(method)}
+                    disabled={!available}
+                    className={`w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition text-left ${
+                      otpMethod === method && available
+                        ? "border-[#1F4D46] bg-[#F0F7F5]"
+                        : available
+                        ? "border-[#D8CDB9] hover:border-[#1F4D46]/40"
+                        : "border-[#D8CDB9] opacity-40 cursor-not-allowed"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-[#E8E0D2] flex items-center justify-center shrink-0">
+                      <Icon size={16} className="text-[#1F4D46]" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-[#1F4D46]">{label}</p>
+                      <p className="text-xs text-gray-400">{available ? target : (badge ?? "Não disponível")}</p>
+                    </div>
+                    {otpMethod === method && available && <CheckCircle size={16} className="text-[#1F4D46] shrink-0" />}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => setStep("accept")}
+                  className="flex-1 border border-[#C2A56B] py-2.5 rounded-xl text-sm hover:bg-[#E8E0D2] transition">
+                  ← Voltar
+                </button>
+                <button
+                  onClick={handleSendOtp}
+                  disabled={otpSending}
+                  className="flex-1 bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2"
+                >
+                  {otpSending ? <><Loader2 size={14} className="animate-spin" /> Enviando…</> : "Enviar código →"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── ETAPA 5: Input do código OTP ── */}
+          {step === "otp-code" && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-base font-bold text-[#1F4D46] mb-1">Digite o Código</h3>
+                <p className="text-xs text-gray-400">
+                  Código enviado para <strong>{maskedTarget}</strong>. Expira em 10 minutos.
+                </p>
+              </div>
+
+              <div className="flex justify-center">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="000000"
+                  className="text-4xl font-bold tracking-[12px] text-center border-2 border-[#C2A56B] rounded-2xl px-6 py-4 w-56 focus:outline-none focus:border-[#1F4D46]"
+                  autoFocus
+                />
+              </div>
+
+              <div className="text-center">
+                {otpTimer > 0 ? (
+                  <p className="text-xs text-gray-400">Reenviar em {otpTimer}s</p>
+                ) : (
+                  <button
+                    onClick={() => { setOtpCode(""); setOtpSent(false); setStep("otp-send"); }}
+                    className="text-xs text-[#1F4D46] hover:underline flex items-center gap-1 mx-auto"
+                  >
+                    <RefreshCw size={12} /> Reenviar código
+                  </button>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => setStep("otp-send")}
+                  className="flex-1 border border-[#C2A56B] py-2.5 rounded-xl text-sm hover:bg-[#E8E0D2] transition">
+                  ← Voltar
+                </button>
+                <button
+                  onClick={handleValidateOtp}
+                  disabled={otpCode.length !== 6 || otpValidating}
+                  className="flex-1 bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2"
+                >
+                  {otpValidating ? <><Loader2 size={14} className="animate-spin" /> Validando…</> : "Validar código →"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── ETAPA 6: Assinaturas manuscritas ── */}
+          {step === "signature" && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-base font-bold text-[#1F4D46] mb-1">Assinaturas</h3>
+                <p className="text-xs text-gray-400">Assine com o dedo ou mouse nos campos abaixo.</p>
+              </div>
+
+              {/* Assinatura do Paciente */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs font-semibold text-[#1F4D46]">Assinatura do Paciente <span className="text-red-400">*</span></p>
+                  <button onClick={() => { patSigRef.current?.clear(); setPatSigEmpty(true); }}
+                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-400 transition">
+                    <Trash2 size={12} /> Limpar
+                  </button>
+                </div>
+                <div className="border-2 rounded-2xl overflow-hidden bg-gray-50"
+                  style={{ borderColor: patSigEmpty ? "#D8CDB9" : "#1F4D46" }}>
+                  <SignatureCanvas
+                    ref={patSigRef}
+                    penColor="#1F4D46"
+                    canvasProps={{ className: "w-full", height: 150 }}
+                    onEnd={() => setPatSigEmpty(patSigRef.current?.isEmpty() ?? true)}
+                  />
+                </div>
+                <p className="text-xs mt-1">
+                  {patSigEmpty
+                    ? <span className="text-gray-400">Aguardando assinatura…</span>
+                    : <span className="text-green-600 font-medium">✓ Registrada</span>}
+                </p>
+              </div>
+
+              {/* Assinatura do Profissional — só se o documento tiver campo professional_sig */}
+              {needsProSig && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-semibold text-[#6F7F73]">Assinatura do Profissional <span className="text-red-400">*</span></p>
+                    <button onClick={() => { proSigRef.current?.clear(); setProSigEmpty(true); }}
+                      className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-400 transition">
+                      <Trash2 size={12} /> Limpar
+                    </button>
+                  </div>
+                  <div className="border-2 rounded-2xl overflow-hidden bg-gray-50"
+                    style={{ borderColor: proSigEmpty ? "#D8CDB9" : "#6F7F73" }}>
+                    <SignatureCanvas
+                      ref={proSigRef}
+                      penColor="#6F7F73"
+                      canvasProps={{ className: "w-full", height: 150 }}
+                      onEnd={() => setProSigEmpty(proSigRef.current?.isEmpty() ?? true)}
+                    />
+                  </div>
+                  <p className="text-xs mt-1">
+                    {proSigEmpty
+                      ? <span className="text-gray-400">Aguardando assinatura…</span>
+                      : <span className="text-green-600 font-medium">✓ Registrada</span>}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button onClick={() => setStep("otp-code")}
+                  className="flex-1 border border-[#C2A56B] py-2.5 rounded-xl text-sm hover:bg-[#E8E0D2] transition">
+                  ← Voltar
+                </button>
+                <button
+                  disabled={patSigEmpty || (needsProSig && proSigEmpty)}
+                  className="flex-1 bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold transition"
+                  onClick={() => {
+                    setPatSigDataUrl(patSigRef.current?.toDataURL());
+                    if (needsProSig) setProSigDataUrl(proSigRef.current?.toDataURL());
+                    setStep("sign");
+                  }}
+                >
+                  Confirmar assinaturas →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── ETAPA 7: Confirmar e assinar ── */}
+          {step === "sign" && !signedDoc && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-base font-bold text-[#1F4D46] mb-1">Confirmar Assinatura</h3>
+                <p className="text-xs text-gray-400">Identidade verificada. Clique para assinar e gerar o PDF com certificado de evidências.</p>
+              </div>
+
+              <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-4 space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-gray-500 text-xs">Documento</span><span className="font-medium text-[#1F4D46] text-xs">{patientDoc.document.name}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500 text-xs">Assinante</span><span className="font-medium text-[#1F4D46] text-xs">{signerName}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500 text-xs">CPF</span><span className="font-medium text-[#1F4D46] text-xs">{signerCpf}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500 text-xs">E-mail</span><span className="font-medium text-[#1F4D46] text-xs">{signerEmail}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500 text-xs">Validação OTP</span><span className="font-medium text-green-600 text-xs">✓ {otpMethod}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500 text-xs">Assinatura do paciente</span><span className="font-medium text-green-600 text-xs">✓ Registrada</span></div>
+                {needsProSig && <div className="flex justify-between"><span className="text-gray-500 text-xs">Assinatura do profissional</span><span className="font-medium text-green-600 text-xs">✓ Registrada</span></div>}
+                <div className="flex justify-between"><span className="text-gray-500 text-xs">Fuso horário</span><span className="font-medium text-[#1F4D46] text-xs">{timezone}</span></div>
+                {geoData && <div className="flex justify-between"><span className="text-gray-500 text-xs">Localização</span><span className="font-medium text-[#1F4D46] text-xs">✓ Registrada</span></div>}
+              </div>
+
+              <button
+                onClick={handleSign}
+                disabled={saving}
+                className="w-full bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-50 text-white py-3.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2"
+              >
+                {saving
+                  ? <><Loader2 size={16} className="animate-spin" /> Gerando PDF e certificado…</>
+                  : <><Shield size={16} /> Assinar documento</>
+                }
+              </button>
+            </div>
+          )}
+
+          {/* ── SUCESSO ── */}
+          {signedDoc && (
+            <div className="flex flex-col items-center text-center gap-5 py-4">
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle size={32} className="text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#1F4D46]">Documento Assinado!</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  O PDF com o certificado de evidências foi gerado e armazenado com segurança.
+                </p>
+              </div>
+              <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-4 w-full text-left space-y-1.5">
+                <p className="text-xs text-gray-500">Hash SHA-256: <span className="font-mono text-[10px] text-[#1F4D46] break-all">{signedDoc.signedHash}</span></p>
+                <p className="text-xs text-gray-500">Assinado em: <span className="font-medium text-[#1F4D46]">{new Date(signedDoc.signedAt).toLocaleString("pt-BR")}</span></p>
+              </div>
+              <div className="flex gap-3 w-full">
+                <button onClick={downloadSigned}
+                  className="flex-1 flex items-center justify-center gap-2 bg-[#1F4D46] hover:bg-[#285A50] text-white py-3 rounded-xl text-sm font-semibold transition">
+                  <Download size={15} /> Baixar PDF Assinado
+                </button>
+                <button onClick={onClose}
+                  className="flex-1 border border-[#C2A56B] py-3 rounded-xl text-sm hover:bg-[#E8E0D2] transition">
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
