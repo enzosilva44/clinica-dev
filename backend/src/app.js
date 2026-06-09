@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { authMiddleware } from "./middlewares/auth.middleware.js";
+import { requireFeature } from "./middlewares/feature.middleware.js";
 import patientsRoutes from "./modules/patients/patient.routes.js";
 import appointmentRoutes from "./modules/appointments/appointment.routes.js";
 import evolutionRoutes from "./modules/evolutions/evolution.routes.js";
@@ -19,6 +20,8 @@ import reportsRoutes from "./modules/reports/reports.routes.js";
 import photoRoutes from "./modules/photos/photo.routes.js";
 import automationRoutes from "./modules/automations/automation.routes.js";
 import billingRoutes from "./modules/billing/billing.routes.js";
+import adminRoutes from "./modules/admin/admin.routes.js";
+import profileRoutes from "./modules/profile/profile.routes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -35,18 +38,20 @@ app.use("/patients", patientsRoutes);
 app.use("/appointments", appointmentRoutes);
 app.use("/evolutions", evolutionRoutes);
 app.use("/procedures", procedureRoutes);
-app.use("/products", productRoutes);
+app.use("/products", authMiddleware, requireFeature("stock"), productRoutes);
 app.use("/dashboard", dashboardRoutes);
-app.use("/financial", transactionRoutes);
-app.use("/club", clubRoutes);
-app.use("/procedure-maps", procedureMapRoutes);
-app.use("/ai", aiRoutes);
+app.use("/financial", authMiddleware, requireFeature("financial"), transactionRoutes);
+app.use("/club", authMiddleware, requireFeature("clube"), clubRoutes);
+app.use("/procedure-maps", authMiddleware, requireFeature("procedureMap"), procedureMapRoutes);
+app.use("/ai", authMiddleware, requireFeature("aiAssistant"), aiRoutes);
 app.use("/documents", documentRoutes);
 app.use("/budgets", budgetRoutes);
-app.use("/reports", reportsRoutes);
+app.use("/reports", authMiddleware, requireFeature("analytics"), reportsRoutes);
 app.use("/photos", photoRoutes);
-app.use("/automations", automationRoutes);
+app.use("/automations", authMiddleware, requireFeature("whatsapp"), automationRoutes);
 app.use("/billing", billingRoutes);
+app.use("/admin", adminRoutes);
+app.use("/profile", profileRoutes);
 
 app.get("/", (req, res) => {
   res.json({

@@ -10,7 +10,7 @@ function generateCode() {
   return String(Math.floor(100000 + crypto.randomInt(900000))).padStart(6, "0");
 }
 
-export async function requestOtp({ context, method, target, documentName }) {
+export async function requestOtp({ context, method, target, documentName, clinicUserId }) {
   // Rate limit: máximo MAX_SENDS_PER_HOUR envios por hora para o mesmo contexto
   const since = new Date(Date.now() - 3600 * 1000);
   const recentCount = await prisma.otpCode.count({
@@ -33,7 +33,13 @@ export async function requestOtp({ context, method, target, documentName }) {
     data: { context, method, target, code, expiresAt },
   });
 
-  await sendOtp(method, target, code, documentName);
+  const testMode = process.env.OTP_TEST_MODE === "true";
+  if (testMode) {
+    console.log(`[OTP TEST MODE] Contexto: ${context} | Código: ${code}`);
+    return { sent: true, method, maskedTarget: maskTarget(method, target), testCode: code };
+  }
+
+  await sendOtp(method, target, code, documentName, clinicUserId);
   return { sent: true, method, maskedTarget: maskTarget(method, target) };
 }
 

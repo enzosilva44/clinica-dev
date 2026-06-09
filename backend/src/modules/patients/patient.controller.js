@@ -92,7 +92,31 @@ import * as patientService from "./patient.service.js";
     }
   }
 
-  export async function remove(req, res) {
+  export async function checkImport(req, res) {
+  try {
+    const { patients } = req.body;
+    if (!Array.isArray(patients) || patients.length === 0)
+      return res.status(400).json({ error: "Nenhum paciente enviado." });
+    const result = await patientService.checkImport(patients, req.user.id);
+    return res.json(result);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+}
+
+export async function importBulk(req, res) {
+  try {
+    const { patients } = req.body;
+    if (!Array.isArray(patients) || patients.length === 0)
+      return res.status(400).json({ error: "Nenhum paciente enviado." });
+    const result = await patientService.importBulk(patients, req.user.id);
+    return res.json(result);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+}
+
+export async function remove(req, res) {
   try {
     const response = await patientService.remove(
       req.params.id,

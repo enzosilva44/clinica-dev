@@ -10,6 +10,7 @@ import MainLayout from "../layouts/MainLayout";
 import CalendarSidebar from "../components/calendar/CalendarSidebar";
 import "../components/calendar/calendar.css";
 import api from "../services/api";
+import { useFeatures } from "../hooks/useFeatures";
 
 const PROFESSIONALS = ["Dra Ana", "Dra Julia", "Dra Camila"];
 const PROFESSIONAL_COLORS = {
@@ -72,6 +73,7 @@ function getInitialScrollTime(date = new Date()) {
 }
 
 export default function Agenda() {
+  const features    = useFeatures();
   const calendarRef = useRef(null);
   const [now, setNow] = useState(new Date());
   const [allEvents, setAllEvents] = useState([]);
@@ -216,11 +218,13 @@ export default function Agenda() {
 
   useEffect(() => {
     setEvents(
-      allEvents.filter(
-        (e) => !e.extendedProps.professional || selectedProfessionals.includes(e.extendedProps.professional)
-      )
+      features.multiProfessional
+        ? allEvents.filter(
+            (e) => !e.extendedProps.professional || selectedProfessionals.includes(e.extendedProps.professional)
+          )
+        : allEvents
     );
-  }, [allEvents, selectedProfessionals]);
+  }, [allEvents, selectedProfessionals, features.multiProfessional]);
 
   function toggleProfessional(name) {
     setSelectedProfessionals((prev) =>
@@ -374,8 +378,8 @@ export default function Agenda() {
       <div className="flex gap-5 h-[calc(100vh-90px)]">
         {/* SIDEBAR */}
         <CalendarSidebar
-          selectedProfessionals={selectedProfessionals}
-          toggleProfessional={toggleProfessional}
+          selectedProfessionals={features.multiProfessional ? selectedProfessionals : null}
+          toggleProfessional={features.multiProfessional ? toggleProfessional : null}
           allEvents={allEvents}
           gotoDate={gotoDate}
         />
@@ -576,25 +580,27 @@ export default function Agenda() {
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-medium text-gray-500 block mb-1.5">Profissional</label>
-                <div className="flex gap-2">
-                  {PROFESSIONALS.map((name) => (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => setForm((prev) => ({ ...prev, professional: name }))}
-                      className={`flex-1 py-2 rounded-xl text-xs font-medium transition border ${
-                        form.professional === name
-                          ? "border-[#1F4D46] bg-[#1F4D46] text-white"
-                          : "border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2]"
-                      }`}
-                    >
-                      {name}
-                    </button>
-                  ))}
+              {features.multiProfessional && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1.5">Profissional</label>
+                  <div className="flex gap-2">
+                    {PROFESSIONALS.map((name) => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, professional: name }))}
+                        className={`flex-1 py-2 rounded-xl text-xs font-medium transition border ${
+                          form.professional === name
+                            ? "border-[#1F4D46] bg-[#1F4D46] text-white"
+                            : "border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2]"
+                        }`}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">Procedimento</label>

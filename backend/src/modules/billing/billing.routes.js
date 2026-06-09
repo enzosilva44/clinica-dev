@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { requireFeature } from "../../middlewares/feature.middleware.js";
 import {
   createCharge, listCharges, getCharge, cancelCharge, simulatePayment,
   getBalance, createTransfer, listTransfers,
-  saveConfig, getConfig, handleWebhook,
+  saveConfig, getConfig, handleWebhook, sendPaymentLink,
 } from "./billing.service.js";
 
 const router = Router();
@@ -19,7 +20,7 @@ router.post("/webhook", async (req, res) => {
   }
 });
 
-router.use(authMiddleware);
+router.use(authMiddleware, requireFeature("faturamento"));
 
 // ── cobranças ──────────────────────────────────────────────────────────────────
 router.get("/charges", async (req, res) => {
@@ -53,6 +54,13 @@ router.delete("/charges/:id", async (req, res) => {
 router.post("/charges/:id/simulate", async (req, res) => {
   try {
     const result = await simulatePayment(req.user.id, req.params.id);
+    res.json(result);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+router.post("/charges/:id/send-link", async (req, res) => {
+  try {
+    const result = await sendPaymentLink(req.user.id, req.params.id);
     res.json(result);
   } catch (e) { res.status(400).json({ error: e.message }); }
 });

@@ -132,6 +132,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
   const [otpSending, setOtpSending] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [maskedTarget, setMaskedTarget] = useState("");
+  const [otpTestCode, setOtpTestCode] = useState(null);
   const [otpCode, setOtpCode] = useState("");
   const [otpValidating, setOtpValidating] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
@@ -186,6 +187,8 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
         phone: otpMethod !== "email"  ? signerPhone : undefined,
       });
       setMaskedTarget(res.data.maskedTarget);
+      setOtpTestCode(res.data.testCode ?? null);
+      if (res.data.testCode) setOtpCode(res.data.testCode);
       setOtpSent(true);
       startTimer();
       setStep("otp-code");
@@ -401,7 +404,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                 {[
                   { method: "email", icon: Mail, label: "E-mail", target: signerEmail, available: !!signerEmail },
                   { method: "sms", icon: Phone, label: "SMS", target: signerPhone, available: false, badge: "Em breve" },
-                  { method: "whatsapp", icon: Phone, label: "WhatsApp", target: signerPhone, available: false, badge: "Em breve" },
+                  { method: "whatsapp", icon: Phone, label: "WhatsApp", target: signerPhone, available: !!signerPhone },
                 ].map(({ method, icon: Icon, label, target, available, badge }) => (
                   <button
                     key={method}
@@ -449,9 +452,21 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
               <div>
                 <h3 className="text-base font-bold text-[#1F4D46] mb-1">Digite o Código</h3>
                 <p className="text-xs text-gray-400">
-                  Código enviado para <strong>{maskedTarget}</strong>. Expira em 10 minutos.
+                  {otpTestCode
+                    ? "Modo teste ativo — o código foi gerado abaixo."
+                    : <>Código enviado para <strong>{maskedTarget}</strong>. Expira em 10 minutos.</>}
                 </p>
               </div>
+
+              {otpTestCode && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <span className="text-amber-500 text-lg">🧪</span>
+                  <div>
+                    <p className="text-xs font-semibold text-amber-700">Modo Teste</p>
+                    <p className="text-xs text-amber-600">Código: <strong className="tracking-widest">{otpTestCode}</strong></p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-center">
                 <input

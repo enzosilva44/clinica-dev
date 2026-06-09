@@ -254,6 +254,52 @@ export async function getConfig(userId) {
   };
 }
 
+// ─── envio de link via WhatsApp ───────────────────────────────────────────────
+
+export async function sendPaymentLink(userId, chargeId) {
+  const key    = await resolveKey(userId);
+  const charge = await asaas("GET", `/payments/${chargeId}`, null, key);
+
+  const link = charge.invoiceUrl || charge.bankSlipUrl;
+  if (!link) throw new Error("Link de pagamento ainda não disponível para esta cobrança.");
+
+  // busca o paciente via externalReference (ID da Transaction)
+  let phone;
+  if (charge.externalReference) {
+    const tx = await prisma.transaction.findUnique({
+      where: { id: charge.externalReference },
+      select: { patient: { select: { phone: true, name: true } } },
+    });
+    phone = tx?.patient?.phone?.replace(/\D/g, "");
+  }
+
+  if (!phone) throw new Error("Paciente sem telefone cadastrado para envio do link.");
+
+  const { sendWhatsAppMessage } = await import("../whatsapp/whatsapp.provider.js");
+
+  // Credenciais WhatsApp do usuário/clínica com fallback para env
+  const userWa = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { whatsappPhoneNumberId: true, whatsappAccessToken: true },
+  });
+  const waConfig = {
+    phoneNumberId: userWa?.whatsappPhoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID,
+    accessToken:   userWa?.whatsappAccessToken   || process.env.WHATSAPP_ACCESS_TOKEN,
+  };
+  if (!waConfig.phoneNumberId || !waConfig.accessToken) {
+    throw new Error("WhatsApp não configurado. Acesse Automações → Conexão e salve suas credenciais.");
+  }
+
+  const method = { PIX: "PIX", CREDIT_CARD: "Cartão de crédito", BOLETO: "Boleto" }[charge.billingType] ?? charge.billingType;
+  const value  = Number(charge.value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const message =
+    `Olá! Segue o link para pagamento da sua cobrança no valor de *${value}* (${method}):\n\n${link}\n\nEm caso de dúvidas, entre em contato conosco.`;
+
+  await sendWhatsAppMessage(phone, message, waConfig);
+  return { ok: true, phone, link };
+}
+
 // ─── webhook ──────────────────────────────────────────────────────────────────
 
 export async function handleWebhook(event) {

@@ -11,7 +11,17 @@ import api from "../services/api";
 const AuthContext = createContext({});
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  function getStoredUser() {
+    try {
+      const raw = localStorage.getItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      localStorage.removeItem("user");
+      return null;
+    }
+  }
+
+  const [user, setUser] = useState(getStoredUser);
 
   const navigate = useNavigate();
 
@@ -24,32 +34,37 @@ export function AuthProvider({ children }) {
     const { token, user } = response.data;
 
     localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
 
     setUser(user);
-
-    navigate("/patients");
+    navigate("/dashboard");
   }
 
   async function loginWithGoogle(credential) {
-    const response = await api.post("/auth/google", {
-      credential,
-    });
-
+    const response = await api.post("/auth/google", { credential });
     const { token, user } = response.data;
-
     localStorage.setItem("token", token);
-
+    localStorage.setItem("user", JSON.stringify(user));
     setUser(user);
-
-    navigate("/patients");
+    navigate("/dashboard");
   }
 
   function logout() {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
 
     setUser(null);
 
     navigate("/");
+  }
+
+  async function registerAndLogin(data) {
+    const response = await api.post("/auth/register", data);
+    const { token, user } = response.data;
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    setUser(user);
+    navigate("/dashboard");
   }
 
   return (
@@ -58,6 +73,7 @@ export function AuthProvider({ children }) {
         user,
         login,
         loginWithGoogle,
+        registerAndLogin,
         logout,
       }}
     >

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Eye, EyeOff, Shield, Sparkles, MessageSquare, Map, FileSignature, BarChart2, CalendarCheck, Package } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
@@ -220,7 +221,14 @@ export default function Login() {
             </>
           )}
 
-          <p className="text-center text-[11px] text-gray-300 mt-10">
+          <p className="text-center text-sm text-gray-400 mt-6">
+            Não tem conta?{" "}
+            <Link to="/register" className="text-[#1F4D46] font-semibold hover:underline">
+              Criar conta
+            </Link>
+          </p>
+
+          <p className="text-center text-[11px] text-gray-300 mt-4">
             Versão Beta · IasoClin
           </p>
         </div>

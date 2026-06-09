@@ -112,6 +112,8 @@ router.get("/:id/stats", async (req, res) => {
 
 router.get("/:id", patientController.findOne);
 
+router.post("/import/check", patientController.checkImport);
+router.post("/import", patientController.importBulk);
 router.post("/", patientController.create);
 
 router.put("/:id", patientController.update);

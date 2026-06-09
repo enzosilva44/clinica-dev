@@ -27,7 +27,7 @@ export default function PatientDetails() {
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [clinicalSubTab, setClinicalSubTab] = useState("evolucao");
-  const [aiSummaryRequested, setAiSummaryRequested] = useState(false);
+  const [aiSummaryAt, setAiSummaryAt] = useState(null);
 
   const [showEvolutionForm, setShowEvolutionForm] = useState(false);
 
@@ -67,12 +67,22 @@ export default function PatientDetails() {
     ],
   }));
 
+  async function loadSavedSummary() {
+    try {
+      const res = await api.get(`/ai/patient-summary/${id}`);
+      if (res.data.summary) {
+        setAiSummary(res.data.summary);
+        setAiSummaryAt(res.data.updatedAt);
+      }
+    } catch { /* silencioso */ }
+  }
+
   async function generateSummary() {
     setLoadingSummary(true);
-    setAiSummary("");
     try {
       const res = await api.post(`/ai/patient-summary/${id}`);
       setAiSummary(res.data.summary);
+      setAiSummaryAt(new Date().toISOString());
     } catch (error) {
       toast.error("Erro ao gerar resumo");
     } finally {
@@ -394,12 +404,7 @@ export default function PatientDetails() {
     loadTransactions();
   }, []);
 
-  useEffect(() => {
-    if (activeTab === "clinical" && !aiSummaryRequested) {
-      setAiSummaryRequested(true);
-      generateSummary();
-    }
-  }, [activeTab]);
+  useEffect(() => { loadSavedSummary(); }, []);
 
   if (!patient) {
     return (
@@ -771,21 +776,27 @@ export default function PatientDetails() {
                 <span className="text-sm font-bold text-[#1F4D46]">Histórico do Paciente — IA</span>
               </div>
               <button
-                onClick={() => { setAiSummaryRequested(true); generateSummary(); }}
+                onClick={generateSummary}
                 disabled={loadingSummary}
                 className="flex items-center gap-1.5 border border-[#C2A56B] hover:bg-[#E8E0D2] disabled:opacity-50 text-[#1F4D46] px-3 py-1.5 rounded-lg transition text-xs"
               >
                 <Sparkles size={12} className={loadingSummary ? "animate-pulse" : ""} />
-                {loadingSummary ? "Gerando…" : "Atualizar"}
+                {loadingSummary ? "Gerando…" : aiSummary ? "Atualizar" : "Gerar resumo"}
               </button>
             </div>
-            {loadingSummary && !aiSummary && (
+            {aiSummaryAt && !loadingSummary && (
+              <p className="text-[11px] text-gray-400 mb-2">
+                Atualizado em {new Date(aiSummaryAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </p>
+            )}
+            {loadingSummary && (
               <p className="text-sm text-gray-400 animate-pulse">Analisando histórico do paciente…</p>
             )}
-            {aiSummary ? (
+            {!loadingSummary && aiSummary && (
               <p className="text-sm text-gray-700 leading-relaxed">{aiSummary}</p>
-            ) : !loadingSummary && (
-              <p className="text-sm text-gray-400">Nenhum resumo gerado ainda.</p>
+            )}
+            {!loadingSummary && !aiSummary && (
+              <p className="text-sm text-gray-400">Clique em "Gerar resumo" para criar um resumo com IA do histórico deste paciente.</p>
             )}
           </div>
 

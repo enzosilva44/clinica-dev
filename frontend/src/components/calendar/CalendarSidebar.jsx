@@ -125,7 +125,8 @@ function MiniCalendar({ allEvents, gotoDate }) {
 }
 
 export default function CalendarSidebar({ selectedProfessionals, toggleProfessional, allEvents = [], gotoDate }) {
-  const allSelected = PROFESSIONALS.every((p) => selectedProfessionals.includes(p.name));
+  const showProfessionals = !!selectedProfessionals && !!toggleProfessional;
+  const allSelected = showProfessionals && PROFESSIONALS.every((p) => selectedProfessionals.includes(p.name));
 
   function toggleAll() {
     if (allSelected) {
@@ -144,53 +145,55 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
       {/* Mini calendar */}
       <MiniCalendar allEvents={allEvents} gotoDate={gotoDate} />
 
-      {/* Profissionais */}
-      <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-4">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            Profissionais
-          </p>
-          <button
-            onClick={toggleAll}
-            className="text-xs text-[#1F4D46] hover:opacity-70 transition font-medium"
-          >
-            {allSelected ? "Limpar" : "Todos"}
-          </button>
-        </div>
+      {/* Profissionais — só exibe no plano dev */}
+      {showProfessionals && (
+        <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              Profissionais
+            </p>
+            <button
+              onClick={toggleAll}
+              className="text-xs text-[#1F4D46] hover:opacity-70 transition font-medium"
+            >
+              {allSelected ? "Limpar" : "Todos"}
+            </button>
+          </div>
 
-        <div className="space-y-1.5">
-          {PROFESSIONALS.map((p) => {
-            const active = selectedProfessionals.includes(p.name);
-            return (
-              <button
-                key={p.name}
-                onClick={() => toggleProfessional(p.name)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition text-left ${
-                  active
-                    ? "bg-white border border-[#D8CDB9] shadow-sm"
-                    : "hover:bg-[#E8E0D2] opacity-45 hover:opacity-70"
-                }`}
-              >
-                <div
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: p.color }}
-                />
-                <span className="text-sm font-medium text-[#1F4D46] flex-1 truncate">
-                  {p.name}
-                </span>
-                {active && (
+          <div className="space-y-1.5">
+            {PROFESSIONALS.map((p) => {
+              const active = selectedProfessionals.includes(p.name);
+              return (
+                <button
+                  key={p.name}
+                  onClick={() => toggleProfessional(p.name)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition text-left ${
+                    active
+                      ? "bg-white border border-[#D8CDB9] shadow-sm"
+                      : "hover:bg-[#E8E0D2] opacity-45 hover:opacity-70"
+                  }`}
+                >
                   <div
-                    className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                    className="w-3 h-3 rounded-full shrink-0"
                     style={{ backgroundColor: p.color }}
-                  >
-                    <Check size={9} className="text-white" strokeWidth={3} />
-                  </div>
-                )}
-              </button>
-            );
-          })}
+                  />
+                  <span className="text-sm font-medium text-[#1F4D46] flex-1 truncate">
+                    {p.name}
+                  </span>
+                  {active && (
+                    <div
+                      className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: p.color }}
+                    >
+                      <Check size={9} className="text-white" strokeWidth={3} />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Legenda de status */}
       <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-4">

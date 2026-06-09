@@ -127,13 +127,13 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/cadastro")}
               className="text-sm text-[#1F4D46] font-medium hover:opacity-70 transition hidden sm:block"
             >
               Entrar
             </button>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/cadastro")}
               className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5"
             >
               Começar grátis <ChevronRight size={14} />
@@ -158,13 +158,13 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/cadastro")}
               className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-8 py-4 rounded-2xl font-bold text-base transition flex items-center gap-2 shadow-lg shadow-[#1F4D46]/20"
             >
               Testar 14 dias grátis <ChevronRight size={16} />
             </button>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/cadastro")}
               className="border-2 border-[#D8CDB9] hover:border-[#1F4D46] text-[#1F4D46] px-8 py-4 rounded-2xl font-semibold text-base transition"
             >
               Ver demonstração
@@ -362,7 +362,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <button
-                  onClick={() => navigate("/")}
+                  onClick={() => navigate("/cadastro")}
                   className={`w-full py-3 rounded-xl font-semibold text-sm transition ${
                     plan.highlight
                       ? "bg-[#C2A56B] hover:bg-[#D4B97A] text-white"
@@ -387,7 +387,7 @@ export default function LandingPage() {
             14 dias grátis, sem compromisso.
           </p>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/cadastro")}
             className="bg-[#C2A56B] hover:bg-[#D4B97A] text-white px-10 py-4 rounded-2xl font-bold text-base transition shadow-lg"
           >
             Começar agora — grátis por 14 dias

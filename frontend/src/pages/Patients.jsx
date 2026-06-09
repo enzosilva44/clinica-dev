@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Plus, Users, Search, Sparkles, X } from "lucide-react";
+import { Plus, Users, Search, Sparkles, X, Upload } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
+import ImportPatientsModal from "../components/patients/ImportPatientsModal";
 
 function initials(name) {
   if (!name) return "?";
@@ -41,6 +42,7 @@ export default function Patients() {
   const [suggestions, setSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   async function loadReturnSuggestions() {
     setLoadingSuggestions(true);
@@ -75,6 +77,12 @@ export default function Patients() {
 
   return (
     <MainLayout>
+      {showImport && (
+        <ImportPatientsModal
+          onClose={() => setShowImport(false)}
+          onSuccess={() => { setPage(1); loadPatients(); }}
+        />
+      )}
       {/* HEADER */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -82,6 +90,13 @@ export default function Patients() {
           <p className="text-gray-500 mt-1">Gerencie os pacientes da clínica</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-2 border border-[#D8CDB9] hover:bg-[#E8E0D2] text-[#1F4D46] px-4 py-2.5 rounded-xl transition text-sm font-medium"
+          >
+            <Upload size={15} />
+            Importar
+          </button>
           <button
             onClick={loadReturnSuggestions}
             disabled={loadingSuggestions}

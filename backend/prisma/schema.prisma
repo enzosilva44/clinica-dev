@@ -26,6 +26,30 @@ model User {
   authProvider          String               @default("password")
   avatarUrl             String?
   googleId              String?              @unique
+  plan                  String               @default("solo")
+  featureOverrides      Json?
+  cardBrand             String?
+  cardLast4             String?
+  cardHolderName        String?
+  cardExpiry            String?
+  gender                String?
+  nickname              String?
+  clinicName            String?
+  specialty             String?
+  professionalId        String?
+  personType            String?
+  phone                 String?
+  cpf                   String?
+  cnpj                  String?
+  rg                    String?
+  birthDate             DateTime?
+  street                String?
+  addressNumber         String?
+  complement            String?
+  neighborhood          String?
+  city                  String?
+  state                 String?
+  zipCode               String?
   asaasApiKey           String?
   whatsappAccessToken   String?
   whatsappPhoneNumberId String?
@@ -58,6 +82,8 @@ model Patient {
   birthDate        DateTime?
   document         String?
   observations     String?
+  aiSummary        String?
+  aiSummaryAt      DateTime?
   clinicId         String?
   userId           String
   createdAt        DateTime          @default(now())

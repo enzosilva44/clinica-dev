@@ -13,14 +13,30 @@ import {
 const router = Router();
 router.use(authMiddleware);
 
-// 1. Resumo do histórico do paciente
+// 1. Resumo do histórico do paciente — gera, salva e retorna
 router.post("/patient-summary/:patientId", async (req, res) => {
   try {
-    const summary = await generatePatientSummary(
-      req.params.patientId,
-      req.user.id
-    );
+    const { prisma } = await import("../../config/prisma.js");
+    const summary = await generatePatientSummary(req.params.patientId, req.user.id);
+    await prisma.patient.updateMany({
+      where: { id: req.params.patientId, userId: req.user.id },
+      data: { aiSummary: summary, aiSummaryAt: new Date() },
+    });
     res.json({ summary });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 1b. Busca resumo salvo sem gerar novo
+router.get("/patient-summary/:patientId", async (req, res) => {
+  try {
+    const { prisma } = await import("../../config/prisma.js");
+    const patient = await prisma.patient.findFirst({
+      where: { id: req.params.patientId, userId: req.user.id },
+      select: { aiSummary: true, aiSummaryAt: true },
+    });
+    res.json({ summary: patient?.aiSummary ?? null, updatedAt: patient?.aiSummaryAt ?? null });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

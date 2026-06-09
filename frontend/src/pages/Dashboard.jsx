@@ -7,13 +7,29 @@ import {
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { useFeatures } from "../hooks/useFeatures";
 
-const FALLBACK_QUOTES = [
+const DAILY_QUOTES = [
   "Cada atendimento é uma oportunidade de transformar autoestima em confiança.",
   "Excelência não é um ato, é um hábito cultivado dia a dia.",
   "Harmonia entre arte e ciência — é isso que você pratica todos os dias.",
   "Você não apenas realiza procedimentos — você transforma histórias.",
+  "Cuidar com precisão é uma forma de respeito. Seu trabalho mostra isso.",
+  "A consistência nos pequenos detalhes cria resultados extraordinários.",
+  "Cada paciente que sai satisfeito carrega sua dedicação para o mundo.",
+  "Arte, técnica e empatia: a tríade de quem transforma vidas.",
+  "O cuidado que você oferece hoje planta confiança para amanhã.",
+  "Resultados naturais são o maior elogio à sua habilidade.",
+  "A beleza que você realça já estava lá — você apenas a revelou.",
+  "Cada detalhe importa. Você já sabe disso melhor do que ninguém.",
+  "Transformar autoestima é transformar qualidade de vida.",
+  "Seu cuidado com cada paciente é o que diferencia um atendimento inesquecível.",
 ];
+
+function getDailyQuote() {
+  const day = Math.floor(Date.now() / 86400000);
+  return DAILY_QUOTES[day % DAILY_QUOTES.length];
+}
 
 const PROFESSIONAL_COLORS = {
   "Dra Ana":    "#1F4D46",
@@ -25,21 +41,14 @@ function getGreeting() {
   const h = new Date().getHours();
   if (h >= 5 && h < 12) return "Bom dia";
   if (h >= 12 && h < 18) return "Boa tarde";
-  return "Boa noite Dr. Enzo";
+  return "Boa noite";
 }
 
-function getFirstName(name = "") {
-  const parts = name.trim().split(" ");
-  if (parts[0].match(/^Dr[a]?\.?$/i) && parts[1]) return `${parts[0]} ${parts[1]}`;
-  return parts[0];
+function getDisplayName(user) {
+  const prefix = user?.gender === "F" ? "Dra." : user?.gender === "M" ? "Dr." : "";
+  const name   = user?.nickname?.trim() || user?.name?.trim().split(" ")[0] || "";
+  return prefix ? `${prefix} ${name}` : name;
 }
-
-function getFallbackQuote() {
-  const day = Math.floor(Date.now() / 86400000);
-  return FALLBACK_QUOTES[day % FALLBACK_QUOTES.length];
-}
-
-const TODAY_KEY = `daily_insight_${new Date().toISOString().slice(0, 10)}`;
 
 function professionalColor(name) {
   return PROFESSIONAL_COLORS[name] ?? "#1F4D46";
@@ -54,10 +63,11 @@ const QUICK_ACCESS = [
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const features  = useFeatures();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dailyInsight, setDailyInsight] = useState(localStorage.getItem(TODAY_KEY) || "");
+  const dailyInsight = getDailyQuote();
 
   useEffect(() => {
     api.get("/dashboard/stats")
@@ -66,15 +76,6 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (dailyInsight) return;
-    api.get("/ai/daily-insight")
-      .then((res) => {
-        setDailyInsight(res.data.phrase);
-        localStorage.setItem(TODAY_KEY, res.data.phrase);
-      })
-      .catch(() => setDailyInsight(getFallbackQuote()));
-  }, []);
 
   const today = new Date().toLocaleDateString("pt-BR", {
     weekday: "long", day: "2-digit", month: "long",
@@ -94,8 +95,7 @@ export default function Dashboard() {
             {today}
           </p>
           <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-            {getGreeting()},<br />
-            {getFirstName(user?.name)}!
+            {getGreeting()}, {getDisplayName(user)}!
           </h1>
           <p className="text-white/60 mt-3 text-sm max-w-lg leading-relaxed italic">
             {dailyInsight ? `"${dailyInsight}"` : <span className="animate-pulse">Gerando frase do dia…</span>}
@@ -238,7 +238,7 @@ export default function Dashboard() {
                     hour: "2-digit", minute: "2-digit",
                   })
                 : null;
-              const color = professionalColor(appt.professional);
+              const color = features.multiProfessional ? professionalColor(appt.professional) : "#1F4D46";
               const isPast = new Date(appt.endsAt ?? appt.startsAt) < new Date();
               const isNow =
                 new Date(appt.startsAt) <= new Date() &&
@@ -276,7 +276,7 @@ export default function Dashboard() {
                     </p>
                     <p className="text-xs text-gray-400 truncate">
                       {appt.procedureType || "Sem procedimento"}
-                      {appt.professional ? ` · ${appt.professional}` : ""}
+                      {features.multiProfessional && appt.professional ? ` · ${appt.professional}` : ""}
                     </p>
                   </div>
 

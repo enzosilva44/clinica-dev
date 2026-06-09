@@ -8,6 +8,8 @@ import { fileURLToPath } from "url";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { prisma } from "../../config/prisma.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { requireFeature } from "../../middlewares/feature.middleware.js";
+import { getFeatures } from "../../config/features.js";
 import { requestOtp, validateOtp } from "../signature/otp.service.js";
 
 const router = Router();
@@ -53,6 +55,23 @@ function formatDateTime(date) {
     timeStyle: "medium",
     timeZone: "UTC",
   }).format(date);
+}
+
+const documentsAccess = [authMiddleware, requireFeature("documents")];
+
+async function userHasDocumentsAccess(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, plan: true, featureOverrides: true },
+  });
+  if (!user) return false;
+  if (user.role === "ADMIN") return true;
+
+  const features = {
+    ...getFeatures(user.plan),
+    ...(user.featureOverrides ?? {}),
+  };
+  return Boolean(features.documents);
 }
 
 async function generateSignedPdf({ patientDocument, fields, fieldValues, audit }) {
@@ -248,15 +267,29 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   fileFilter: (_req, file, cb) => {
-    if (file.mimetype === "application/pdf") cb(null, true);
+    const isPdf = file.mimetype === "application/pdf" || /\.pdf$/i.test(file.originalname);
+    if (isPdf) cb(null, true);
     else cb(new Error("Apenas PDFs são permitidos"), false);
   },
   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
 });
 
+function handlePdfUpload(req, res, next) {
+  upload.single("file")(req, res, (error) => {
+    if (!error) return next();
+
+    const message =
+      error.code === "LIMIT_FILE_SIZE"
+        ? "Arquivo excede o limite de 20 MB"
+        : error.message || "Erro ao processar arquivo";
+
+    return res.status(400).json({ error: message });
+  });
+}
+
 // --- Pasta Sanitária ---
 
-router.get("/", authMiddleware, async (req, res) => {
+router.get("/", ...documentsAccess, async (req, res) => {
   try {
     const docs = await prisma.document.findMany({
       where: { userId: req.user.id },
@@ -268,7 +301,7 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-router.post("/upload", authMiddleware, upload.single("file"), async (req, res) => {
+router.post("/upload", ...documentsAccess, handlePdfUpload, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Arquivo obrigatório" });
     const { name, type } = req.body;
@@ -288,7 +321,7 @@ router.post("/upload", authMiddleware, upload.single("file"), async (req, res) =
   }
 });
 
-router.put("/:id", authMiddleware, async (req, res) => {
+router.put("/:id", ...documentsAccess, async (req, res) => {
   try {
     const doc = await prisma.document.findFirst({
       where: { id: req.params.id, userId: req.user.id },
@@ -308,7 +341,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-router.delete("/:id", authMiddleware, async (req, res) => {
+router.delete("/:id", ...documentsAccess, async (req, res) => {
   try {
     const doc = await prisma.document.findFirst({
       where: { id: req.params.id, userId: req.user.id },
@@ -345,6 +378,9 @@ router.get("/:id/file", async (req, res) => {
     } catch {
       return res.status(401).json({ error: "Token inválido" });
     }
+    if (!(await userHasDocumentsAccess(userId))) {
+      return res.status(403).json({ error: "Recurso não disponível no plano atual." });
+    }
 
     const doc = await prisma.document.findFirst({
       where: { id: req.params.id, userId },
@@ -362,7 +398,7 @@ router.get("/:id/file", async (req, res) => {
 
 // --- Patient Documents ---
 
-router.get("/patient/:patientId", authMiddleware, async (req, res) => {
+router.get("/patient/:patientId", ...documentsAccess, async (req, res) => {
   try {
     const docs = await prisma.patientDocument.findMany({
       where: { patientId: req.params.patientId, userId: req.user.id },
@@ -388,6 +424,9 @@ router.get("/patient-doc/:id/file", async (req, res) => {
     } catch {
       return res.status(401).json({ error: "Token inválido" });
     }
+    if (!(await userHasDocumentsAccess(userId))) {
+      return res.status(403).json({ error: "Recurso não disponível no plano atual." });
+    }
 
     const pd = await prisma.patientDocument.findFirst({
       where: { id: req.params.id, userId },
@@ -407,7 +446,7 @@ router.get("/patient-doc/:id/file", async (req, res) => {
   }
 });
 
-router.post("/send", authMiddleware, async (req, res) => {
+router.post("/send", ...documentsAccess, async (req, res) => {
   try {
     const { patientId, documentId } = req.body;
     const existing = await prisma.patientDocument.findFirst({
@@ -424,7 +463,7 @@ router.post("/send", authMiddleware, async (req, res) => {
   }
 });
 
-router.put("/patient-doc/:id/sign", authMiddleware, async (req, res) => {
+router.put("/patient-doc/:id/sign", ...documentsAccess, async (req, res) => {
   try {
     const pd = await prisma.patientDocument.findFirst({
       where: { id: req.params.id, userId: req.user.id },
@@ -553,7 +592,7 @@ router.put("/patient-doc/:id/sign", authMiddleware, async (req, res) => {
   }
 });
 
-router.delete("/patient-doc/:id", authMiddleware, async (req, res) => {
+router.delete("/patient-doc/:id", ...documentsAccess, async (req, res) => {
   try {
     const pd = await prisma.patientDocument.findFirst({
       where: { id: req.params.id, userId: req.user.id },
@@ -571,7 +610,7 @@ router.delete("/patient-doc/:id", authMiddleware, async (req, res) => {
 });
 
 // ── OTP: Solicitar código ─────────────────────────────────────────────────────
-router.post("/patient-doc/:id/request-otp", authMiddleware, async (req, res) => {
+router.post("/patient-doc/:id/request-otp", ...documentsAccess, async (req, res) => {
   try {
     const pd = await prisma.patientDocument.findFirst({
       where: { id: req.params.id, userId: req.user.id },
@@ -588,6 +627,7 @@ router.post("/patient-doc/:id/request-otp", authMiddleware, async (req, res) => 
       method,
       target,
       documentName: pd.document.name,
+      clinicUserId: req.user.id,
     });
 
     // Persiste email/telefone informado para auditoria
@@ -607,7 +647,7 @@ router.post("/patient-doc/:id/request-otp", authMiddleware, async (req, res) => 
 });
 
 // ── OTP: Validar código ───────────────────────────────────────────────────────
-router.post("/patient-doc/:id/validate-otp", authMiddleware, async (req, res) => {
+router.post("/patient-doc/:id/validate-otp", ...documentsAccess, async (req, res) => {
   try {
     const pd = await prisma.patientDocument.findFirst({
       where: { id: req.params.id, userId: req.user.id },

@@ -151,6 +151,7 @@ function MethodBadge({ method }) {
 function ChargeDetailModal({ charge, onClose, onSimulate }) {
   const [copied, setCopied] = useState(false);
   const [simulating, setSimulating] = useState(false);
+  const [sendingLink, setSendingLink] = useState(false);
 
   function copy(text) {
     navigator.clipboard.writeText(text);
@@ -166,6 +167,18 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
       onClose();
     } finally {
       setSimulating(false);
+    }
+  }
+
+  async function handleSendLink() {
+    setSendingLink(true);
+    try {
+      await api.post(`/billing/charges/${charge.id}/send-link`);
+      toast.success("Link enviado via WhatsApp!");
+    } catch (err) {
+      toast.error(err.response?.data?.error ?? "Erro ao enviar link");
+    } finally {
+      setSendingLink(false);
     }
   }
 
@@ -242,9 +255,14 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
                   className="flex-1 flex items-center justify-center gap-2 bg-[#1F4D46] hover:bg-[#285A50] text-white py-2.5 rounded-xl text-xs font-semibold transition">
                   <Copy size={13} /> Copiar link
                 </button>
-                <button onClick={() => toast("Envio via WhatsApp disponível com integração")}
-                  className="flex-1 flex items-center justify-center gap-2 border border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2] py-2.5 rounded-xl text-xs font-semibold transition">
-                  <ExternalLink size={13} /> Enviar link
+                <button
+                  onClick={handleSendLink}
+                  disabled={sendingLink}
+                  className="flex-1 flex items-center justify-center gap-2 border border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2] py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-60">
+                  {sendingLink
+                    ? <RefreshCw size={13} className="animate-spin" />
+                    : <ExternalLink size={13} />}
+                  {sendingLink ? "Enviando…" : "WhatsApp"}
                 </button>
               </div>
               <button

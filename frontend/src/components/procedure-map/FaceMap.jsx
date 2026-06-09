@@ -36,10 +36,11 @@ export default function FaceMap({
   const [tool, setTool] = useState("point");
   const [pendingMarker, setPendingMarker] = useState(null);
   const [pendingUnits, setPendingUnits] = useState("");
-  const [form, setForm] = useState({ procedure: "", dose: "", notes: "", color: "#1F4D46" });
+  const [pendingUnit, setPendingUnit] = useState("U");
+  const [form, setForm] = useState({ procedure: "", dose: "", notes: "", color: "#1F4D46", unit: "U" });
   const [hoveredId, setHoveredId] = useState(null);
   const [linePoints, setLinePoints] = useState([]);
-  const [lineForm, setLineForm] = useState({ label: "", notes: "", color: "#1F4D46", units: "" });
+  const [lineForm, setLineForm] = useState({ label: "", notes: "", color: "#1F4D46", units: "", unit: "U" });
   const [mousePos, setMousePos] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
@@ -97,12 +98,13 @@ export default function FaceMap({
       x: pendingMarker.x,
       y: pendingMarker.y,
       ...(selectedMuscle
-        ? { muscleId: selectedMuscle.id, muscleName: selectedMuscle.name, tag: selectedMuscle.tag, units, color: selectedMuscle.color }
-        : { ...form, units }),
+        ? { muscleId: selectedMuscle.id, muscleName: selectedMuscle.name, tag: selectedMuscle.tag, units, unit: pendingUnit, color: selectedMuscle.color }
+        : { ...form, units, unit: form.unit }),
     };
     onChange([...markers, marker]);
     setPendingMarker(null);
     setPendingUnits("");
+    setPendingUnit("U");
   }
 
   function confirmLine() {
@@ -113,12 +115,12 @@ export default function FaceMap({
       type: "line",
       points: linePoints,
       ...(selectedMuscle
-        ? { muscleId: selectedMuscle.id, muscleName: selectedMuscle.name, tag: selectedMuscle.tag, units, color: selectedMuscle.color }
+        ? { muscleId: selectedMuscle.id, muscleName: selectedMuscle.name, tag: selectedMuscle.tag, units, unit: lineForm.unit, color: selectedMuscle.color }
         : { ...lineForm, units }),
     };
     onChange([...markers, marker]);
     setLinePoints([]);
-    setLineForm({ label: "", notes: "", color: "#1F4D46", units: "" });
+    setLineForm({ label: "", notes: "", color: "#1F4D46", units: "", unit: "U" });
   }
 
   function removeMarker(id) { onChange(markers.filter((m) => m.id !== id)); }
@@ -149,18 +151,32 @@ export default function FaceMap({
           <div className="space-y-2.5">
             {selectedMuscle ? (
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Unidades (U)</label>
-                <input
-                  autoFocus
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={pendingUnits}
-                  onChange={(e) => setPendingUnits(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && confirmMarker()}
-                  className="w-full border border-[#C2A56B] rounded-lg p-2 text-sm"
-                  placeholder="Ex: 4"
-                />
+                <label className="text-xs text-gray-500 mb-1 block">Quantidade</label>
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={pendingUnits}
+                    onChange={(e) => setPendingUnits(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && confirmMarker()}
+                    className="flex-1 border border-[#C2A56B] rounded-lg p-2 text-sm"
+                    placeholder="Ex: 4"
+                  />
+                  <select
+                    value={pendingUnit}
+                    onChange={(e) => setPendingUnit(e.target.value)}
+                    className="border border-[#C2A56B] rounded-lg p-2 text-sm bg-white"
+                  >
+                    <option value="U">U</option>
+                    <option value="ml">ml</option>
+                    <option value="mg">mg</option>
+                    <option value="un">un</option>
+                    <option value="fios">fios</option>
+                    <option value="seringas">ser.</option>
+                  </select>
+                </div>
               </div>
             ) : (
               <>
@@ -174,9 +190,23 @@ export default function FaceMap({
                   <input value={form.procedure} onChange={(e) => setForm({ ...form, procedure: e.target.value })}
                     placeholder="Procedimento" className="w-full border border-[#C2A56B] rounded-lg p-2 text-sm" />
                 )}
-                <input value={pendingUnits} onChange={(e) => setPendingUnits(e.target.value)}
-                  type="number" min="0" step="0.5"
-                  placeholder="Unidades (U)" className="w-full border border-[#C2A56B] rounded-lg p-2 text-sm" />
+                <div className="flex gap-2">
+                  <input value={pendingUnits} onChange={(e) => setPendingUnits(e.target.value)}
+                    type="number" min="0" step="0.5"
+                    placeholder="Quantidade" className="flex-1 border border-[#C2A56B] rounded-lg p-2 text-sm" />
+                  <select
+                    value={form.unit}
+                    onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                    className="border border-[#C2A56B] rounded-lg p-2 text-sm bg-white"
+                  >
+                    <option value="U">U</option>
+                    <option value="ml">ml</option>
+                    <option value="mg">mg</option>
+                    <option value="un">un</option>
+                    <option value="fios">fios</option>
+                    <option value="seringas">ser.</option>
+                  </select>
+                </div>
                 <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   placeholder="Observação" className="w-full border border-[#C2A56B] rounded-lg p-2 text-sm" />
                 <ColorPicker color={form.color} onChange={(c) => setForm({ ...form, color: c })} />
@@ -209,23 +239,54 @@ export default function FaceMap({
           <div className="space-y-2.5">
             {selectedMuscle ? (
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Unidades (U)</label>
-                <input
-                  autoFocus
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={lineForm.units}
-                  onChange={(e) => setLineForm({ ...lineForm, units: e.target.value })}
-                  onKeyDown={(e) => e.key === "Enter" && confirmLine()}
-                  className="w-full border border-[#C2A56B] rounded-lg p-2 text-sm"
-                  placeholder={`Ex: ${selectedMuscle.defaultUnits}`}
-                />
+                <label className="text-xs text-gray-500 mb-1 block">Quantidade</label>
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={lineForm.units}
+                    onChange={(e) => setLineForm({ ...lineForm, units: e.target.value })}
+                    onKeyDown={(e) => e.key === "Enter" && confirmLine()}
+                    className="flex-1 border border-[#C2A56B] rounded-lg p-2 text-sm"
+                    placeholder={`Ex: ${selectedMuscle.defaultUnits}`}
+                  />
+                  <select
+                    value={lineForm.unit}
+                    onChange={(e) => setLineForm({ ...lineForm, unit: e.target.value })}
+                    className="border border-[#C2A56B] rounded-lg p-2 text-sm bg-white"
+                  >
+                    <option value="U">U</option>
+                    <option value="ml">ml</option>
+                    <option value="mg">mg</option>
+                    <option value="un">un</option>
+                    <option value="fios">fios</option>
+                    <option value="seringas">ser.</option>
+                  </select>
+                </div>
               </div>
             ) : (
               <>
                 <input value={lineForm.label} onChange={(e) => setLineForm({ ...lineForm, label: e.target.value })}
                   placeholder="Rótulo (ex: Botox frontal)" className="w-full border border-[#C2A56B] rounded-lg p-2 text-sm" />
+                <div className="flex gap-2">
+                  <input value={lineForm.units} onChange={(e) => setLineForm({ ...lineForm, units: e.target.value })}
+                    type="number" min="0" step="0.5"
+                    placeholder="Quantidade" className="flex-1 border border-[#C2A56B] rounded-lg p-2 text-sm" />
+                  <select
+                    value={lineForm.unit}
+                    onChange={(e) => setLineForm({ ...lineForm, unit: e.target.value })}
+                    className="border border-[#C2A56B] rounded-lg p-2 text-sm bg-white"
+                  >
+                    <option value="U">U</option>
+                    <option value="ml">ml</option>
+                    <option value="mg">mg</option>
+                    <option value="un">un</option>
+                    <option value="fios">fios</option>
+                    <option value="seringas">ser.</option>
+                  </select>
+                </div>
                 <input value={lineForm.notes} onChange={(e) => setLineForm({ ...lineForm, notes: e.target.value })}
                   placeholder="Observação" className="w-full border border-[#C2A56B] rounded-lg p-2 text-sm" />
                 <ColorPicker color={lineForm.color} onChange={(c) => setLineForm({ ...lineForm, color: c })} />
@@ -566,7 +627,7 @@ export default function FaceMap({
                     <text x={mid.x + 5} y={mid.y - 5}
                       fontSize="10" fill={m.color} fontWeight="bold" fontFamily="sans-serif"
                       style={{ pointerEvents: "none" }}>
-                      {m.units}U
+                      {m.units}{m.unit ?? "U"}
                     </text>
                   )}
                   {!m.units && m.label && (
@@ -593,7 +654,7 @@ export default function FaceMap({
                   <text x={m.x + 7} y={m.y - 4}
                     fontSize="10" fill={m.color ?? "#C0392B"} fontWeight="bold" fontFamily="sans-serif"
                     style={{ pointerEvents: "none" }}>
-                    {m.units}U
+                    {m.units}{m.unit ?? "U"}
                   </text>
                 )}
               </g>
@@ -667,8 +728,8 @@ export default function FaceMap({
                       }
                       <div>
                         <p className="text-sm font-medium text-[#1F4D46]">
-                          {m.procedure || m.label || (m.type === "line" ? `Traço ${i + 1}` : `Ponto ${i + 1}`)}
-                          {m.dose && <span className="text-xs text-gray-500 ml-1.5">({m.dose})</span>}
+                          {m.procedure || m.muscleName || m.label || (m.type === "line" ? `Traço ${i + 1}` : `Ponto ${i + 1}`)}
+                          {m.units > 0 && <span className="text-xs text-gray-500 ml-1.5">({m.units}{m.unit ?? "U"})</span>}
                         </p>
                         {m.notes && <p className="text-xs text-gray-400">{m.notes}</p>}
                       </div>

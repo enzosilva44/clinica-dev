@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FileText, Trash2, Eye, X, Plus, Settings2 } from "lucide-react";
+import { FileText, Trash2, Eye, X, Plus, Settings2, Upload } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 import toast from "react-hot-toast";
@@ -26,6 +26,10 @@ function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function isPdf(file) {
+  return file?.type === "application/pdf" || /\.pdf$/i.test(file?.name ?? "");
 }
 
 export default function Documents() {
@@ -56,7 +60,7 @@ export default function Documents() {
     e.preventDefault();
     setDragging(false);
     const f = e.dataTransfer.files[0];
-    if (f?.type === "application/pdf") {
+    if (isPdf(f)) {
       setFile(f);
       if (!form.name) setForm((p) => ({ ...p, name: f.name.replace(/\.pdf$/i, "") }));
     } else {
@@ -79,8 +83,8 @@ export default function Documents() {
       setFile(null);
       setForm({ name: "", type: "termo" });
       loadDocs();
-    } catch {
-      toast.error("Erro ao fazer upload");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Erro ao fazer upload");
     } finally {
       setUploading(false);
     }
@@ -220,7 +224,14 @@ export default function Documents() {
               >
                 <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={(e) => {
                   const f = e.target.files[0];
-                  if (f) { setFile(f); if (!form.name) setForm((p) => ({ ...p, name: f.name.replace(/\.pdf$/i, "") })); }
+                  if (!f) return;
+                  if (!isPdf(f)) {
+                    toast.error("Apenas arquivos PDF são aceitos");
+                    e.target.value = "";
+                    return;
+                  }
+                  setFile(f);
+                  if (!form.name) setForm((p) => ({ ...p, name: f.name.replace(/\.pdf$/i, "") }));
                 }} />
                 {file ? (
                   <>

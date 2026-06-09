@@ -26,41 +26,58 @@ function publicUser(user) {
     name: user.name,
     email: user.email,
     role: user.role,
+    plan: user.plan ?? "solo",
+    nickname: user.nickname,
+    gender: user.gender,
+    phone: user.phone,
+    clinicName: user.clinicName,
+    featureOverrides: user.featureOverrides ?? {},
     avatarUrl: user.avatarUrl,
     authProvider: user.authProvider,
   };
 }
 
 export async function register(req, res) {
-  const { name, email, password } = req.body;
+  const {
+    name, email, password,
+    nickname, gender, clinicName, specialty, professionalId,
+    personType, phone, cpf, cnpj, rg, birthDate,
+    street, addressNumber, complement, neighborhood, city, state, zipCode,
+    plan,
+  } = req.body;
 
-  const userExists = await prisma.user.findUnique({
-    where: {
-      email,
-    },
-  });
-
-  if (userExists) {
-    return res.status(400).json({
-      error: "Usuário já existe",
-    });
-  }
+  const userExists = await prisma.user.findUnique({ where: { email } });
+  if (userExists) return res.status(400).json({ error: "E-mail já cadastrado." });
 
   const passwordHash = await bcrypt.hash(password, 8);
 
   const user = await prisma.user.create({
     data: {
-      name,
-      email,
-      password: passwordHash,
+      name, email, password: passwordHash,
+      nickname:        nickname        || null,
+      gender:          gender          || null,
+      clinicName:      clinicName      || null,
+      specialty:       specialty       || null,
+      professionalId:  professionalId  || null,
+      personType:      personType      || "pf",
+      phone:           phone           || null,
+      cpf:             cpf             || null,
+      cnpj:            cnpj            || null,
+      rg:              rg              || null,
+      birthDate:       birthDate ? new Date(birthDate) : null,
+      street:        street        || null,
+      addressNumber: addressNumber || null,
+      complement:    complement    || null,
+      neighborhood:  neighborhood  || null,
+      city:          city          || null,
+      state:         state         || null,
+      zipCode:       zipCode       || null,
+      plan:          plan          || "solo",
     },
   });
 
-  return res.status(201).json({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-  });
+  const token = buildToken(user);
+  return res.status(201).json({ token, user: publicUser(user) });
 }
 
 export async function login(req, res) {
