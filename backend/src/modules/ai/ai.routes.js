@@ -13,6 +13,22 @@ import {
 const router = Router();
 router.use(authMiddleware);
 
+function sendAiError(res, error, context) {
+  const message = error?.message || "Erro ao processar IA.";
+  const status = message.includes("ANTHROPIC_API_KEY")
+    ? 500
+    : message.startsWith("Falha na IA")
+      ? 502
+      : 400;
+
+  console.error(`[ai:${context}]`, {
+    status,
+    message,
+  });
+
+  return res.status(status).json({ error: message });
+}
+
 // 1. Resumo do histórico do paciente — gera, salva e retorna
 router.post("/patient-summary/:patientId", async (req, res) => {
   try {
@@ -24,7 +40,7 @@ router.post("/patient-summary/:patientId", async (req, res) => {
     });
     res.json({ summary });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendAiError(res, error, "patient-summary:create");
   }
 });
 
@@ -38,7 +54,7 @@ router.get("/patient-summary/:patientId", async (req, res) => {
     });
     res.json({ summary: patient?.aiSummary ?? null, updatedAt: patient?.aiSummaryAt ?? null });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendAiError(res, error, "patient-summary:get");
   }
 });
 
@@ -48,7 +64,7 @@ router.post("/evolution-draft", async (req, res) => {
     const draft = await generateEvolutionDraft(req.body);
     res.json({ draft });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendAiError(res, error, "evolution-draft");
   }
 });
 
@@ -58,7 +74,7 @@ router.get("/return-suggestions", async (req, res) => {
     const suggestions = await generateReturnSuggestions(req.user.id);
     res.json({ suggestions });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendAiError(res, error, "return-suggestions");
   }
 });
 
@@ -72,7 +88,7 @@ router.post("/chat", async (req, res) => {
     const reply = await chatHelp(messages);
     res.json({ reply });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendAiError(res, error, "chat");
   }
 });
 
@@ -82,7 +98,7 @@ router.get("/financial-health", async (req, res) => {
     const result = await analyzeFinancialHealth(req.user.id);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendAiError(res, error, "financial-health");
   }
 });
 
@@ -96,7 +112,7 @@ router.post("/chat-reports", async (req, res) => {
     const reply = await chatReports(req.user.id, messages);
     res.json({ reply });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendAiError(res, error, "chat-reports");
   }
 });
 
@@ -106,7 +122,7 @@ router.get("/daily-insight", async (req, res) => {
     const phrase = await generateDailyInsight(req.user.id);
     res.json({ phrase });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    sendAiError(res, error, "daily-insight");
   }
 });
 

@@ -1,8 +1,24 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "../../config/prisma.js";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
+
+function getClient() {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error("ANTHROPIC_API_KEY não configurada no backend.");
+  }
+
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
+
+async function createMessage(payload) {
+  try {
+    return await getClient().messages.create(payload);
+  } catch (error) {
+    const message = error?.message || "Erro ao chamar a API da Anthropic.";
+    throw new Error(`Falha na IA (${MODEL}): ${message}`);
+  }
+}
 
 function extractJson(text) {
   // Strip markdown code blocks (```json ... ``` or ``` ... ```)
@@ -73,7 +89,7 @@ export async function generatePatientSummary(patientId, userId) {
     .filter(Boolean)
     .join("\n");
 
-  const response = await client.messages.create({
+  const response = await createMessage({
     model: MODEL,
     max_tokens: 600,
     system: [BASE_SYSTEM],
@@ -91,7 +107,7 @@ export async function generatePatientSummary(patientId, userId) {
 export async function generateEvolutionDraft(data) {
   const { procedureName, dose, region, notes, patientName } = data;
 
-  const response = await client.messages.create({
+  const response = await createMessage({
     model: MODEL,
     max_tokens: 500,
     system: [BASE_SYSTEM],
@@ -161,7 +177,7 @@ export async function generateReturnSuggestions(userId) {
     })
     .join("\n\n");
 
-  const response = await client.messages.create({
+  const response = await createMessage({
     model: MODEL,
     max_tokens: 800,
     system: [BASE_SYSTEM],
@@ -295,7 +311,7 @@ export async function analyzeFinancialHealth(userId) {
     };
   }
 
-  const response = await client.messages.create({
+  const response = await createMessage({
     model: MODEL,
     max_tokens: 1500,
     system: [BASE_SYSTEM],
@@ -550,7 +566,7 @@ Data de hoje: ${today}.`,
   const allMessages = [...messages];
 
   for (let iteration = 0; iteration < 6; iteration++) {
-    const response = await client.messages.create({
+    const response = await createMessage({
       model: MODEL,
       max_tokens: 1024,
       system: [systemPrompt],
@@ -607,7 +623,7 @@ Se a pergunta não for sobre o sistema, responda: "Posso ajudar apenas com dúvi
     cache_control: { type: "ephemeral" },
   };
 
-  const response = await client.messages.create({
+  const response = await createMessage({
     model: MODEL,
     max_tokens: 400,
     system: [systemPrompt],
@@ -660,7 +676,7 @@ ${topProc ? `- Procedimento em destaque: ${topProc}` : ""}
 
 Retorne apenas a frase, sem mais nada.`;
 
-  const response = await client.messages.create({
+  const response = await createMessage({
     model: MODEL,
     max_tokens: 80,
     messages: [{ role: "user", content: prompt }],
