@@ -31,11 +31,28 @@ export async function create(data, userId) {
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
   const discount = Math.max(Number(data.discount) || 0, 0);
   const total = Math.max(subtotal - discount, 0);
+  const validUntil = data.validUntil ? new Date(data.validUntil) : null;
+
+  const recentDuplicate = await prisma.budget.findFirst({
+    where: {
+      userId,
+      patientId: data.patientId,
+      title: data.title,
+      subtotal,
+      discount,
+      total,
+      createdAt: { gte: new Date(Date.now() - 15_000) },
+    },
+    include: { items: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (recentDuplicate) return recentDuplicate;
 
   const budget = await prisma.budget.create({
     data: {
       title: data.title,
-      validUntil: data.validUntil ? new Date(data.validUntil) : null,
+      validUntil,
       subtotal,
       discount,
       total,

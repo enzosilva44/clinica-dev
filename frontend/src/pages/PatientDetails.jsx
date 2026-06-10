@@ -45,6 +45,7 @@ export default function PatientDetails() {
   const [allDocs, setAllDocs] = useState([]);
   const [signingDoc, setSigningDoc] = useState(null);
   const [budgets, setBudgets] = useState([]);
+  const [savingBudget, setSavingBudget] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [budgetForm, setBudgetForm] = useState(() => ({
@@ -84,7 +85,7 @@ export default function PatientDetails() {
       setAiSummary(res.data.summary);
       setAiSummaryAt(new Date().toISOString());
     } catch (error) {
-      toast.error("Erro ao gerar resumo");
+      toast.error(error.response?.data?.error || "Erro ao gerar resumo");
     } finally {
       setLoadingSummary(false);
     }
@@ -261,10 +262,12 @@ export default function PatientDetails() {
   }
 
   async function createBudget() {
+    if (savingBudget) return;
     const validItems = budgetForm.items.filter((item) => item.procedureName);
     if (!budgetForm.title.trim()) return toast.error("Informe o título do orçamento");
     if (validItems.length === 0) return toast.error("Adicione ao menos um procedimento");
 
+    setSavingBudget(true);
     try {
       await api.post("/budgets", {
         patientId: id,
@@ -290,6 +293,8 @@ export default function PatientDetails() {
       loadBudgets();
     } catch (error) {
       toast.error(error?.response?.data?.error ?? "Erro ao criar orçamento");
+    } finally {
+      setSavingBudget(false);
     }
   }
 
@@ -1382,9 +1387,10 @@ export default function PatientDetails() {
                   </button>
                   <button
                     onClick={createBudget}
-                    className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-5 py-2 rounded-xl text-sm font-medium transition"
+                    disabled={savingBudget}
+                    className="bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-60 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
                   >
-                    Criar orçamento
+                    {savingBudget ? "Criando…" : "Criar orçamento"}
                   </button>
                 </div>
               </div>

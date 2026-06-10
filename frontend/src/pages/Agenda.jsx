@@ -89,6 +89,7 @@ export default function Agenda() {
   const [sendWhatsApp, setSendWhatsApp] = useState(false);
   const [whatsappMessage, setWhatsappMessage] = useState("");
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+  const [savingAppointment, setSavingAppointment] = useState(false);
   const [patientSearch, setPatientSearch] = useState("");
   const [patientResults, setPatientResults] = useState([]);
   const [showPatientDrop, setShowPatientDrop] = useState(false);
@@ -267,6 +268,8 @@ export default function Agenda() {
   }
 
   async function handleSave() {
+    if (savingAppointment) return;
+    setSavingAppointment(true);
     try {
       if (editing) {
         await api.put(`/appointments/${editing.id}`, {
@@ -328,6 +331,8 @@ export default function Agenda() {
       loadAppointments();
     } catch (error) {
       toast.error(editing ? "Erro ao atualizar agendamento" : "Erro ao criar agendamento");
+    } finally {
+      setSavingAppointment(false);
     }
   }
 
@@ -859,10 +864,10 @@ export default function Agenda() {
                 </button>
                 <button
                   onClick={handleSave}
-                  disabled={sendingWhatsApp}
+                  disabled={savingAppointment || sendingWhatsApp}
                   className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-5 py-2 rounded-xl text-sm font-medium transition disabled:opacity-60"
                 >
-                  {sendingWhatsApp ? "Enviando…" : "Salvar"}
+                  {sendingWhatsApp ? "Enviando…" : savingAppointment ? "Salvando…" : "Salvar"}
                 </button>
               </div>
             </div>

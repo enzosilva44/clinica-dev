@@ -14,12 +14,30 @@ export async function create(data, user) {
     throw new Error("Paciente não encontrado");
   }
 
+  const startsAt = new Date(data.startsAt);
+  const endsAt = new Date(data.endsAt);
+  const recentDuplicate = await prisma.appointment.findFirst({
+    where: {
+      userId: user.id,
+      patientId: data.patientId,
+      title: data.title,
+      startsAt,
+      endsAt,
+      procedureType: data.procedureType || null,
+      createdAt: { gte: new Date(Date.now() - 15_000) },
+    },
+    include: { patient: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (recentDuplicate) return recentDuplicate;
+
   const appointment = await prisma.appointment.create({
     data: {
       title: data.title,
       description: data.description,
-      startsAt: new Date(data.startsAt),
-      endsAt: new Date(data.endsAt),
+      startsAt,
+      endsAt,
       professional: data.professional,
       procedureType: data.procedureType,
       notes: data.notes,
