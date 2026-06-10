@@ -1,38 +1,29 @@
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 import jwt from "jsonwebtoken";
-import { fileURLToPath } from "url";
 import { prisma } from "../../config/prisma.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { deleteFile, fileExists, getFile, saveFile } from "../../providers/storage/index.js";
 
 const router = Router();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadsDir = path.resolve(__dirname, "../../../uploads");
-const photosDir = path.join(uploadsDir, "photos");
-if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir, { recursive: true });
-
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, photosDir),
-  filename: (_req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-    cb(null, `${unique}${path.extname(file.originalname)}`);
-  },
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter: (_req, file, cb) => {
     if (ALLOWED_TYPES.includes(file.mimetype)) cb(null, true);
     else cb(new Error("Apenas imagens são permitidas (JPG, PNG, WebP)"), false);
   },
   limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
 });
+
+function storageKey({ userId, patientId, originalName }) {
+  const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+  const extension = path.extname(originalName) || ".jpg";
+  return path.posix.join("photos", userId, patientId, `${unique}${extension}`);
+}
 
 // List photos for a patient
 router.get("/patient/:patientId", authMiddleware, async (req, res) => {
@@ -60,19 +51,25 @@ router.post("/patient/:patientId", authMiddleware, (req, res, next) => {
   try {
     if (!req.files?.length) return res.status(400).json({ error: "Nenhuma imagem enviada" });
 
-    const created = await prisma.$transaction(
-      req.files.map((file) =>
-        prisma.patientPhoto.create({
+    const created = await Promise.all(
+      req.files.map(async (file) => {
+        const filePath = storageKey({
+          userId: req.user.id,
+          patientId: req.params.patientId,
+          originalName: file.originalname,
+        });
+        await saveFile(file.buffer, filePath, file.mimetype);
+        return prisma.patientPhoto.create({
           data: {
             fileName: file.originalname,
-            filePath: path.join("photos", file.filename),
+            filePath,
             fileSize: file.size,
             mimeType: file.mimetype,
             patientId: req.params.patientId,
             userId: req.user.id,
           },
-        })
-      )
+        });
+      })
     );
     res.status(201).json(created);
   } catch (e) {
@@ -98,12 +95,12 @@ router.get("/:id/file", async (req, res) => {
     });
     if (!photo) return res.status(404).json({ error: "Foto não encontrada" });
 
-    const filePath = path.join(uploadsDir, photo.filePath);
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Arquivo não encontrado" });
+    if (!(await fileExists(photo.filePath))) return res.status(404).json({ error: "Arquivo não encontrado" });
+    const buffer = await getFile(photo.filePath);
 
     res.setHeader("Content-Type", photo.mimeType || "image/jpeg");
     res.setHeader("Cache-Control", "private, max-age=3600");
-    fs.createReadStream(filePath).pipe(res);
+    res.end(buffer);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -117,8 +114,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
     });
     if (!photo) return res.status(404).json({ error: "Foto não encontrada" });
 
-    const filePath = path.join(uploadsDir, photo.filePath);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    await deleteFile(photo.filePath);
 
     await prisma.patientPhoto.delete({ where: { id: photo.id } });
     res.json({ ok: true });

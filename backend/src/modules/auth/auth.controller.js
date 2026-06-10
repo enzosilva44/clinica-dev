@@ -106,12 +106,14 @@ export async function login(req, res) {
     });
   }
 
-  const token = buildToken(user);
-
-  return res.json({
-    token,
-    user: publicUser(user),
+  // Track login
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date(), loginCount: { increment: 1 } },
   });
+
+  const token = buildToken(user);
+  return res.json({ token, user: publicUser(user) });
 }
 
 export async function googleLogin(req, res) {
@@ -163,6 +165,8 @@ export async function googleLogin(req, res) {
           googleId: user.googleId || googleId,
           avatarUrl,
           authProvider: user.authProvider === "password" ? "password_google" : user.authProvider,
+          lastLoginAt: new Date(),
+          loginCount: { increment: 1 },
         },
       });
     } else {

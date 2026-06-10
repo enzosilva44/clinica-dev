@@ -21,6 +21,10 @@ model User {
   email                 String               @unique
   role                  Role                 @default(PROFESSIONAL)
   clinicId              String?
+  billingCycle          String    @default("mensal")
+  canceledAt            DateTime?
+  lastLoginAt           DateTime?
+  loginCount            Int                  @default(0)
   createdAt             DateTime             @default(now())
   password              String
   authProvider          String               @default("password")
@@ -469,6 +473,91 @@ model AutomationLog {
   patient      Patient?            @relation(fields: [patientId], references: [id])
   template     AutomationTemplate? @relation(fields: [templateId], references: [id])
   user         User                @relation(fields: [userId], references: [id])
+}
+
+model AdminTask {
+  id          String             @id @default(cuid())
+  title       String
+  description String?
+  priority    String             @default("media")
+  status      String             @default("backlog")
+  area        String?
+  clinicId    String?
+  dueDate     DateTime?
+  reminderAt  DateTime?
+  assignees   Json?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  comments    AdminTaskComment[]
+}
+
+model AdminTaskComment {
+  id        String    @id @default(cuid())
+  taskId    String
+  content   String
+  author    String
+  type      String    @default("comment")
+  createdAt DateTime  @default(now())
+  task      AdminTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model Lead {
+  id           String    @id @default(cuid())
+  name         String
+  email        String?
+  phone        String?
+  clinicName   String?
+  source       String?
+  status       String    @default("prospecto")
+  value        Float?
+  notes        String?
+  nextFollowUp DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model AdminFinancialEntry {
+  id             String    @id @default(cuid())
+  type           String
+  description    String
+  amount         Float
+  category       String?
+  status         String    @default("pendente")
+  clinicId       String?
+  clinicName     String?
+  planType       String?
+  paymentMethod  String?
+  dueDate        DateTime?
+  paidAt         DateTime?
+  notes          String?
+  recorrente     Boolean   @default(false)
+  recorrencia    String?
+  recorrenciaFim DateTime?
+  recorrenciaRef String?
+  createdBy      String
+  approvedBy     String?
+  approvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model AdminNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  taskId    String?
+  taskTitle String?
+  content   String
+  author    String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model CsNote {
+  id        String   @id @default(cuid())
+  clinicId  String
+  content   String
+  type      String   @default("geral")
+  createdAt DateTime @default(now())
 }
 
 enum Role {

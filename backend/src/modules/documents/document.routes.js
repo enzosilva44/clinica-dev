@@ -1,25 +1,17 @@
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { fileURLToPath } from "url";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { prisma } from "../../config/prisma.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireFeature } from "../../middlewares/feature.middleware.js";
 import { getFeatures } from "../../config/features.js";
 import { requestOtp, validateOtp } from "../signature/otp.service.js";
+import { deleteFile, fileExists, getFile, saveFile } from "../../providers/storage/index.js";
 
 const router = Router();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadsDir = path.resolve(__dirname, "../../../uploads");
-const signedUploadsDir = path.join(uploadsDir, "signed");
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-if (!fs.existsSync(signedUploadsDir)) fs.mkdirSync(signedUploadsDir, { recursive: true });
 
 function sha256(buffer) {
   return crypto.createHash("sha256").update(buffer).digest("hex");
@@ -75,12 +67,11 @@ async function userHasDocumentsAccess(userId) {
 }
 
 async function generateSignedPdf({ patientDocument, fields, fieldValues, audit }) {
-  const originalPath = path.join(uploadsDir, patientDocument.document.filePath);
-  if (!fs.existsSync(originalPath)) {
+  if (!(await fileExists(patientDocument.document.filePath))) {
     throw new Error("Arquivo original não encontrado");
   }
 
-  const originalBytes = fs.readFileSync(originalPath);
+  const originalBytes = await getFile(patientDocument.document.filePath);
   const originalHash = sha256(originalBytes);
   const pdfDoc = await PDFDocument.load(originalBytes);
   const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -245,8 +236,8 @@ async function generateSignedPdf({ patientDocument, fields, fieldValues, audit }
   const signedBuffer = Buffer.from(signedBytes);
   const signedHash = sha256(signedBuffer);
   const signedFileName = `signed-${patientDocument.id}-${Date.now()}-${sanitizeFileName(patientDocument.document.name)}.pdf`;
-  const signedFilePath = path.join("signed", signedFileName);
-  fs.writeFileSync(path.join(uploadsDir, signedFilePath), signedBuffer);
+  const signedFilePath = path.posix.join("signed", patientDocument.userId, signedFileName);
+  await saveFile(signedBuffer, signedFilePath, "application/pdf");
 
   return {
     originalHash,
@@ -256,16 +247,8 @@ async function generateSignedPdf({ patientDocument, fields, fieldValues, audit }
   };
 }
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-    cb(null, `${unique}${path.extname(file.originalname)}`);
-  },
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter: (_req, file, cb) => {
     const isPdf = file.mimetype === "application/pdf" || /\.pdf$/i.test(file.originalname);
     if (isPdf) cb(null, true);
@@ -287,6 +270,12 @@ function handlePdfUpload(req, res, next) {
   });
 }
 
+function documentStorageKey({ userId, originalName }) {
+  const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+  const extension = path.extname(originalName) || ".pdf";
+  return path.posix.join("documents", userId, `${unique}${extension}`);
+}
+
 // --- Pasta Sanitária ---
 
 router.get("/", ...documentsAccess, async (req, res) => {
@@ -305,12 +294,14 @@ router.post("/upload", ...documentsAccess, handlePdfUpload, async (req, res) => 
   try {
     if (!req.file) return res.status(400).json({ error: "Arquivo obrigatório" });
     const { name, type } = req.body;
+    const filePath = documentStorageKey({ userId: req.user.id, originalName: req.file.originalname });
+    await saveFile(req.file.buffer, filePath, "application/pdf");
     const doc = await prisma.document.create({
       data: {
         name: name || req.file.originalname.replace(/\.pdf$/i, ""),
         type: type || "termo",
         fileName: req.file.originalname,
-        filePath: req.file.filename,
+        filePath,
         fileSize: req.file.size,
         userId: req.user.id,
       },
@@ -353,11 +344,9 @@ router.delete("/:id", ...documentsAccess, async (req, res) => {
     });
     for (const patientDoc of patientDocs) {
       if (!patientDoc.signedFilePath) continue;
-      const signedPath = path.join(uploadsDir, patientDoc.signedFilePath);
-      if (fs.existsSync(signedPath)) fs.unlinkSync(signedPath);
+      await deleteFile(patientDoc.signedFilePath);
     }
-    const filePath = path.join(uploadsDir, doc.filePath);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    await deleteFile(doc.filePath);
     await prisma.document.delete({ where: { id: doc.id } });
     res.json({ ok: true });
   } catch (e) {
@@ -386,11 +375,11 @@ router.get("/:id/file", async (req, res) => {
       where: { id: req.params.id, userId },
     });
     if (!doc) return res.status(404).json({ error: "Not found" });
-    const filePath = path.join(uploadsDir, doc.filePath);
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Arquivo não encontrado" });
+    if (!(await fileExists(doc.filePath))) return res.status(404).json({ error: "Arquivo não encontrado" });
+    const buffer = await getFile(doc.filePath);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${doc.fileName}"`);
-    fs.createReadStream(filePath).pipe(res);
+    res.end(buffer);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -435,12 +424,12 @@ router.get("/patient-doc/:id/file", async (req, res) => {
     if (!pd) return res.status(404).json({ error: "Not found" });
     if (!pd.signedFilePath) return res.status(404).json({ error: "PDF assinado não encontrado" });
 
-    const filePath = path.join(uploadsDir, pd.signedFilePath);
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Arquivo assinado não encontrado" });
+    if (!(await fileExists(pd.signedFilePath))) return res.status(404).json({ error: "Arquivo assinado não encontrado" });
+    const buffer = await getFile(pd.signedFilePath);
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="assinado-${pd.document.fileName}"`);
-    fs.createReadStream(filePath).pipe(res);
+    res.end(buffer);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -599,8 +588,7 @@ router.delete("/patient-doc/:id", ...documentsAccess, async (req, res) => {
     });
     if (!pd) return res.status(404).json({ error: "Not found" });
     if (pd.signedFilePath) {
-      const signedPath = path.join(uploadsDir, pd.signedFilePath);
-      if (fs.existsSync(signedPath)) fs.unlinkSync(signedPath);
+      await deleteFile(pd.signedFilePath);
     }
     await prisma.patientDocument.delete({ where: { id: pd.id } });
     res.json({ ok: true });
