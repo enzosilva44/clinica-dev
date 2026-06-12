@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import SignatureCanvas from "react-signature-canvas";
-import { X, ChevronLeft, ChevronRight, Shield, Mail, Phone, CheckCircle, Download, RefreshCw, Loader2, Trash2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Shield, Mail, Phone, CheckCircle, Download, RefreshCw, Loader2, Trash2, Check, FlaskConical } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
@@ -372,7 +372,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                   </div>
                 )}
                 {geoStatus === "requesting" && <p className="text-xs text-gray-400 animate-pulse">Aguardando permissão…</p>}
-                {geoStatus === "granted"  && <p className="text-xs text-green-600">✓ Localização registrada</p>}
+                {geoStatus === "granted"  && <p className="text-xs text-green-600 flex items-center gap-1"><Check size={11} /> Localização registrada</p>}
                 {geoStatus === "denied"   && <p className="text-xs text-gray-400">Localização recusada — GEOLOCATION_DENIED registrado</p>}
               </div>
 
@@ -460,7 +460,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
 
               {otpTestCode && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
-                  <span className="text-amber-500 text-lg">🧪</span>
+                  <FlaskConical size={18} className="text-amber-500" />
                   <div>
                     <p className="text-xs font-semibold text-amber-700">Modo Teste</p>
                     <p className="text-xs text-amber-600">Código: <strong className="tracking-widest">{otpTestCode}</strong></p>
@@ -539,7 +539,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                 <p className="text-xs mt-1">
                   {patSigEmpty
                     ? <span className="text-gray-400">Aguardando assinatura…</span>
-                    : <span className="text-green-600 font-medium">✓ Registrada</span>}
+                    : <span className="text-green-600 font-medium inline-flex items-center gap-1"><Check size={11} /> Registrada</span>}
                 </p>
               </div>
 
@@ -565,7 +565,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                   <p className="text-xs mt-1">
                     {proSigEmpty
                       ? <span className="text-gray-400">Aguardando assinatura…</span>
-                      : <span className="text-green-600 font-medium">✓ Registrada</span>}
+                      : <span className="text-green-600 font-medium inline-flex items-center gap-1"><Check size={11} /> Registrada</span>}
                   </p>
                 </div>
               )}
@@ -603,11 +603,11 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                 <div className="flex justify-between"><span className="text-gray-500 text-xs">Assinante</span><span className="font-medium text-[#1F4D46] text-xs">{signerName}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500 text-xs">CPF</span><span className="font-medium text-[#1F4D46] text-xs">{signerCpf}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500 text-xs">E-mail</span><span className="font-medium text-[#1F4D46] text-xs">{signerEmail}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500 text-xs">Validação OTP</span><span className="font-medium text-green-600 text-xs">✓ {otpMethod}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500 text-xs">Assinatura do paciente</span><span className="font-medium text-green-600 text-xs">✓ Registrada</span></div>
-                {needsProSig && <div className="flex justify-between"><span className="text-gray-500 text-xs">Assinatura do profissional</span><span className="font-medium text-green-600 text-xs">✓ Registrada</span></div>}
+                <div className="flex justify-between"><span className="text-gray-500 text-xs">Validação OTP</span><span className="font-medium text-green-600 text-xs inline-flex items-center gap-1"><Check size={10} /> {otpMethod}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500 text-xs">Assinatura do paciente</span><span className="font-medium text-green-600 text-xs inline-flex items-center gap-1"><Check size={10} /> Registrada</span></div>
+                {needsProSig && <div className="flex justify-between"><span className="text-gray-500 text-xs">Assinatura do profissional</span><span className="font-medium text-green-600 text-xs inline-flex items-center gap-1"><Check size={10} /> Registrada</span></div>}
                 <div className="flex justify-between"><span className="text-gray-500 text-xs">Fuso horário</span><span className="font-medium text-[#1F4D46] text-xs">{timezone}</span></div>
-                {geoData && <div className="flex justify-between"><span className="text-gray-500 text-xs">Localização</span><span className="font-medium text-[#1F4D46] text-xs">✓ Registrada</span></div>}
+                {geoData && <div className="flex justify-between"><span className="text-gray-500 text-xs">Localização</span><span className="font-medium text-[#1F4D46] text-xs inline-flex items-center gap-1"><Check size={10} /> Registrada</span></div>}
               </div>
 
               <button

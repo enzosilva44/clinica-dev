@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users, Calendar, Wallet, BarChart2,
-  ArrowRight, TrendingUp, Clock, ChevronRight, Cake,
+  ArrowRight, TrendingUp, Clock, ChevronRight, Cake, PartyPopper,
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
@@ -160,15 +160,15 @@ export default function Dashboard() {
                       : "bg-white border-[#D8CDB9] hover:border-[#C4895A]/40 hover:bg-[#FDF6EE]"
                   }`}
                 >
-                  <div className={`text-lg leading-none ${p.isToday ? "animate-bounce" : ""}`}>
-                    🎂
+                  <div className={`leading-none ${p.isToday ? "animate-bounce" : ""}`}>
+                    <Cake size={18} className={p.isToday ? "text-white" : "text-[#C4895A]"} />
                   </div>
                   <div>
                     <p className={`text-xs font-semibold leading-tight truncate max-w-27.5 ${p.isToday ? "text-white" : "text-[#1F4D46]"}`}>
                       {p.name.split(" ")[0]}
                     </p>
-                    <p className={`text-[10px] mt-0.5 ${p.isToday ? "text-white/80" : "text-gray-400"}`}>
-                      {p.isToday ? "Hoje! 🎉" : `Dia ${p.day}`}
+                    <p className={`text-[10px] mt-0.5 flex items-center gap-1 ${p.isToday ? "text-white/80" : "text-gray-400"}`}>
+                      {p.isToday ? <><PartyPopper size={10} /> Hoje!</> : `Dia ${p.day}`}
                     </p>
                   </div>
                 </button>

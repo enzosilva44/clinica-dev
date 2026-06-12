@@ -16,38 +16,47 @@ export async function create(data, user) {
 
   const startsAt = new Date(data.startsAt);
   const endsAt = new Date(data.endsAt);
-  const recentDuplicate = await prisma.appointment.findFirst({
-    where: {
-      userId: user.id,
-      patientId: data.patientId,
-      title: data.title,
-      startsAt,
-      endsAt,
-      procedureType: data.procedureType || null,
-      createdAt: { gte: new Date(Date.now() - 15_000) },
-    },
-    include: { patient: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const idempotencyKey = data.idempotencyKey || null;
 
-  if (recentDuplicate) return recentDuplicate;
+  // Se já existe um appointment com essa idempotencyKey, retorna ele (request repetida)
+  if (idempotencyKey) {
+    const existing = await prisma.appointment.findUnique({
+      where: { idempotencyKey },
+      include: { patient: true },
+    });
+    if (existing) return existing;
+  }
 
-  const appointment = await prisma.appointment.create({
-    data: {
-      title: data.title,
-      description: data.description,
-      startsAt,
-      endsAt,
-      professional: data.professional,
-      procedureType: data.procedureType,
-      notes: data.notes,
-      status: data.status || "SCHEDULED",
-      color: data.color,
-      patient: { connect: { id: data.patientId } },
-      user: { connect: { id: user.id } },
-    },
-    include: { patient: true },
-  });
+  let appointment;
+  try {
+    appointment = await prisma.appointment.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        startsAt,
+        endsAt,
+        professional: data.professional,
+        procedureType: data.procedureType,
+        notes: data.notes,
+        status: data.status || "SCHEDULED",
+        color: data.color,
+        idempotencyKey,
+        patient: { connect: { id: data.patientId } },
+        user: { connect: { id: user.id } },
+      },
+      include: { patient: true },
+    });
+  } catch (error) {
+    // P2002 = violação de constraint única (race condition: outra request criou primeiro)
+    if (error.code === "P2002" && idempotencyKey) {
+      const existing = await prisma.appointment.findUnique({
+        where: { idempotencyKey },
+        include: { patient: true },
+      });
+      if (existing) return existing;
+    }
+    throw error;
+  }
 
   // busca preço do procedimento para já preencher o valor
   let amount = 0;

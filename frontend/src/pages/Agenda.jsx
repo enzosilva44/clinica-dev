@@ -4,7 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
-import { Plus, X, Trash2, Calendar, MessageSquare, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Plus, X, Trash2, Calendar, MessageSquare, TrendingUp, TrendingDown, DollarSign, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import CalendarSidebar from "../components/calendar/CalendarSidebar";
@@ -75,6 +75,7 @@ function getInitialScrollTime(date = new Date()) {
 export default function Agenda() {
   const features    = useFeatures();
   const calendarRef = useRef(null);
+  const idempotencyKeyRef = useRef(null);
   const [now, setNow] = useState(new Date());
   const [allEvents, setAllEvents] = useState([]);
   const [events, setEvents] = useState([]);
@@ -240,6 +241,7 @@ export default function Agenda() {
 
   function openCreate(info) {
     setEditing(null);
+    idempotencyKeyRef.current = crypto.randomUUID();
     const date = info?.start || new Date();
     setForm({ ...emptyForm(), selectedDate: formatForInput(date) });
     setSendWhatsApp(confirmTemplate?.isActive ?? false);
@@ -295,12 +297,15 @@ export default function Agenda() {
           notes: form.notes,
           procedureType: form.procedureType,
           status: form.status,
+          idempotencyKey: idempotencyKeyRef.current,
           txAmount: form.txAmount || undefined,
           txPaymentMethod: form.txPaymentMethod || undefined,
           txInstallments: Number(form.txInstallments) > 1 ? Number(form.txInstallments) : undefined,
           txDueDate: form.txDueDate || undefined,
           txNotes: form.txNotes || undefined,
         });
+        // Renova a chave para o próximo agendamento
+        idempotencyKeyRef.current = crypto.randomUUID();
         toast.success("Agendamento criado");
       }
 
@@ -542,7 +547,7 @@ export default function Agenda() {
                     className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
                   />
                   {form.patientId && (
-                    <span className="absolute right-3 top-9 text-[10px] text-green-600 font-medium">✓ selecionado</span>
+                    <span className="absolute right-3 top-9 text-[10px] text-green-600 font-medium inline-flex items-center gap-1"><Check size={10} /> selecionado</span>
                   )}
                   {showPatientDrop && patientResults.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-[#C2A56B] rounded-xl shadow-lg max-h-48 overflow-y-auto">

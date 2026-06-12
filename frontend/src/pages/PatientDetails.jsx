@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Sparkles, Cake, CalendarDays, ClipboardList, TrendingUp, TrendingDown, Users, FileText, Download, Trash2, Eye, Send, Plus } from "lucide-react";
+import { Sparkles, Cake, CalendarDays, ClipboardList, TrendingUp, TrendingDown, Users, FileText, Download, Trash2, Eye, Send, Plus, PartyPopper, Check } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
@@ -46,6 +46,7 @@ export default function PatientDetails() {
   const [signingDoc, setSigningDoc] = useState(null);
   const [budgets, setBudgets] = useState([]);
   const [savingBudget, setSavingBudget] = useState(false);
+  const budgetKeyRef = useRef(null);
   const [transactions, setTransactions] = useState([]);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [budgetForm, setBudgetForm] = useState(() => ({
@@ -275,6 +276,7 @@ export default function PatientDetails() {
         validUntil: budgetForm.validUntil || null,
         discount: Number(budgetForm.discount) || 0,
         observations: budgetForm.observations,
+        idempotencyKey: budgetKeyRef.current,
         txPaymentMethod: budgetForm.txPaymentMethod || null,
         txInstallments: Number(budgetForm.txInstallments) > 1 ? Number(budgetForm.txInstallments) : undefined,
         txDueDate: budgetForm.txDueDate || null,
@@ -287,6 +289,8 @@ export default function PatientDetails() {
           observation: item.observation,
         })),
       });
+      // Renova a chave para o próximo orçamento
+      budgetKeyRef.current = crypto.randomUUID();
       toast.success("Orçamento criado");
       resetBudgetForm();
       setShowBudgetForm(false);
@@ -639,8 +643,8 @@ export default function PatientDetails() {
               </div>
               {patientStats?.birthday ? (
                 <>
-                  <p className={`text-2xl font-bold leading-none ${patientStats.birthday.isToday ? "text-white" : "text-[#1F4D46]"}`}>
-                    {patientStats.birthday.age} anos{patientStats.birthday.isToday ? " 🎉" : ""}
+                  <p className={`text-2xl font-bold leading-none flex items-center gap-1.5 ${patientStats.birthday.isToday ? "text-white" : "text-[#1F4D46]"}`}>
+                    {patientStats.birthday.age} anos{patientStats.birthday.isToday && <PartyPopper size={18} />}
                   </p>
                   <p className={`text-xs mt-1.5 ${patientStats.birthday.isToday ? "text-white/80" : "text-gray-400"}`}>
                     {new Date(patientStats.birthday.date).toLocaleDateString("pt-BR")}
@@ -1028,7 +1032,7 @@ export default function PatientDetails() {
                       </span>
                       {pd.signedHash ? (
                         <span className="text-xs bg-green-100 text-green-700 font-medium px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-                          ✓ Com auditoria
+                          <Check size={11} /> Com auditoria
                         </span>
                       ) : (
                         <span className="text-xs bg-amber-100 text-amber-700 font-medium px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
@@ -1151,7 +1155,10 @@ export default function PatientDetails() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-[#1F4D46]">Orçamentos</h2>
             <button
-              onClick={() => setShowBudgetForm(!showBudgetForm)}
+              onClick={() => {
+                if (!showBudgetForm) budgetKeyRef.current = crypto.randomUUID();
+                setShowBudgetForm(!showBudgetForm);
+              }}
               className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-4 py-2 rounded-lg transition text-sm flex items-center gap-2"
             >
               <Plus size={15} />

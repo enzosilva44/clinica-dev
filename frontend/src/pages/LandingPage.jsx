@@ -255,13 +255,15 @@ export default function LandingPage() {
               ["Assinante", "Maria da Silva"],
               ["CPF", "•••.456.789-••"],
               ["Data/Hora UTC", "2026-06-08T21:15:34Z"],
-              ["OTP validado", "✓ e-mail"],
-              ["Geolocalização", "✓ Registrada"],
+              ["OTP validado", "e-mail", true],
+              ["Geolocalização", "Registrada", true],
               ["Hash SHA-256", "f2f4db7f6e2a..."],
-            ].map(([k, v]) => (
+            ].map(([k, v, checked]) => (
               <div key={k} className="flex justify-between py-2.5 border-b border-white/10 text-xs">
                 <span className="text-[#D8CDB9]/60">{k}</span>
-                <span className="text-white font-medium">{v}</span>
+                <span className="text-white font-medium inline-flex items-center gap-1">
+                  {checked && <Check size={11} className="text-green-400" />}{v}
+                </span>
               </div>
             ))}
             <p className="text-[10px] text-[#D8CDB9]/40 mt-4 leading-relaxed">

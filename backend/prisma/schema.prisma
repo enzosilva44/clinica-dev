@@ -113,21 +113,22 @@ model Patient {
 }
 
 model Budget {
-  id           String        @id @default(cuid())
-  title        String
-  validUntil   DateTime?
-  subtotal     Float         @default(0)
-  discount     Float         @default(0)
-  total        Float         @default(0)
-  observations String?
-  patientId    String
-  userId       String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  patient      Patient       @relation(fields: [patientId], references: [id])
-  user         User          @relation(fields: [userId], references: [id])
-  items        BudgetItem[]
-  transactions Transaction[]
+  id             String        @id @default(cuid())
+  title          String
+  validUntil     DateTime?
+  subtotal       Float         @default(0)
+  discount       Float         @default(0)
+  total          Float         @default(0)
+  observations   String?
+  idempotencyKey String?       @unique
+  patientId      String
+  userId         String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  patient        Patient       @relation(fields: [patientId], references: [id])
+  user           User          @relation(fields: [userId], references: [id])
+  items          BudgetItem[]
+  transactions   Transaction[]
 }
 
 model BudgetItem {
@@ -144,22 +145,23 @@ model BudgetItem {
 }
 
 model Appointment {
-  id            String       @id @default(cuid())
-  title         String
-  description   String?
-  startsAt      DateTime
-  endsAt        DateTime
-  patientId     String
-  userId        String
-  createdAt     DateTime     @default(now())
-  color         String?
-  notes         String?
-  procedureType String?
-  professional  String?
-  status        String       @default("SCHEDULED")
-  patient       Patient      @relation(fields: [patientId], references: [id])
-  user          User         @relation(fields: [userId], references: [id])
-  transaction   Transaction?
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  startsAt       DateTime
+  endsAt         DateTime
+  patientId      String
+  userId         String
+  createdAt      DateTime     @default(now())
+  color          String?
+  notes          String?
+  procedureType  String?
+  professional   String?
+  status         String       @default("SCHEDULED")
+  idempotencyKey String?      @unique
+  patient        Patient      @relation(fields: [patientId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+  transaction    Transaction?
 }
 
 model Evolution {
@@ -269,6 +271,8 @@ model ProcedureMap {
   lotNumber         String?
   productName       String?
   vialPresentation  String?
+  vialQuantity      String?
+  vialUnit          String?
   patient           Patient   @relation(fields: [patientId], references: [id])
   user              User      @relation(fields: [userId], references: [id])
 }

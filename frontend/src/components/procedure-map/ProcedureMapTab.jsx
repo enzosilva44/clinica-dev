@@ -1,16 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Map, Trash2, Edit2, Check, X, Printer, RotateCcw, Save, ImageIcon, User } from "lucide-react";
+import { Plus, Map, Trash2, Edit2, Check, X, Printer, RotateCcw, Save, ImageIcon, User, ClipboardList, Pencil } from "lucide-react";
 
 const PRESET_IMAGES = [
   { value: "/face-1.png",       label: "Rosto Padrão",     desc: "Vista frontal neutra" },
   { value: "/face-musculo.png", label: "Mapa Muscular",    desc: "Com referências anatômicas" },
   { value: "/face-boca.png",    label: "Foco Boca/Lábios", desc: "Detalhamento peribucal" },
+  { value: "/corpo-1.png",       label: "Corpo Inteiro", desc: "Frente e costas" },
+  { value: "/corpo-musculo.png", label: "Glúteos",       desc: "Músculos glúteos e quadril" },
 ];
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import FaceMap from "./FaceMap";
 import Spinner from "../ui/Spinner";
-import { FACIAL_MUSCLES, TAG_COLORS, TAG_LABELS, VIAL_PRESENTATIONS } from "../../data/faceMuscles";
+import { FACIAL_MUSCLES, GLUTEAL_MUSCLES, TAG_COLORS, TAG_LABELS, vividColor } from "../../data/faceMuscles";
+
+// Grupo muscular sugerido por imagem (a pessoa pode ver os músculos em
+// qualquer imagem via checkbox; isto só define QUAL grupo aparece).
+const GLUTEAL_IMAGES = ["/corpo-1.png", "/corpo-musculo.png"];
+function muscleGroupForImage(img) {
+  return GLUTEAL_IMAGES.includes(img) ? GLUTEAL_MUSCLES : FACIAL_MUSCLES;
+}
+
+// Unidades de medida disponíveis para apresentação do frasco
+const VIAL_UNITS = ["U", "UI", "ml", "mg", "mcg", "%"];
 
 const EMPTY_FORM = {
   productName: "",
@@ -19,7 +31,8 @@ const EMPTY_FORM = {
   dilutionVolume: "",
   lotNumber: "",
   expiryDate: "",
-  vialPresentation: "100U",
+  vialQuantity: "",
+  vialUnit: "U",
   clinicalNotes: "",
 };
 
@@ -32,6 +45,9 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
   const [baseImage, setBaseImage] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [selectedMuscleId, setSelectedMuscleId] = useState(null);
+  const [showMuscles, setShowMuscles] = useState(false);
+  const skipAutoSave = useRef(true);
+  const [autoSaved, setAutoSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -54,6 +70,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
   }
 
   function openMap(map) {
+    skipAutoSave.current = true; // evita auto-save disparar ao carregar
     setSelectedId(map.id);
     setMarkers(map.markers ?? []);
     setBackgroundPhotoId(map.backgroundPhotoId ?? null);
@@ -62,6 +79,18 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     setTitleInput(map.title ?? "");
     setEditingTitle(false);
     setSelectedMuscleId(null);
+    // Retrocompat: mapas antigos usavam vialPresentation (ex: "100U").
+    // Separamos número e unidade ao carregar.
+    let vialQuantity = map.vialQuantity ?? "";
+    let vialUnit = map.vialUnit ?? "U";
+    if (!map.vialQuantity && map.vialPresentation) {
+      const match = String(map.vialPresentation).match(/^([\d.,]+)\s*(\D*)$/);
+      if (match) {
+        vialQuantity = match[1].replace(",", ".");
+        vialUnit = match[2].trim() || "U";
+      }
+    }
+
     setFormData({
       productName:     map.productName     ?? "",
       applicationDate: map.applicationDate ? map.applicationDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
@@ -69,7 +98,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
       dilutionVolume:  map.dilutionVolume  ?? "",
       lotNumber:       map.lotNumber       ?? "",
       expiryDate:      map.expiryDate      ? map.expiryDate.slice(0, 10) : "",
-      vialPresentation: map.vialPresentation ?? "100U",
+      vialQuantity,
+      vialUnit,
       clinicalNotes:   map.clinicalNotes   ?? "",
     });
   }
@@ -134,6 +164,30 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     }
   }
 
+  // ── Auto-save dos marcadores (pontos e traços) ──
+  // Salva em segundo plano sempre que o desenho muda, para nunca perder o
+  // trabalho caso a pessoa esqueça de clicar em "Salvar".
+  // Libera o auto-save logo após carregar um mapa
+  useEffect(() => {
+    if (!selectedId) return;
+    const t = setTimeout(() => { skipAutoSave.current = false; }, 100);
+    return () => clearTimeout(t);
+  }, [selectedId]);
+
+  useEffect(() => {
+    // não salva no carregamento inicial nem sem mapa selecionado
+    if (skipAutoSave.current || !selectedId) return;
+    const t = setTimeout(async () => {
+      try {
+        await api.put(`/procedure-maps/${selectedId}`, { markers });
+        setMaps((prev) => prev.map((m) => m.id === selectedId ? { ...m, markers } : m));
+        setAutoSaved(true);
+        setTimeout(() => setAutoSaved(false), 1500);
+      } catch { /* silencioso — o save manual continua disponível */ }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [markers, selectedId]);
+
   async function handleBgChange(photoId) {
     setBackgroundPhotoId(photoId);
     try {
@@ -164,19 +218,36 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     api.get(`/photos/patient/${patientId}`).then((r) => setPatientPhotos(r.data)).catch(() => {});
   }, [patientId]);
 
-  // ── Computed summary ──
-  const summary = markers
-    .filter((m) => m.muscleId)
-    .reduce((acc, m) => {
-      if (!acc[m.muscleId]) acc[m.muscleId] = { name: m.muscleName, tag: m.tag, color: m.color, count: 0, totalUnits: 0 };
-      acc[m.muscleId].count++;
-      acc[m.muscleId].totalUnits += (parseFloat(m.units) || 0);
-      return acc;
-    }, {});
-  const totalUnits = Object.values(summary).reduce((s, x) => s + x.totalUnits, 0);
   const totalPoints = markers.filter((m) => !m.type || m.type === "point").length;
 
-  const selectedMuscle = FACIAL_MUSCLES.find((m) => m.id === selectedMuscleId) ?? null;
+  // Total geral de unidades, agrupado por tipo (U, ml, mg…), incluindo
+  // todos os marcadores com quantidade — não só os de músculo.
+  const totalsByUnit = markers.reduce((acc, m) => {
+    const qty = parseFloat(m.units) || 0;
+    if (qty <= 0) return acc;
+    const u = m.unit ?? "U";
+    acc[u] = (acc[u] ?? 0) + qty;
+    return acc;
+  }, {});
+  const totalUnitEntries = Object.entries(totalsByUnit);
+  const fmtNum = (n) => (Number.isInteger(n) ? n : n.toFixed(1));
+
+  // Grupo de músculos correspondente à imagem atual (faciais ou glúteos)
+  const activeMuscles = muscleGroupForImage(baseImage);
+  const selectedMuscle = activeMuscles.find((m) => m.id === selectedMuscleId) ?? null;
+
+  // Ao desligar o checkbox, limpa o músculo selecionado
+  useEffect(() => {
+    if (!showMuscles && selectedMuscleId) setSelectedMuscleId(null);
+  }, [showMuscles, selectedMuscleId]);
+
+  // Ao trocar de imagem: limpa a seleção e liga o checkbox automaticamente
+  // se a imagem for de anatomia muscular (face-musculo / corpo-musculo).
+  useEffect(() => {
+    setSelectedMuscleId(null);
+    const isAnatomyImage = baseImage === "/face-musculo.png" || baseImage === "/corpo-musculo.png";
+    setShowMuscles(isAnatomyImage);
+  }, [baseImage]);
   const selectedMap = maps.find((m) => m.id === selectedId);
 
   function handlePrint() {
@@ -261,7 +332,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
           {/* ── HEADER ── */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-[#D8CDB9] bg-white no-print">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-base">✏️</span>
+              <Pencil size={15} className="text-[#1F4D46] shrink-0" />
               {editingTitle ? (
                 <>
                   <input autoFocus value={titleInput}
@@ -294,6 +365,11 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#C2A56B] text-gray-600 hover:bg-[#E8E0D2] transition">
                 <RotateCcw size={13} /> Limpar
               </button>
+              {autoSaved && (
+                <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                  <Check size={13} /> Salvo automaticamente
+                </span>
+              )}
               <button onClick={handleSave} disabled={saving}
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#1F4D46] text-white hover:bg-[#285A50] disabled:opacity-60 transition">
                 <Save size={13} /> {saving ? "Salvando…" : "Salvar"}
@@ -313,7 +389,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                   <button key={img.value} onClick={() => confirmBaseImage(img.value)}
                     className="group border-2 border-[#D8CDB9] hover:border-[#1F4D46] rounded-2xl overflow-hidden transition text-left">
                     <div className="bg-[#F5F1EA] flex items-center justify-center h-44 overflow-hidden">
-                      <img src={img.value} alt={img.label} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                      <img src={img.value} alt={img.label} className="h-full w-full object-contain group-hover:scale-105 transition-transform duration-200" />
                     </div>
                     <div className="p-3">
                       <p className="text-sm font-semibold text-[#1F4D46]">{img.label}</p>
@@ -407,51 +483,79 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className="text-xs text-gray-500 mb-1 block">Apresentação do Frasco</label>
-                  <select value={formData.vialPresentation}
-                    onChange={(e) => setFormData({ ...formData, vialPresentation: e.target.value })}
-                    className="w-full border border-[#C2A56B] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#1F4D46]">
-                    {VIAL_PRESENTATIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-                  </select>
+                  <div className="flex gap-2">
+                    <input type="number" min="0" step="any" value={formData.vialQuantity}
+                      onChange={(e) => setFormData({ ...formData, vialQuantity: e.target.value })}
+                      placeholder="Qtd. (ex: 100)"
+                      className="flex-1 min-w-0 border border-[#C2A56B] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#1F4D46]" />
+                    <select value={formData.vialUnit}
+                      onChange={(e) => setFormData({ ...formData, vialUnit: e.target.value })}
+                      className="w-20 shrink-0 border border-[#C2A56B] rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#1F4D46]">
+                      {VIAL_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
 
+            {/* ── Checkbox: mostrar músculos ── */}
+            <label className="flex items-center gap-2 mb-3 cursor-pointer select-none no-print w-fit">
+              <input
+                type="checkbox"
+                checked={showMuscles}
+                onChange={(e) => setShowMuscles(e.target.checked)}
+                className="w-4 h-4 accent-[#1F4D46]"
+              />
+              <span className="text-sm font-medium text-[#1F4D46]">Mostrar referência muscular</span>
+              <span className="text-xs text-gray-400">
+                ({activeMuscles === GLUTEAL_MUSCLES ? "glúteos" : "face"})
+              </span>
+            </label>
+
             {/* ── FACE + MUSCLES ── */}
             <div className="flex flex-col lg:flex-row gap-5 items-start mb-5">
-              {/* Face */}
-              <div className="w-full lg:shrink-0" style={{ maxWidth: 320 }}>
+              {/* Face — expande quando o seletor está fechado */}
+              <div className={`w-full ${showMuscles ? "lg:shrink-0" : "flex flex-col items-center"}`}
+                style={{ maxWidth: showMuscles ? 320 : 480, marginInline: showMuscles ? undefined : "auto" }}>
                 <p className="text-xs text-[#C0392B] font-medium mb-2 text-center no-print">
-                  {selectedMuscleId
-                    ? `Músculo: ${selectedMuscle?.name} — clique no rosto para marcar`
-                    : "Selecione um músculo e clique no rosto para marcar os pontos"}
+                  {showMuscles
+                    ? (selectedMuscleId
+                        ? `Músculo: ${selectedMuscle?.name} — clique para marcar`
+                        : "Selecione um músculo e clique na imagem para marcar")
+                    : "Clique na imagem para marcar os pontos de aplicação"}
                 </p>
-                <FaceMap
-                  markers={markers}
-                  onChange={setMarkers}
-                  onBgChange={handleBgChange}
-                  backgroundPhotoId={backgroundPhotoId}
-                  baseImage={baseImage ?? "/face-1.png"}
-                  procedures={procedures}
-                  patientId={patientId}
-                  selectedMuscle={selectedMuscle}
-                  compact
-                />
-                <div className="mt-2 text-center text-xs text-gray-500">
-                  <span className="font-semibold text-[#1F4D46]">{totalPoints} ponto{totalPoints !== 1 ? "s" : ""}</span>
-                  {totalUnits > 0 && <span> · <span className="font-semibold text-[#1F4D46]">{totalUnits}U total</span></span>}
+                <div className="w-full" style={{ maxWidth: showMuscles ? 320 : 480 }}>
+                  <FaceMap
+                    markers={markers}
+                    onChange={setMarkers}
+                    onBgChange={handleBgChange}
+                    backgroundPhotoId={backgroundPhotoId}
+                    baseImage={baseImage ?? "/face-1.png"}
+                    procedures={procedures}
+                    patientId={patientId}
+                    selectedMuscle={selectedMuscle}
+                    compact
+                  />
+                  <div className="mt-2 text-center text-xs text-gray-500">
+                    <span className="font-semibold text-[#1F4D46]">{totalPoints} ponto{totalPoints !== 1 ? "s" : ""}</span>
+                    {totalUnitEntries.map(([unit, total]) => (
+                      <span key={unit}> · <span className="font-semibold text-[#1F4D46]">{fmtNum(total)}{unit} total</span></span>
+                    ))}
+                  </div>
+                  {totalPoints > 0 && (
+                    <p className="text-center text-[10px] text-gray-400 mt-0.5">
+                      Clique na imagem para adicionar · Clique no ponto para editar
+                    </p>
+                  )}
                 </div>
-                {totalPoints > 0 && (
-                  <p className="text-center text-[10px] text-gray-400 mt-0.5">
-                    Clique no rosto para adicionar · Clique no ponto para editar
-                  </p>
-                )}
               </div>
 
-              {/* Muscles selector */}
+              {/* Muscles selector — só quando o checkbox está ligado */}
+              {showMuscles && (
               <div className="flex-1 min-w-0 no-print w-full lg:w-auto">
                 <p className="text-xs font-semibold text-gray-600 mb-2">Selecione os Músculos:</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1 max-h-72 lg:max-h-115 overflow-y-auto pr-1">
-                  {FACIAL_MUSCLES.map((muscle) => {
+                  {activeMuscles.map((muscle) => {
                     const isSelected = selectedMuscleId === muscle.id;
                     const used = markers.filter((mk) => mk.muscleId === muscle.id);
                     const usedUnits = used.reduce((s, mk) => s + (parseFloat(mk.units) || 0), 0);
@@ -485,36 +589,71 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                   })}
                 </div>
               </div>
+              )}
             </div>
 
             {/* ── SUMMARY ── */}
-            {Object.keys(summary).length > 0 && (
+            {markers.length > 0 && (
               <div className="bg-white border border-[#D8CDB9] rounded-xl p-4 mb-4">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">📋 Resumo da Aplicação</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 mb-3">
-                  {Object.values(summary).map((s) => (
-                    <div key={s.name} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                        <span className="text-sm text-[#1F4D46]">{s.name}</span>
-                        <span className="text-xs text-gray-400">{s.count} ponto{s.count !== 1 ? "s" : ""}</span>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5"><ClipboardList size={13} /> Resumo da Aplicação</p>
+
+                {/* Lista detalhada — cada marcador com tipo, nome, quantidade e unidade */}
+                <div className="space-y-1 mb-3">
+                  {markers.map((m, i) => {
+                    const isLine = m.type === "line";
+                    const name = m.procedure || m.muscleName || m.label || (isLine ? `Traço ${i + 1}` : `Ponto ${i + 1}`);
+                    const qty = parseFloat(m.units) || 0;
+                    const color = vividColor(m.color);
+                    return (
+                      <div key={m.id ?? i} className="flex items-center justify-between gap-2 py-1 border-b border-[#F0EBE3] last:border-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {/* ícone tipo: traço ou ponto */}
+                          {isLine
+                            ? <div className="w-4 h-1 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                            : <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                          }
+                          <span className="text-[10px] font-semibold uppercase tracking-wide shrink-0"
+                            style={{ color }}>
+                            {isLine ? "Traço" : "Ponto"}
+                          </span>
+                          <span className="text-sm text-[#1F4D46] truncate">{name}</span>
+                        </div>
+                        {qty > 0 && (
+                          <span className="text-xs font-bold shrink-0 px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: color }}>
+                            {fmtNum(qty)}{m.unit ?? "U"}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: s.color }}>
-                        {s.totalUnits}U
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-                <div className="flex items-end justify-between pt-3 border-t border-[#D8CDB9]">
+
+                {/* Contagem de pontos x traços */}
+                <div className="flex items-center gap-4 text-xs text-gray-500 mb-3 pb-3 border-b border-[#D8CDB9]">
+                  <span className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                    {markers.filter((m) => !m.type || m.type === "point").length} ponto(s)
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <div className="w-4 h-1 rounded-full bg-gray-400" />
+                    {markers.filter((m) => m.type === "line").length} traço(s)
+                  </span>
+                </div>
+
+                <div className="flex items-end justify-between">
                   <div>
-                    <p className="text-xs text-gray-400">Total de Unidades</p>
-                    <p className="text-3xl font-black text-[#1F4D46]">{totalUnits}U</p>
+                    <p className="text-xs text-gray-400">Total Aplicado</p>
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                      {totalUnitEntries.length > 0 ? totalUnitEntries.map(([unit, total]) => (
+                        <p key={unit} className="text-3xl font-black text-[#1F4D46]">{fmtNum(total)}<span className="text-lg">{unit}</span></p>
+                      )) : <p className="text-3xl font-black text-[#1F4D46]">0</p>}
+                    </div>
                   </div>
                   {formData.productName && (
                     <div className="text-right">
                       <p className="text-xs text-gray-400">Produto</p>
                       <p className="text-sm font-semibold text-[#1F4D46]">{formData.productName}</p>
-                      {formData.vialPresentation && <p className="text-xs text-gray-400">{formData.vialPresentation}</p>}
+                      {formData.vialQuantity && <p className="text-xs text-gray-400">{formData.vialQuantity}{formData.vialUnit}</p>}
                     </div>
                   )}
                 </div>

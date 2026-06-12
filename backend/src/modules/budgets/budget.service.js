@@ -32,39 +32,47 @@ export async function create(data, userId) {
   const discount = Math.max(Number(data.discount) || 0, 0);
   const total = Math.max(subtotal - discount, 0);
   const validUntil = data.validUntil ? new Date(data.validUntil) : null;
+  const idempotencyKey = data.idempotencyKey || null;
 
-  const recentDuplicate = await prisma.budget.findFirst({
-    where: {
-      userId,
-      patientId: data.patientId,
-      title: data.title,
-      subtotal,
-      discount,
-      total,
-      createdAt: { gte: new Date(Date.now() - 15_000) },
-    },
-    include: { items: true },
-    orderBy: { createdAt: "desc" },
-  });
+  // Se já existe um budget com essa idempotencyKey, retorna ele (request repetida)
+  if (idempotencyKey) {
+    const existing = await prisma.budget.findUnique({
+      where: { idempotencyKey },
+      include: { items: true },
+    });
+    if (existing) return existing;
+  }
 
-  if (recentDuplicate) return recentDuplicate;
-
-  const budget = await prisma.budget.create({
-    data: {
-      title: data.title,
-      validUntil,
-      subtotal,
-      discount,
-      total,
-      observations: data.observations || null,
-      patientId: data.patientId,
-      userId,
-      items: {
-        create: items,
+  let budget;
+  try {
+    budget = await prisma.budget.create({
+      data: {
+        title: data.title,
+        validUntil,
+        subtotal,
+        discount,
+        total,
+        observations: data.observations || null,
+        idempotencyKey,
+        patientId: data.patientId,
+        userId,
+        items: {
+          create: items,
+        },
       },
-    },
-    include: { items: true },
-  });
+      include: { items: true },
+    });
+  } catch (error) {
+    // P2002 = violação de constraint única (race condition: outra request criou primeiro)
+    if (error.code === "P2002" && idempotencyKey) {
+      const existing = await prisma.budget.findUnique({
+        where: { idempotencyKey },
+        include: { items: true },
+      });
+      if (existing) return existing;
+    }
+    throw error;
+  }
 
   await createPending(userId, {
     budgetId: budget.id,
@@ -90,7 +98,28 @@ export async function remove(id, userId) {
     throw new Error("Orçamento não encontrado");
   }
 
-  return prisma.budget.delete({
-    where: { id },
+  // Remove o orçamento e todas as transações vinculadas a ele.
+  // No parcelamento, apenas a 1ª parcela carrega o budgetId — as demais
+  // compartilham o installmentGroupId. Por isso buscamos o grupo e apagamos
+  // todas as parcelas, evitando órfãs que continuariam somando no total gasto.
+  return prisma.$transaction(async (tx) => {
+    const linked = await tx.transaction.findMany({
+      where: { budgetId: id, userId },
+      select: { id: true, installmentGroupId: true },
+    });
+
+    const groupIds = linked.map((t) => t.installmentGroupId).filter(Boolean);
+
+    await tx.transaction.deleteMany({
+      where: {
+        userId,
+        OR: [
+          { budgetId: id },
+          ...(groupIds.length ? [{ installmentGroupId: { in: groupIds } }] : []),
+        ],
+      },
+    });
+
+    return tx.budget.delete({ where: { id } });
   });
 }

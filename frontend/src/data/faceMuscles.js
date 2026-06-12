@@ -7,6 +7,9 @@ export const TAG_LABELS = {
   queixo:      "queixo",
   pescoco:     "pescoço",
   mandibula:   "mandíbula",
+  gluteo:      "glúteo",
+  quadril:     "quadril",
+  coxa:        "coxa",
 };
 
 export const TAG_COLORS = {
@@ -18,6 +21,9 @@ export const TAG_COLORS = {
   queixo:      "bg-emerald-100 text-emerald-700",
   pescoco:     "bg-teal-100 text-teal-700",
   mandibula:   "bg-red-100 text-red-700",
+  gluteo:      "bg-rose-100 text-rose-700",
+  quadril:     "bg-amber-100 text-amber-700",
+  coxa:        "bg-lime-100 text-lime-700",
 };
 
 export const FACIAL_MUSCLES = [
@@ -39,4 +45,35 @@ export const FACIAL_MUSCLES = [
   { id: "temporal",         name: "Temporal",                      tag: "mandibula",   color: "#C0392B", defaultUnits: 15, description: "Auxiliar no tratamento do bruxismo" },
 ];
 
+export const GLUTEAL_MUSCLES = [
+  { id: "gluteo_maximo",  name: "Glúteo Máximo",         tag: "gluteo",  color: "#E11D74", defaultUnits: 30, description: "Maior músculo glúteo — volume e projeção" },
+  { id: "gluteo_medio",   name: "Glúteo Médio",          tag: "gluteo",  color: "#F43F8E", defaultUnits: 20, description: "Lateral superior — contorno e arredondamento" },
+  { id: "gluteo_minimo",  name: "Glúteo Mínimo",         tag: "gluteo",  color: "#FB6FA8", defaultUnits: 12, description: "Profundo — estabilização do quadril" },
+  { id: "tensor_fascia",  name: "Tensor da Fáscia Lata", tag: "quadril", color: "#D97706", defaultUnits: 10, description: "Lateral do quadril — \"culote\"" },
+  { id: "piriforme",      name: "Piriforme",             tag: "quadril", color: "#F59E0B", defaultUnits: 8,  description: "Rotador profundo do quadril" },
+  { id: "biceps_femoral", name: "Bíceps Femoral",        tag: "coxa",    color: "#65A30D", defaultUnits: 15, description: "Posterior da coxa — transição glúteo/coxa" },
+];
+
+// Mapa de grupos musculares por imagem preset
+export const MUSCLE_GROUPS = {
+  facial:  FACIAL_MUSCLES,
+  gluteal: GLUTEAL_MUSCLES,
+};
+
 export const VIAL_PRESENTATIONS = ["50U", "100U", "200U", "300U", "500U"];
+
+// Mapeia cores antigas (escuras) para as novas vibrantes, para que
+// marcadores já salvos no banco também fiquem mais visíveis.
+const LEGACY_COLOR_MAP = {
+  "#1F4D46": "#00E676",
+  "#7C5CBF": "#B026FF",
+  "#2E6FA8": "#00B0FF",
+  "#C45E8A": "#FF2D95",
+  "#D4742A": "#FF6D00",
+  "#C0392B": "#FF1744",
+};
+
+export function vividColor(color) {
+  if (!color) return "#FF1744";
+  return LEGACY_COLOR_MAP[color.toUpperCase()] ?? LEGACY_COLOR_MAP[color] ?? color;
+}

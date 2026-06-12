@@ -27,8 +27,12 @@ export default function Clube() {
   const [plans, setPlans] = useState([]);
   const [members, setMembers] = useState([]);
   const [alerts, setAlerts] = useState([]);
-  const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Busca de paciente por nome (sem carregar lista do banco)
+  const [patientSearch, setPatientSearch] = useState("");
+  const [patientResults, setPatientResults] = useState([]);
+  const [showPatientDrop, setShowPatientDrop] = useState(false);
 
   // modal plano
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -54,18 +58,33 @@ export default function Clube() {
   const [appDate, setAppDate] = useState(new Date().toISOString().slice(0, 10));
   const [appNotes, setAppNotes] = useState("");
 
+  async function searchPatients(q) {
+    setPatientSearch(q);
+    setMemberPatientId(""); // limpa seleção ao digitar
+    if (q.trim().length < 1) { setPatientResults([]); setShowPatientDrop(false); return; }
+    try {
+      const res = await api.get("/patients", { params: { search: q, status: "active" } });
+      setPatientResults(res.data.data ?? []);
+      setShowPatientDrop(true);
+    } catch { setPatientResults([]); }
+  }
+
+  function selectPatient(p) {
+    setMemberPatientId(p.id);
+    setPatientSearch(p.name);
+    setShowPatientDrop(false);
+  }
+
   async function load() {
     try {
-      const [plansRes, membersRes, alertsRes, patientsRes] = await Promise.all([
+      const [plansRes, membersRes, alertsRes] = await Promise.all([
         api.get("/club/plans"),
         api.get("/club/members"),
         api.get("/club/alerts"),
-        api.get("/patients", { params: { status: "active", page: 1 } }),
       ]);
       setPlans(plansRes.data);
       setMembers(membersRes.data);
       setAlerts(alertsRes.data);
-      setPatients(patientsRes.data.data || []);
     } catch (e) {
       console.error(e);
       toast.error("Erro ao carregar dados do clube");
@@ -162,6 +181,7 @@ export default function Clube() {
     setShowMemberModal(false);
     setMemberPatientId(""); setMemberPlanId(""); setMemberStartDate(new Date().toISOString().slice(0, 10));
     setMemberEndDate(""); setMemberPayment(""); setMemberNotes("");
+    setPatientSearch(""); setPatientResults([]); setShowPatientDrop(false);
   }
 
   // ── Aplicações ──
@@ -472,12 +492,40 @@ export default function Clube() {
               <button onClick={closeMemberModal}><X size={20} /></button>
             </div>
             <form onSubmit={saveMember} className="space-y-4">
-              <div>
+              <div className="relative">
                 <label className="text-xs text-gray-500 block mb-1">Paciente</label>
-                <select value={memberPatientId} onChange={e => setMemberPatientId(e.target.value)} required className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm">
-                  <option value="">Selecione</option>
-                  {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+                <input
+                  type="text"
+                  value={patientSearch}
+                  onChange={e => searchPatients(e.target.value)}
+                  onFocus={() => { if (patientResults.length) setShowPatientDrop(true); }}
+                  placeholder="Digite o nome do paciente…"
+                  autoComplete="off"
+                  className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:border-[#1F4D46]"
+                />
+                {/* input oculto para garantir validação required do form */}
+                <input type="text" value={memberPatientId} required readOnly tabIndex={-1}
+                  className="sr-only" aria-hidden="true" />
+                {showPatientDrop && patientResults.length > 0 && (
+                  <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-[#D8CDB9] rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    {patientResults.map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => selectPatient(p)}
+                        className="w-full text-left px-3 py-2.5 text-sm hover:bg-[#F5F1EA] transition flex flex-col"
+                      >
+                        <span className="font-medium text-[#1F4D46]">{p.name}</span>
+                        {p.phone && <span className="text-xs text-gray-400">{p.phone}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showPatientDrop && patientSearch.trim() && patientResults.length === 0 && (
+                  <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-[#D8CDB9] rounded-xl shadow-lg px-3 py-2.5 text-sm text-gray-400">
+                    Nenhum paciente encontrado
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-xs text-gray-500 block mb-1">Plano</label>

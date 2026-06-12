@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FileText, Trash2, Eye, X, Plus, Settings2, Upload } from "lucide-react";
+import { FileText, Trash2, Eye, X, Plus, Settings2, Upload, Check } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 import toast from "react-hot-toast";
@@ -163,8 +163,8 @@ export default function Documents() {
                 </span>
                 {/* Badge: campos configurados */}
                 {(doc.fields ?? []).some((f) => f.type === "patient_sig") ? (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0 hidden sm:inline">
-                    ✓ Campos configurados
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0 hidden sm:inline-flex items-center gap-1">
+                    <Check size={10} /> Campos configurados
                   </span>
                 ) : (
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 shrink-0 hidden sm:inline">

@@ -3,7 +3,7 @@ import {
   Plus, X, TrendingUp, TrendingDown, DollarSign, Clock,
   CheckCircle2, Filter, CalendarDays, FileText, Layers,
   Wallet, AlertTriangle, Repeat2, Pencil, Download,
-  ShieldCheck, ShieldAlert, RefreshCw, Info, Sparkles,
+  ShieldCheck, ShieldAlert, RefreshCw, Info, Sparkles, Zap,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
@@ -1166,7 +1166,7 @@ export default function Financeiro() {
                         {tx.category && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white inline-flex items-center gap-1"
                             style={{ backgroundColor: CAT_COLORS[tx.category] || "#9ca3af" }}>
-                            {tx.category === "Faturamento" && <span>⚡</span>}
+                            {tx.category === "Faturamento" && <Zap size={10} />}
                             {tx.category}
                           </span>
                         )}
@@ -1336,7 +1336,7 @@ export default function Financeiro() {
                         {tx.category ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white inline-flex items-center gap-1"
                             style={{ backgroundColor: CAT_COLORS[tx.category] || "#9ca3af" }}>
-                            {tx.category === "Faturamento" && <span>⚡</span>}
+                            {tx.category === "Faturamento" && <Zap size={10} />}
                             {tx.category}
                           </span>
                         ) : <span className="text-xs text-gray-300">—</span>}

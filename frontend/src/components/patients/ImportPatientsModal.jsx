@@ -1,7 +1,7 @@
 import { useRef, useState, useMemo } from "react";
 import {
   X, Upload, FileSpreadsheet, CheckCircle, AlertCircle,
-  ChevronDown, AlertTriangle, RefreshCw, Users,
+  ChevronDown, AlertTriangle, RefreshCw, Users, XCircle,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import api from "../../services/api";
@@ -78,10 +78,10 @@ function applyMapping(rows, mapping) {
 // ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  new:            { label: "Novo",                color: "text-green-600",  bg: "bg-green-50  border-green-100",  icon: "✅", defaultSelected: true  },
-  similar:        { label: "Possível duplicata",  color: "text-amber-600",  bg: "bg-amber-50  border-amber-100",  icon: "⚠️", defaultSelected: false },
-  exists:         { label: "Já existe no sistema",color: "text-red-500",    bg: "bg-red-50    border-red-100",    icon: "❌", defaultSelected: false },
-  duplicate_file: { label: "Repetido no arquivo", color: "text-gray-400",   bg: "bg-gray-50   border-gray-200",   icon: "🔁", defaultSelected: false },
+  new:            { label: "Novo",                color: "text-green-600",  bg: "bg-green-50  border-green-100",  icon: CheckCircle,   defaultSelected: true  },
+  similar:        { label: "Possível duplicata",  color: "text-amber-600",  bg: "bg-amber-50  border-amber-100",  icon: AlertTriangle, defaultSelected: false },
+  exists:         { label: "Já existe no sistema",color: "text-red-500",    bg: "bg-red-50    border-red-100",    icon: XCircle,       defaultSelected: false },
+  duplicate_file: { label: "Repetido no arquivo", color: "text-gray-400",   bg: "bg-gray-50   border-gray-200",   icon: RefreshCw,     defaultSelected: false },
 };
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -333,13 +333,16 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
             <div className="space-y-3">
               {/* Summary bar */}
               <div className="grid grid-cols-4 gap-2">
-                {Object.entries(STATUS_CONFIG).map(([status, cfg]) => (
-                  <div key={status} className={`rounded-xl border px-3 py-2.5 text-center ${cfg.bg}`}>
-                    <p className="text-lg leading-none mb-0.5">{cfg.icon}</p>
-                    <p className={`text-lg font-bold leading-none ${cfg.color}`}>{groups[status].length}</p>
-                    <p className="text-[10px] text-gray-500 mt-1 leading-tight">{cfg.label}</p>
-                  </div>
-                ))}
+                {Object.entries(STATUS_CONFIG).map(([status, cfg]) => {
+                  const Icon = cfg.icon;
+                  return (
+                    <div key={status} className={`rounded-xl border px-3 py-2.5 text-center ${cfg.bg}`}>
+                      <Icon size={18} className={`mx-auto mb-1 ${cfg.color}`} />
+                      <p className={`text-lg font-bold leading-none ${cfg.color}`}>{groups[status].length}</p>
+                      <p className="text-[10px] text-gray-500 mt-1 leading-tight">{cfg.label}</p>
+                    </div>
+                  );
+                })}
               </div>
 
               <p className="text-xs text-gray-400 text-center">
@@ -352,11 +355,12 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                 const rows = groups[status];
                 if (rows.length === 0) return null;
                 const allOn = rows.every((r) => selected.has(r._idx));
+                const Icon = cfg.icon;
                 return (
                   <div key={status} className={`border rounded-xl overflow-hidden ${cfg.bg}`}>
                     <div className="flex items-center justify-between px-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <span>{cfg.icon}</span>
+                        <Icon size={14} className={cfg.color} />
                         <span className={`text-xs font-semibold ${cfg.color}`}>
                           {cfg.label} ({rows.length})
                         </span>

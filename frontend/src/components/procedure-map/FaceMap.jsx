@@ -1,18 +1,30 @@
 import { useRef, useState, useEffect } from "react";
 import { X, Trash2, Dot, Minus, ImageIcon } from "lucide-react";
 import api from "../../services/api";
+import { vividColor } from "../../data/faceMuscles";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const SVG_W = 320;
 const SVG_H = 460;
 
+// Proporção (altura/largura) conhecida de imagens preset, para ajustar o
+// viewBox e evitar que a imagem seja cortada (ex: boca aparecer completa).
+// Imagens não listadas têm a proporção detectada automaticamente ao carregar.
+const IMAGE_RATIOS = {
+  "/face-1.png":        1122 / 1402, // ≈ 0.80
+  "/face-musculo.png":  2245 / 1587, // ≈ 1.41
+  "/face-boca.png":     1091 / 1442, // ≈ 0.76 (larga e baixa)
+  "/corpo-1.png":       1086 / 1448, // ≈ 0.75 (corpo inteiro)
+  "/corpo-musculo.png": 1122 / 1402, // ≈ 0.80 (glúteos)
+};
+
 const MARKER_COLORS = [
-  { label: "Verde",    value: "#1F4D46" },
-  { label: "Roxo",     value: "#7C5CBF" },
-  { label: "Azul",     value: "#2E6FA8" },
-  { label: "Rosa",     value: "#C45E8A" },
-  { label: "Laranja",  value: "#D4742A" },
-  { label: "Vermelho", value: "#C0392B" },
+  { label: "Verde",    value: "#00E676" }, // verde neon
+  { label: "Roxo",     value: "#B026FF" }, // roxo elétrico
+  { label: "Azul",     value: "#00B0FF" }, // azul ciano vivo
+  { label: "Rosa",     value: "#FF2D95" }, // magenta/pink fluorescente
+  { label: "Laranja",  value: "#FF6D00" }, // laranja intenso
+  { label: "Vermelho", value: "#FF1744" }, // vermelho vibrante
 ];
 
 function photoUrl(id) {
@@ -33,6 +45,29 @@ export default function FaceMap({
   compact = false,
 }) {
   const svgRef = useRef(null);
+
+  // Proporção detectada automaticamente para imagens não listadas em IMAGE_RATIOS.
+  const [autoRatio, setAutoRatio] = useState(null);
+
+  useEffect(() => {
+    if (backgroundPhotoId || !baseImage || IMAGE_RATIOS[baseImage]) {
+      setAutoRatio(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      if (img.naturalWidth > 0) setAutoRatio(img.naturalHeight / img.naturalWidth);
+    };
+    img.src = baseImage;
+  }, [baseImage, backgroundPhotoId]);
+
+  // Altura do viewBox ajustada à proporção da imagem preset selecionada,
+  // garantindo que a imagem apareça inteira (sem cortes) — ex: boca completa.
+  const presetRatio = IMAGE_RATIOS[baseImage] ?? autoRatio;
+  const svgH = !backgroundPhotoId && presetRatio
+    ? Math.round(SVG_W * presetRatio)
+    : SVG_H;
+
   const [tool, setTool] = useState("point");
   const [pendingMarker, setPendingMarker] = useState(null);
   const [pendingUnits, setPendingUnits] = useState("");
@@ -61,7 +96,7 @@ export default function FaceMap({
     const rect = svgRef.current.getBoundingClientRect();
     return {
       x: Math.round((e.clientX - rect.left) * (SVG_W / rect.width)),
-      y: Math.round((e.clientY - rect.top) * (SVG_H / rect.height)),
+      y: Math.round((e.clientY - rect.top) * (svgH / rect.height)),
     };
   }
 
@@ -126,13 +161,23 @@ export default function FaceMap({
   function removeMarker(id) { onChange(markers.filter((m) => m.id !== id)); }
 
   function svgToPercent(x, y) {
-    return { left: `${(x / SVG_W) * 100}%`, top: `${(y / SVG_H) * 100}%` };
+    return { left: `${(x / SVG_W) * 100}%`, top: `${(y / svgH) * 100}%` };
   }
 
   function switchTool(t) { setTool(t); setLinePoints([]); setPendingMarker(null); }
 
   const pointMarkers = markers.filter((m) => !m.type || m.type === "point");
   const lineMarkers  = markers.filter((m) => m.type === "line");
+
+  // Soma total de unidades, agrupado por tipo de unidade (U, ml, mg, etc.)
+  const totalsByUnit = markers.reduce((acc, m) => {
+    const qty = parseFloat(m.units) || 0;
+    if (qty <= 0) return acc;
+    const u = m.unit ?? "U";
+    acc[u] = (acc[u] ?? 0) + qty;
+    return acc;
+  }, {});
+  const totalEntries = Object.entries(totalsByUnit);
 
   const pendingPanel = (
     <>
@@ -367,7 +412,7 @@ export default function FaceMap({
         <div className="relative">
           <svg
             ref={svgRef}
-            viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+            viewBox={`0 0 ${SVG_W} ${svgH}`}
             onClick={handleSvgClick}
             onMouseMove={handleSvgMouseMove}
             onMouseLeave={() => setMousePos(null)}
@@ -407,14 +452,14 @@ export default function FaceMap({
             {backgroundPhotoId ? (
               /* ── PATIENT PHOTO BACKGROUND ── */
               <>
-                <image href={photoUrl(backgroundPhotoId)} x="0" y="0" width={SVG_W} height={SVG_H} preserveAspectRatio="xMidYMid slice" />
-                <rect x="0" y="0" width={SVG_W} height={SVG_H} fill="transparent" />
+                <image href={photoUrl(backgroundPhotoId)} x="0" y="0" width={SVG_W} height={svgH} preserveAspectRatio="xMidYMid slice" />
+                <rect x="0" y="0" width={SVG_W} height={svgH} fill="transparent" />
               </>
             ) : baseImage ? (
               /* ── PRESET FACE IMAGE ── */
               <>
-                <image href={baseImage} x="0" y="0" width={SVG_W} height={SVG_H} preserveAspectRatio="xMidYMid slice" />
-                <rect x="0" y="0" width={SVG_W} height={SVG_H} fill="transparent" />
+                <image href={baseImage} x="0" y="0" width={SVG_W} height={svgH} preserveAspectRatio="xMidYMid meet" />
+                <rect x="0" y="0" width={SVG_W} height={svgH} fill="transparent" />
               </>
             ) : (
               /* ── BUILT-IN FACE ILLUSTRATION ── */
@@ -613,26 +658,32 @@ export default function FaceMap({
             {/* ── SAVED LINE MARKERS ── */}
             {lineMarkers.map((m) => {
               const mid = m.points[Math.floor(m.points.length / 2)];
+              const pts = m.points.map((p) => `${p.x},${p.y}`).join(" ");
+              const color = vividColor(m.color);
               return (
-                <g key={m.id} className="marker-dot" style={{ cursor: readOnly ? "default" : "pointer" }}>
-                  <polyline
-                    points={m.points.map((p) => `${p.x},${p.y}`).join(" ")}
-                    fill="none" stroke={m.color} strokeWidth="3"
-                    strokeLinecap="round" strokeLinejoin="round" opacity="0.9"
-                    onMouseEnter={() => setHoveredId(m.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                    onClick={(e) => { e.stopPropagation(); if (!readOnly) removeMarker(m.id); }}
-                  />
+                <g key={m.id} className="marker-dot" style={{ cursor: readOnly ? "default" : "pointer" }}
+                  onMouseEnter={() => setHoveredId(m.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                  onClick={(e) => { e.stopPropagation(); if (!readOnly) removeMarker(m.id); }}
+                >
+                  {/* contorno escuro por baixo — destaca a cor neon */}
+                  <polyline points={pts} fill="none" stroke="#1A1A1A" strokeWidth="5.5"
+                    strokeLinecap="round" strokeLinejoin="round" opacity="0.3" />
+                  {/* traço colorido */}
+                  <polyline points={pts} fill="none" stroke={color} strokeWidth="3.5"
+                    strokeLinecap="round" strokeLinejoin="round" />
                   {m.units > 0 && (
                     <text x={mid.x + 5} y={mid.y - 5}
-                      fontSize="10" fill={m.color} fontWeight="bold" fontFamily="sans-serif"
+                      fontSize="11" fill={color} fontWeight="bold" fontFamily="sans-serif"
+                      stroke="white" strokeWidth="0.6" paintOrder="stroke"
                       style={{ pointerEvents: "none" }}>
                       {m.units}{m.unit ?? "U"}
                     </text>
                   )}
                   {!m.units && m.label && (
                     <text x={m.points[0].x + 6} y={m.points[0].y - 5}
-                      fontSize="10" fill={m.color} fontWeight="bold" fontFamily="sans-serif"
+                      fontSize="11" fill={color} fontWeight="bold" fontFamily="sans-serif"
+                      stroke="white" strokeWidth="0.6" paintOrder="stroke"
                       style={{ pointerEvents: "none" }}>
                       {m.label}
                     </text>
@@ -642,23 +693,32 @@ export default function FaceMap({
             })}
 
             {/* ── SAVED POINT MARKERS ── */}
-            {pointMarkers.map((m) => (
-              <g key={m.id} className="marker-dot" style={{ cursor: readOnly ? "default" : "pointer" }}>
-                <circle cx={m.x} cy={m.y} r={hoveredId === m.id ? 6 : 4.5}
-                  fill={m.color ?? "#C0392B"} stroke="white" strokeWidth="1.5" opacity="0.92"
+            {pointMarkers.map((m) => {
+              const r = hoveredId === m.id ? 6.5 : 5;
+              const color = vividColor(m.color);
+              return (
+                <g key={m.id} className="marker-dot" style={{ cursor: readOnly ? "default" : "pointer" }}
                   onMouseEnter={() => setHoveredId(m.id)}
                   onMouseLeave={() => setHoveredId(null)}
                   onClick={(e) => { e.stopPropagation(); if (!readOnly) removeMarker(m.id); }}
-                />
-                {m.units > 0 && (
-                  <text x={m.x + 7} y={m.y - 4}
-                    fontSize="10" fill={m.color ?? "#C0392B"} fontWeight="bold" fontFamily="sans-serif"
-                    style={{ pointerEvents: "none" }}>
-                    {m.units}{m.unit ?? "U"}
-                  </text>
-                )}
-              </g>
-            ))}
+                >
+                  {/* anel escuro externo — destaca a cor neon sobre qualquer fundo */}
+                  <circle cx={m.x} cy={m.y} r={r + 1.5} fill="#1A1A1A" opacity="0.35" />
+                  {/* borda branca */}
+                  <circle cx={m.x} cy={m.y} r={r} fill={color} stroke="white" strokeWidth="2" />
+                  {/* brilho central */}
+                  <circle cx={m.x - r * 0.3} cy={m.y - r * 0.3} r={r * 0.3} fill="white" opacity="0.55" />
+                  {m.units > 0 && (
+                    <text x={m.x + 8} y={m.y - 5}
+                      fontSize="11" fill={color} fontWeight="bold" fontFamily="sans-serif"
+                      stroke="white" strokeWidth="0.6" paintOrder="stroke"
+                      style={{ pointerEvents: "none" }}>
+                      {m.units}{m.unit ?? "U"}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
 
             {/* ── LINE IN PROGRESS ── */}
             {linePoints.length > 0 && (
@@ -678,10 +738,13 @@ export default function FaceMap({
 
             {/* ── PENDING POINT ── */}
             {pendingMarker && (
-              <circle cx={pendingMarker.x} cy={pendingMarker.y} r={8}
-                fill={form.color} stroke="white" strokeWidth="2"
-                opacity="0.6" strokeDasharray="3,2"
-              />
+              <>
+                <circle cx={pendingMarker.x} cy={pendingMarker.y} r={9} fill="#1A1A1A" opacity="0.25" />
+                <circle cx={pendingMarker.x} cy={pendingMarker.y} r={8}
+                  fill={form.color} stroke="white" strokeWidth="2.5"
+                  opacity="0.85" strokeDasharray="3,2"
+                />
+              </>
             )}
           </svg>
 
@@ -715,16 +778,27 @@ export default function FaceMap({
           {/* MARKERS LIST */}
           {markers.length > 0 ? (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                {markers.length} marca{markers.length !== 1 ? "s" : ""}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  {markers.length} marca{markers.length !== 1 ? "s" : ""}
+                </p>
+                {totalEntries.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {totalEntries.map(([unit, total]) => (
+                      <span key={unit} className="text-xs font-semibold bg-[#1F4D46] text-white px-2.5 py-1 rounded-full">
+                        Total: {Number.isInteger(total) ? total : total.toFixed(1)} {unit}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
                 {markers.map((m, i) => (
                   <div key={m.id} className="flex items-start justify-between bg-[#F5F1EA] border border-[#D8CDB9] rounded-xl px-3 py-2">
                     <div className="flex items-start gap-2.5">
                       {m.type === "line"
-                        ? <div className="w-5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: m.color }} />
-                        : <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: m.color }} />
+                        ? <div className="w-5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: vividColor(m.color) }} />
+                        : <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: vividColor(m.color) }} />
                       }
                       <div>
                         <p className="text-sm font-medium text-[#1F4D46]">

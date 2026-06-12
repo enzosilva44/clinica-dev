@@ -71,9 +71,11 @@ router.get("/:id/stats", async (req, res) => {
       };
     }
 
-    // Financial — receita only, exclude canceled
+    // Financial — só receitas efetivamente confirmadas/pagas
+    // (exclui pendentes e canceladas, que não representam valor recebido)
+    const CONFIRMED = ["pago", "confirmado"];
     const revenue = transactions.filter(
-      (t) => t.type?.toLowerCase().includes("receita") && t.status?.toLowerCase() !== "cancelado"
+      (t) => t.type?.toLowerCase().includes("receita") && CONFIRMED.includes(t.status?.toLowerCase())
     );
     const totalSpent = revenue.reduce((s, t) => s + (t.amount || 0), 0);
     const avgTicket = revenue.length > 0 ? totalSpent / revenue.length : 0;
