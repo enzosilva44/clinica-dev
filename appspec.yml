@@ -1,0 +1,34 @@
+version: 0.0
+os: linux
+
+# Copia o conteúdo do build para a EC2
+files:
+  - source: /
+    destination: /home/ubuntu/clinica-dev
+
+# Garante que os arquivos pertençam ao usuário ubuntu
+permissions:
+  - object: /home/ubuntu/clinica-dev
+    owner: ubuntu
+    group: ubuntu
+    mode: 755
+    type:
+      - directory
+      - file
+
+# Ciclo de vida do deploy — cada hook roda um script
+hooks:
+  ApplicationStop:
+    - location: scripts/stop.sh
+      timeout: 60
+      runas: root
+
+  AfterInstall:
+    - location: scripts/after_install.sh
+      timeout: 600
+      runas: root
+
+  ApplicationStart:
+    - location: scripts/start.sh
+      timeout: 120
+      runas: root

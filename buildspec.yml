@@ -1,0 +1,32 @@
+version: 0.2
+
+# CodeBuild: instala dependências e compila backend + frontend.
+# O resultado (artifacts) é entregue ao CodeDeploy, que instala na EC2.
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+
+  build:
+    commands:
+      # ── Backend ──
+      - echo "== Backend: instalando dependências =="
+      - cd backend
+      - npm ci
+      - npx prisma generate
+      - cd ..
+
+      # ── Frontend ──
+      - echo "== Frontend: build de produção =="
+      - cd frontend
+      - npm ci
+      # VITE_API_URL é injetada pelo CodeBuild (variável de ambiente do projeto)
+      - npm run build
+      - cd ..
+
+artifacts:
+  files:
+    - "**/*"
+  # Mantém a estrutura de pastas (backend/, frontend/dist/, scripts/, appspec.yml)
+  base-directory: .
