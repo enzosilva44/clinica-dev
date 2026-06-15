@@ -5,6 +5,11 @@ set -e
 
 APP_DIR=/home/ubuntu/clinica-dev
 
+# Permite que o Nginx (www-data) leia o build do frontend.
+# A home do ubuntu é 700 — precisa do +x para "atravessar" até o dist.
+chmod o+x /home/ubuntu
+chmod -R o+rX "$APP_DIR/frontend/dist"
+
 cd "$APP_DIR/backend"
 
 # Inicia ou reinicia o backend
