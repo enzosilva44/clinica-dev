@@ -26,8 +26,9 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* ── Público ── */}
+      <Route path="/"         element={<LandingPage />} />
       <Route path="/landing"  element={<LandingPage />} />
-      <Route path="/"         element={<Login />} />
+      <Route path="/login"    element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/cadastro" element={<Signup />} />
 

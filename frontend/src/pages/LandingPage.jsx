@@ -111,6 +111,9 @@ const PLANS = [
   },
 ];
 
+// URL da área administrativa (app separado). Configurável via env.
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || "https://admin.iasoclin.online";
+
 export default function LandingPage() {
   const navigate = useNavigate();
 
@@ -126,8 +129,14 @@ export default function LandingPage() {
             <a href="#planos" className="hover:text-[#1F4D46] transition">Planos</a>
           </div>
           <div className="flex items-center gap-3">
+            <a
+              href={ADMIN_URL}
+              className="text-sm text-gray-400 font-medium hover:text-[#1F4D46] transition hidden sm:block"
+            >
+              Área Admin
+            </a>
             <button
-              onClick={() => navigate("/cadastro")}
+              onClick={() => navigate("/login")}
               className="text-sm text-[#1F4D46] font-medium hover:opacity-70 transition hidden sm:block"
             >
               Entrar
