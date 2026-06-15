@@ -13,42 +13,37 @@ phases:
     commands:
       # ── Gera o .env do backend a partir das variáveis do CodeBuild ──
       - echo "== Gerando backend/.env =="
-      - |
-        cat > backend/.env <<EOF
-        PORT=3000
-        JWT_SECRET=${JWT_SECRET}
-        ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-        DATABASE_URL=${DATABASE_URL}
-        GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-        ASAAS_API_KEY=${ASAAS_API_KEY}
-        ASAAS_URL=${ASAAS_URL}
-        WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
-        WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
-        OTP_TEST_MODE=${OTP_TEST_MODE}
-        STORAGE_PROVIDER=${STORAGE_PROVIDER}
-        AWS_REGION=${S3_REGION}
-        AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
-        AWS_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
-        AWS_S3_BUCKET=${S3_BUCKET}
-        EOF
+      - 'printf "PORT=3000\n" > backend/.env'
+      - 'printf "JWT_SECRET=%s\n" "$JWT_SECRET" >> backend/.env'
+      - 'printf "ANTHROPIC_API_KEY=%s\n" "$ANTHROPIC_API_KEY" >> backend/.env'
+      - 'printf "DATABASE_URL=%s\n" "$DATABASE_URL" >> backend/.env'
+      - 'printf "GOOGLE_CLIENT_ID=%s\n" "$GOOGLE_CLIENT_ID" >> backend/.env'
+      - 'printf "ASAAS_API_KEY=%s\n" "$ASAAS_API_KEY" >> backend/.env'
+      - 'printf "ASAAS_URL=%s\n" "$ASAAS_URL" >> backend/.env'
+      - 'printf "WHATSAPP_PHONE_NUMBER_ID=%s\n" "$WHATSAPP_PHONE_NUMBER_ID" >> backend/.env'
+      - 'printf "WHATSAPP_ACCESS_TOKEN=%s\n" "$WHATSAPP_ACCESS_TOKEN" >> backend/.env'
+      - 'printf "OTP_TEST_MODE=%s\n" "$OTP_TEST_MODE" >> backend/.env'
+      - 'printf "STORAGE_PROVIDER=%s\n" "$STORAGE_PROVIDER" >> backend/.env'
+      - 'printf "AWS_REGION=%s\n" "$S3_REGION" >> backend/.env'
+      - 'printf "AWS_ACCESS_KEY_ID=%s\n" "$S3_ACCESS_KEY_ID" >> backend/.env'
+      - 'printf "AWS_SECRET_ACCESS_KEY=%s\n" "$S3_SECRET_ACCESS_KEY" >> backend/.env'
+      - 'printf "AWS_S3_BUCKET=%s\n" "$S3_BUCKET" >> backend/.env'
 
       # ── Backend ──
-      - echo "== Backend: instalando dependências =="
+      - echo "== Backend: instalando dependencias =="
       - cd backend
       - npm ci
       - npx prisma generate
       - cd ..
 
       # ── Frontend ──
-      - echo "== Frontend: build de produção =="
+      - echo "== Frontend: build de producao =="
       - cd frontend
       - npm ci
-      # VITE_API_URL vem das variáveis de ambiente do CodeBuild
       - npm run build
       - cd ..
 
 artifacts:
   files:
     - "**/*"
-  # Mantém a estrutura de pastas (backend/ com .env, frontend/dist/, scripts/, appspec.yml)
   base-directory: .
