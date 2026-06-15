@@ -1,6 +1,7 @@
 version: 0.2
 
-# CodeBuild: instala dependências e compila backend + frontend.
+# CodeBuild: instala dependências, gera o .env do backend a partir das
+# variáveis de ambiente do projeto CodeBuild, e compila backend + frontend.
 # O resultado (artifacts) é entregue ao CodeDeploy, que instala na EC2.
 
 phases:
@@ -10,6 +11,27 @@ phases:
 
   build:
     commands:
+      # ── Gera o .env do backend a partir das variáveis do CodeBuild ──
+      - echo "== Gerando backend/.env =="
+      - |
+        cat > backend/.env <<EOF
+        PORT=3000
+        JWT_SECRET=${JWT_SECRET}
+        ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+        DATABASE_URL=${DATABASE_URL}
+        GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+        ASAAS_API_KEY=${ASAAS_API_KEY}
+        ASAAS_URL=${ASAAS_URL}
+        WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
+        WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
+        OTP_TEST_MODE=${OTP_TEST_MODE}
+        STORAGE_PROVIDER=${STORAGE_PROVIDER}
+        AWS_REGION=${S3_REGION}
+        AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
+        AWS_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
+        AWS_S3_BUCKET=${S3_BUCKET}
+        EOF
+
       # ── Backend ──
       - echo "== Backend: instalando dependências =="
       - cd backend
@@ -21,12 +43,12 @@ phases:
       - echo "== Frontend: build de produção =="
       - cd frontend
       - npm ci
-      # VITE_API_URL é injetada pelo CodeBuild (variável de ambiente do projeto)
+      # VITE_API_URL vem das variáveis de ambiente do CodeBuild
       - npm run build
       - cd ..
 
 artifacts:
   files:
     - "**/*"
-  # Mantém a estrutura de pastas (backend/, frontend/dist/, scripts/, appspec.yml)
+  # Mantém a estrutura de pastas (backend/ com .env, frontend/dist/, scripts/, appspec.yml)
   base-directory: .
