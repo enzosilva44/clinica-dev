@@ -1,43 +1,19 @@
 version: 0.2
 
-# CodeBuild: instala dependências, gera o .env do backend a partir das
-# variáveis de ambiente do projeto CodeBuild, e compila backend + frontend.
-# O resultado (artifacts) é entregue ao CodeDeploy, que instala na EC2.
-
 phases:
   install:
     runtime-versions:
       nodejs: 20
-
   build:
     commands:
-      # ── Gera o .env do backend a partir das variáveis do CodeBuild ──
-      - echo "== Gerando backend/.env =="
-      - 'printf "PORT=3000\n" > backend/.env'
-      - 'printf "JWT_SECRET=%s\n" "$JWT_SECRET" >> backend/.env'
-      - 'printf "ANTHROPIC_API_KEY=%s\n" "$ANTHROPIC_API_KEY" >> backend/.env'
-      - 'printf "DATABASE_URL=%s\n" "$DATABASE_URL" >> backend/.env'
-      - 'printf "GOOGLE_CLIENT_ID=%s\n" "$GOOGLE_CLIENT_ID" >> backend/.env'
-      - 'printf "ASAAS_API_KEY=%s\n" "$ASAAS_API_KEY" >> backend/.env'
-      - 'printf "ASAAS_URL=%s\n" "$ASAAS_URL" >> backend/.env'
-      - 'printf "WHATSAPP_PHONE_NUMBER_ID=%s\n" "$WHATSAPP_PHONE_NUMBER_ID" >> backend/.env'
-      - 'printf "WHATSAPP_ACCESS_TOKEN=%s\n" "$WHATSAPP_ACCESS_TOKEN" >> backend/.env'
-      - 'printf "OTP_TEST_MODE=%s\n" "$OTP_TEST_MODE" >> backend/.env'
-      - 'printf "STORAGE_PROVIDER=%s\n" "$STORAGE_PROVIDER" >> backend/.env'
-      - 'printf "AWS_REGION=%s\n" "$S3_REGION" >> backend/.env'
-      - 'printf "AWS_ACCESS_KEY_ID=%s\n" "$S3_ACCESS_KEY_ID" >> backend/.env'
-      - 'printf "AWS_SECRET_ACCESS_KEY=%s\n" "$S3_SECRET_ACCESS_KEY" >> backend/.env'
-      - 'printf "AWS_S3_BUCKET=%s\n" "$S3_BUCKET" >> backend/.env'
-
-      # ── Backend ──
-      - echo "== Backend: instalando dependencias =="
+      - echo Gerando backend/.env
+      - bash scripts/gen-env.sh
+      - echo Backend build
       - cd backend
       - npm ci
       - npx prisma generate
       - cd ..
-
-      # ── Frontend ──
-      - echo "== Frontend: build de producao =="
+      - echo Frontend build
       - cd frontend
       - npm ci
       - npm run build
