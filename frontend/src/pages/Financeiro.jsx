@@ -19,8 +19,8 @@ const PAYMENT_METHODS = ["Dinheiro", "PIX", "Cartão de crédito", "Cartão de d
 const CATEGORIES = ["Procedimento", "Aluguel", "Fornecedor", "Salário", "Imposto", "Marketing", "Equipamento", "Outros"];
 
 const CAT_COLORS = {
-  Procedimento: "#1F4D46", Aluguel: "#6F7F73", Fornecedor: "#C2A56B",
-  Salário: "#285A50", Imposto: "#9b6b3a", Marketing: "#4a7c74",
+  Procedimento: "#00704A", Aluguel: "#6F7F73", Fornecedor: "#CBA258",
+  Salário: "#1E3932", Imposto: "#9b6b3a", Marketing: "#4a7c74",
   Equipamento: "#8a6a3d", Faturamento: "#7C3AED", Outros: "#9ca3af",
 };
 
@@ -76,7 +76,7 @@ function downloadCSV(rows, filename) {
   URL.revokeObjectURL(url);
 }
 
-const INPUT = "w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20";
+const INPUT = "w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20";
 
 const STATUS_PILL = {
   pendente:   "bg-amber-100 text-amber-700",
@@ -96,8 +96,8 @@ const TABS = [
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-[#D8CDB9] rounded-xl p-3 shadow-lg text-xs">
-      <p className="font-semibold text-[#1F4D46] mb-1">{label}</p>
+    <div className="bg-white border border-[#DDD8CC] rounded-xl p-3 shadow-lg text-xs">
+      <p className="font-semibold text-[#00704A] mb-1">{label}</p>
       {payload.map((p) => (
         <p key={p.name} style={{ color: p.fill }}>
           {p.name}: {fmt(p.value)}
@@ -257,7 +257,7 @@ function TransactionModal({ initial, onClose, onSave }) {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl w-full max-w-lg p-6 my-4">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-[#1F4D46]">
+          <h2 className="text-lg font-bold text-[#00704A]">
             {isEdit ? "Editar lançamento" : "Novo lançamento"}
           </h2>
           <button onClick={onClose}><X size={20} /></button>
@@ -265,10 +265,10 @@ function TransactionModal({ initial, onClose, onSave }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* tipo */}
-          <div className="flex rounded-xl border border-[#C2A56B] overflow-hidden">
+          <div className="flex rounded-xl border border-[#CBA258] overflow-hidden">
             {[{ v: "receita", l: "Receita", c: "bg-emerald-500" }, { v: "despesa", l: "Despesa", c: "bg-red-500" }].map(({ v, l, c }) => (
               <button key={v} type="button" onClick={() => setForm((p) => ({ ...p, type: v }))}
-                className={`flex-1 py-2.5 text-sm font-medium transition ${form.type === v ? `${c} text-white` : "bg-white text-gray-500 hover:bg-[#F5F1EA]"}`}>
+                className={`flex-1 py-2.5 text-sm font-medium transition ${form.type === v ? `${c} text-white` : "bg-white text-gray-500 hover:bg-[#F2F0EB]"}`}>
                 {l}
               </button>
             ))}
@@ -323,16 +323,16 @@ function TransactionModal({ initial, onClose, onSave }) {
               />
               {form.patientId && (
                 <button type="button" onClick={clearPatient}
-                  className="border border-[#C2A56B] rounded-xl px-3 text-gray-400 hover:text-red-400 hover:border-red-300 transition">
+                  className="border border-[#CBA258] rounded-xl px-3 text-gray-400 hover:text-red-400 hover:border-red-300 transition">
                   <X size={16} />
                 </button>
               )}
             </div>
             {showPatientDrop && patientResults.length > 0 && (
-              <div className="absolute z-10 w-full bg-white border border-[#D8CDB9] rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
+              <div className="absolute z-10 w-full bg-white border border-[#DDD8CC] rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
                 {patientResults.map((p) => (
                   <button key={p.id} type="button" onClick={() => selectPatient(p)}
-                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#F5F1EA] text-[#1F4D46]">
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#F2F0EB] text-[#00704A]">
                     {p.name}
                   </button>
                 ))}
@@ -342,8 +342,8 @@ function TransactionModal({ initial, onClose, onSave }) {
 
           {/* vínculo: agendamento ou orçamento */}
           {hasVinculo && (
-            <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-xl p-4 space-y-3">
-              <p className="text-xs font-semibold text-[#1F4D46] uppercase tracking-wide">Vincular a</p>
+            <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-xl p-4 space-y-3">
+              <p className="text-xs font-semibold text-[#00704A] uppercase tracking-wide">Vincular a</p>
               {patientAppointments.length > 0 && (
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1">
@@ -379,11 +379,11 @@ function TransactionModal({ initial, onClose, onSave }) {
 
           {/* parcelamento */}
           {!isEdit && (
-            <div className="border border-[#D8CDB9] rounded-xl p-4 space-y-3">
+            <div className="border border-[#DDD8CC] rounded-xl p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <input type="checkbox" id="installments" checked={installmentsOn}
                   onChange={(e) => setInstallmentsOn(e.target.checked)}
-                  className="w-4 h-4 accent-[#1F4D46]" />
+                  className="w-4 h-4 accent-[#00704A]" />
                 <label htmlFor="installments" className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
                   <Layers size={14} className="text-indigo-500" /> Parcelar pagamento
                 </label>
@@ -393,7 +393,7 @@ function TransactionModal({ initial, onClose, onSave }) {
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">Número de parcelas</label>
                     <input value={installmentCount} onChange={(e) => setInstallmentCount(e.target.value)}
-                      type="number" min="2" max="60" className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm w-24" />
+                      type="number" min="2" max="60" className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm w-24" />
                   </div>
                   {form.amount && installmentCount && (
                     <div className="mt-4">
@@ -425,7 +425,7 @@ function TransactionModal({ initial, onClose, onSave }) {
           {!installmentsOn && (
             <div className="flex items-center gap-3">
               <input type="checkbox" id="recurring" checked={!!form.isRecurring} onChange={fb("isRecurring")}
-                className="w-4 h-4 accent-[#1F4D46]" />
+                className="w-4 h-4 accent-[#00704A]" />
               <label htmlFor="recurring" className="text-sm text-gray-600 flex items-center gap-1.5">
                 <Repeat2 size={14} className="text-[#6F7F73]" /> Lançamento recorrente
               </label>
@@ -433,7 +433,7 @@ function TransactionModal({ initial, onClose, onSave }) {
                 <div className="flex items-center gap-2 ml-auto">
                   <span className="text-xs text-gray-500">Dia</span>
                   <input value={form.recurringDay} onChange={f("recurringDay")} type="number" min="1" max="31"
-                    placeholder="1–31" className="border border-[#C2A56B] rounded-lg px-2 py-1.5 text-sm w-16" />
+                    placeholder="1–31" className="border border-[#CBA258] rounded-lg px-2 py-1.5 text-sm w-16" />
                   <span className="text-xs text-gray-500">do mês</span>
                 </div>
               )}
@@ -442,11 +442,11 @@ function TransactionModal({ initial, onClose, onSave }) {
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
-              className="flex-1 border border-[#C2A56B] text-[#1F4D46] py-2.5 rounded-xl text-sm hover:bg-[#E8E0D2] transition">
+              className="flex-1 border border-[#CBA258] text-[#00704A] py-2.5 rounded-xl text-sm hover:bg-[#E6E2D8] transition">
               Cancelar
             </button>
             <button type="submit"
-              className="flex-1 bg-[#1F4D46] hover:bg-[#285A50] text-white py-2.5 rounded-xl text-sm font-medium transition">
+              className="flex-1 bg-[#00704A] hover:bg-[#1E3932] text-white py-2.5 rounded-xl text-sm font-medium transition">
               {isEdit ? "Salvar" : installmentsOn ? `Criar ${installmentCount} parcelas` : "Criar lançamento"}
             </button>
           </div>
@@ -483,14 +483,14 @@ const SEVERITY_CONFIG = {
 };
 
 function ScoreRing({ score }) {
-  const color = score >= 80 ? "#3A9B6F" : score >= 50 ? "#C4895A" : "#B05248";
+  const color = score >= 80 ? "#3A9B6F" : score >= 50 ? "#CBA258" : "#B05248";
   const r = 36;
   const circ = 2 * Math.PI * r;
   const offset = circ * (1 - score / 100);
   return (
     <div className="relative w-24 h-24 shrink-0">
       <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
-        <circle cx="44" cy="44" r={r} fill="none" stroke="#E8E0D2" strokeWidth="8" />
+        <circle cx="44" cy="44" r={r} fill="none" stroke="#E6E2D8" strokeWidth="8" />
         <circle
           cx="44" cy="44" r={r} fill="none"
           stroke={color} strokeWidth="8"
@@ -511,11 +511,11 @@ function GuardianTab({ data, loading, onRefresh }) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-[#1F4D46] flex items-center justify-center animate-pulse">
-          <Sparkles size={20} className="text-[#C2A56B]" />
+        <div className="w-12 h-12 rounded-2xl bg-[#00704A] flex items-center justify-center animate-pulse">
+          <Sparkles size={20} className="text-[#CBA258]" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-semibold text-[#1F4D46]">Analisando fluxo financeiro…</p>
+          <p className="text-sm font-semibold text-[#00704A]">Analisando fluxo financeiro…</p>
           <p className="text-xs text-gray-400 mt-1">A IA está verificando padrões e inconsistências</p>
         </div>
       </div>
@@ -525,18 +525,18 @@ function GuardianTab({ data, loading, onRefresh }) {
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-5">
-        <div className="w-16 h-16 rounded-2xl bg-[#F5F1EA] border border-[#D8CDB9] flex items-center justify-center">
-          <ShieldCheck size={28} className="text-[#1F4D46]" />
+        <div className="w-16 h-16 rounded-2xl bg-[#F2F0EB] border border-[#DDD8CC] flex items-center justify-center">
+          <ShieldCheck size={28} className="text-[#00704A]" />
         </div>
         <div className="text-center">
-          <p className="text-base font-bold text-[#1F4D46]">Guardião Financeiro</p>
+          <p className="text-base font-bold text-[#00704A]">Guardião Financeiro</p>
           <p className="text-sm text-gray-400 mt-1 max-w-sm">
             A IA analisa duplicidades, inadimplências e inconsistências no seu fluxo financeiro.
           </p>
         </div>
         <button
           onClick={onRefresh}
-          className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition"
+          className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition"
         >
           <Sparkles size={15} /> Analisar agora
         </button>
@@ -552,12 +552,12 @@ function GuardianTab({ data, loading, onRefresh }) {
   return (
     <div className="space-y-5">
       {/* Score header */}
-      <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5 flex items-center gap-5">
+      <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5 flex items-center gap-5">
         <ScoreRing score={data.score ?? 0} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <ShieldCheck size={16} className="text-[#1F4D46] shrink-0" />
-            <p className="text-sm font-bold text-[#1F4D46]">Saúde Financeira</p>
+            <ShieldCheck size={16} className="text-[#00704A] shrink-0" />
+            <p className="text-sm font-bold text-[#00704A]">Saúde Financeira</p>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed">{data.resumo}</p>
           <div className="flex items-center gap-3 mt-3 flex-wrap">
@@ -585,7 +585,7 @@ function GuardianTab({ data, loading, onRefresh }) {
         </div>
         <button
           onClick={onRefresh}
-          className="shrink-0 w-9 h-9 rounded-xl border border-[#D8CDB9] hover:bg-[#F5F1EA] flex items-center justify-center transition text-gray-400 hover:text-[#1F4D46]"
+          className="shrink-0 w-9 h-9 rounded-xl border border-[#DDD8CC] hover:bg-[#F2F0EB] flex items-center justify-center transition text-gray-400 hover:text-[#00704A]"
           title="Reanalisar"
         >
           <RefreshCw size={15} />
@@ -845,22 +845,22 @@ export default function Financeiro() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-[#1F4D46]">Financeiro</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#00704A]">Financeiro</h1>
           <p className="text-gray-500 mt-0.5 text-sm">Receitas, despesas e fluxo de caixa</p>
         </div>
         <button
           onClick={() => setModalData({})}
-          className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm transition shrink-0"
+          className="bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm transition shrink-0"
         >
           <Plus size={16} /> Novo lançamento
         </button>
       </div>
 
       {/* TABS */}
-      <div className="flex gap-1 bg-[#F5F1EA] border border-[#D8CDB9] rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-[#F2F0EB] border border-[#DDD8CC] rounded-xl p-1 mb-6 w-fit">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition relative ${tab === t.id ? "bg-white text-[#1F4D46] shadow-sm" : "text-gray-500 hover:text-[#1F4D46]"}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition relative ${tab === t.id ? "bg-white text-[#00704A] shadow-sm" : "text-gray-500 hover:text-[#00704A]"}`}>
             {t.label}
             {t.id === "lancamentos" && summary.pendentes > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -882,7 +882,7 @@ export default function Financeiro() {
           {/* seletor de mês */}
           <div className="mb-5">
             <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
-              className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm text-[#1F4D46]" />
+              className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm text-[#00704A]" />
           </div>
 
           {loadingSum ? <Spinner /> : (
@@ -890,7 +890,7 @@ export default function Financeiro() {
               {/* KPI CARDS */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                 {/* receitas */}
-                <div className="bg-[#1F4D46] rounded-2xl p-5 text-white">
+                <div className="bg-[#00704A] rounded-2xl p-5 text-white">
                   <div className="flex items-center gap-2 mb-2 opacity-60">
                     <TrendingUp size={15} />
                     <p className="text-[11px] font-semibold uppercase tracking-wide">Receitas</p>
@@ -899,7 +899,7 @@ export default function Financeiro() {
                   <DeltaBadge pct={analytics?.comparison?.receitasPct} />
                 </div>
                 {/* despesas */}
-                <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5">
+                <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-2 text-gray-400">
                     <TrendingDown size={15} className="text-red-400" />
                     <p className="text-[11px] font-semibold uppercase tracking-wide">Despesas</p>
@@ -908,7 +908,7 @@ export default function Financeiro() {
                   <DeltaBadge pct={analytics?.comparison?.despesasPct} />
                 </div>
                 {/* saldo */}
-                <div className={`rounded-2xl p-5 ${summary.saldo >= 0 ? "bg-[#285A50] text-white" : "bg-red-50 border border-red-200"}`}>
+                <div className={`rounded-2xl p-5 ${summary.saldo >= 0 ? "bg-[#1E3932] text-white" : "bg-red-50 border border-red-200"}`}>
                   <div className="flex items-center gap-2 mb-2 opacity-60">
                     <DollarSign size={15} />
                     <p className="text-[11px] font-semibold uppercase tracking-wide">Saldo</p>
@@ -932,17 +932,17 @@ export default function Financeiro() {
               {loadingAna ? null : analytics && (
                 <>
                   {/* GRÁFICO SEMANAL */}
-                  <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5 mb-5">
+                  <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5 mb-5">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Evolução semanal</p>
                     <ResponsiveContainer width="100%" height={180}>
                       <BarChart data={analytics.weekly} barGap={4} barSize={22}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E8E0D2" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E6E2D8" vertical={false} />
                         <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false}
                           tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: "#F0EBE0" }} />
                         <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                        <Bar dataKey="receitas" name="Receitas" fill="#1F4D46" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="receitas" name="Receitas" fill="#00704A" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="despesas" name="Despesas" fill="#f87171" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -951,21 +951,21 @@ export default function Financeiro() {
                   {/* PROPORÇÃO + CATEGORIAS */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                     {/* barra de proporção */}
-                    <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5">
+                    <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Proporção do mês</p>
                       {(summary.receitas + summary.despesas) === 0 ? (
                         <p className="text-sm text-gray-400 text-center py-4">Sem dados</p>
                       ) : (
                         <>
-                          <div className="h-4 bg-[#E8E0D2] rounded-full overflow-hidden flex mb-2">
-                            <div className="h-full bg-[#1F4D46] transition-all"
+                          <div className="h-4 bg-[#E6E2D8] rounded-full overflow-hidden flex mb-2">
+                            <div className="h-full bg-[#00704A] transition-all"
                               style={{ width: `${(summary.receitas / (summary.receitas + summary.despesas)) * 100}%` }} />
                             <div className="h-full bg-red-400 transition-all"
                               style={{ width: `${(summary.despesas / (summary.receitas + summary.despesas)) * 100}%` }} />
                           </div>
                           <div className="flex justify-between text-xs text-gray-400">
                             <span className="flex items-center gap-1.5">
-                              <span className="w-2.5 h-2.5 rounded-full bg-[#1F4D46] inline-block" />
+                              <span className="w-2.5 h-2.5 rounded-full bg-[#00704A] inline-block" />
                               Receitas {((summary.receitas / (summary.receitas + summary.despesas)) * 100).toFixed(0)}%
                             </span>
                             <span className="flex items-center gap-1.5">
@@ -975,10 +975,10 @@ export default function Financeiro() {
                           </div>
                           {/* comparativo mês anterior */}
                           {analytics.comparison.previous && (
-                            <div className="mt-4 pt-4 border-t border-[#D8CDB9] grid grid-cols-2 gap-3 text-xs">
+                            <div className="mt-4 pt-4 border-t border-[#DDD8CC] grid grid-cols-2 gap-3 text-xs">
                               <div>
                                 <p className="text-gray-400">Mês anterior · Receitas</p>
-                                <p className="font-semibold text-[#1F4D46]">{fmt(analytics.comparison.previous.receitas)}</p>
+                                <p className="font-semibold text-[#00704A]">{fmt(analytics.comparison.previous.receitas)}</p>
                               </div>
                               <div>
                                 <p className="text-gray-400">Mês anterior · Despesas</p>
@@ -991,7 +991,7 @@ export default function Financeiro() {
                     </div>
 
                     {/* categorias */}
-                    <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5">
+                    <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Por categoria</p>
                       {analytics.categories.length === 0 ? (
                         <p className="text-sm text-gray-400 text-center py-4">Sem lançamentos categorizados</p>
@@ -1000,16 +1000,16 @@ export default function Financeiro() {
                           {analytics.categories.slice(0, 6).map((c) => (
                             <div key={c.category}>
                               <div className="flex justify-between text-xs mb-1">
-                                <span className="font-medium text-[#1F4D46]" style={{ color: CAT_COLORS[c.category] }}>
+                                <span className="font-medium text-[#00704A]" style={{ color: CAT_COLORS[c.category] }}>
                                   {c.category}
                                 </span>
                                 <span className="text-gray-400">{fmt(c.receitas + c.despesas)}</span>
                               </div>
-                              <div className="h-1.5 bg-[#E8E0D2] rounded-full overflow-hidden">
+                              <div className="h-1.5 bg-[#E6E2D8] rounded-full overflow-hidden">
                                 <div className="h-full rounded-full transition-all"
                                   style={{
                                     width: `${((c.receitas + c.despesas) / catMax) * 100}%`,
-                                    backgroundColor: CAT_COLORS[c.category] || "#1F4D46",
+                                    backgroundColor: CAT_COLORS[c.category] || "#00704A",
                                   }} />
                               </div>
                             </div>
@@ -1030,7 +1030,7 @@ export default function Financeiro() {
                       const urgent  = diff >= 0 && diff <= 7;
                       const isReceita = tx.type === "receita";
                       return (
-                        <div className={`flex items-center justify-between bg-white border rounded-xl px-4 py-3 ${overdue ? "border-red-300" : urgent ? "border-amber-300" : "border-[#D8CDB9]"}`}>
+                        <div className={`flex items-center justify-between bg-white border rounded-xl px-4 py-3 ${overdue ? "border-red-300" : urgent ? "border-amber-300" : "border-[#DDD8CC]"}`}>
                           <div className="flex items-center gap-3 min-w-0">
                             <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center ${isReceita ? "bg-emerald-100" : "bg-red-100"}`}>
                               {isReceita
@@ -1038,7 +1038,7 @@ export default function Financeiro() {
                                 : <TrendingDown size={13} className="text-red-500" />}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-[#1F4D46] truncate">{tx.description}</p>
+                              <p className="text-sm font-medium text-[#00704A] truncate">{tx.description}</p>
                               {resolvePatient(tx) && (
                                 <p className="text-xs text-gray-400">{resolvePatient(tx).name}</p>
                               )}
@@ -1110,12 +1110,12 @@ export default function Financeiro() {
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Mês</label>
               <input type="month" value={lancMonth} onChange={(e) => setLancMonth(e.target.value)}
-                className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm" />
+                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm" />
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Tipo</label>
               <select value={lancType} onChange={(e) => setLancType(e.target.value)}
-                className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm">
+                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm">
                 <option value="">Todos</option>
                 <option value="receita">Receita</option>
                 <option value="despesa">Despesa</option>
@@ -1124,7 +1124,7 @@ export default function Financeiro() {
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Status</label>
               <select value={lancStatus} onChange={(e) => setLancStatus(e.target.value)}
-                className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm">
+                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm">
                 <option value="">Todos</option>
                 <option value="confirmado">Confirmado</option>
                 <option value="pendente">Pendente</option>
@@ -1134,13 +1134,13 @@ export default function Financeiro() {
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Categoria</label>
               <select value={lancCat} onChange={(e) => setLancCat(e.target.value)}
-                className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm">
+                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm">
                 <option value="">Todas</option>
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <button onClick={loadLancamentos}
-              className="flex items-center gap-1.5 bg-[#1F4D46] hover:bg-[#285A50] text-white text-sm px-4 py-2 rounded-xl transition">
+              className="flex items-center gap-1.5 bg-[#00704A] hover:bg-[#1E3932] text-white text-sm px-4 py-2 rounded-xl transition">
               <Filter size={14} /> Filtrar
             </button>
           </div>
@@ -1150,7 +1150,7 @@ export default function Financeiro() {
           ) : (
             <div className="space-y-2">
               {lancamentos.map((tx) => (
-                <div key={tx.id} className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl overflow-hidden">
+                <div key={tx.id} className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl overflow-hidden">
                   {/* linha principal */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4">
                     <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center ${tx.type === "receita" ? "bg-emerald-100" : "bg-red-100"}`}>
@@ -1161,7 +1161,7 @@ export default function Financeiro() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-[#1F4D46] text-sm truncate">{tx.description}</p>
+                        <p className="font-semibold text-[#00704A] text-sm truncate">{tx.description}</p>
                         {tx.isRecurring && <Repeat2 size={12} className="text-[#6F7F73] shrink-0" title="Recorrente" />}
                         {tx.category && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white inline-flex items-center gap-1"
@@ -1203,7 +1203,7 @@ export default function Financeiro() {
                           </button>
                         )}
                         <button onClick={() => setModalData(tx)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg bg-[#E8E0D2] text-[#1F4D46] hover:bg-[#D8CDB9] transition"
+                          className="w-7 h-7 flex items-center justify-center rounded-lg bg-[#E6E2D8] text-[#00704A] hover:bg-[#DDD8CC] transition"
                           title="Editar">
                           <Pencil size={13} />
                         </button>
@@ -1213,25 +1213,25 @@ export default function Financeiro() {
 
                   {/* painel confirmar */}
                   {approvingId === tx.id && (
-                    <div className="border-t border-[#D8CDB9] bg-white px-5 py-4">
-                      <p className="text-xs font-semibold text-[#1F4D46] mb-3 uppercase tracking-wide">Confirmar recebimento</p>
+                    <div className="border-t border-[#DDD8CC] bg-white px-5 py-4">
+                      <p className="text-xs font-semibold text-[#00704A] mb-3 uppercase tracking-wide">Confirmar recebimento</p>
                       <div className="flex flex-wrap gap-3 items-end">
                         <div>
                           <label className="text-xs text-gray-500 mb-1 block">Valor (R$) *</label>
                           <input type="number" min="0" step="0.01" value={approveForm.amount}
                             onChange={(e) => setApproveForm((p) => ({ ...p, amount: e.target.value }))}
-                            placeholder="0,00" className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm w-36" />
+                            placeholder="0,00" className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm w-36" />
                         </div>
                         <div>
                           <label className="text-xs text-gray-500 mb-1 block">Forma de pagamento</label>
                           <select value={approveForm.method} onChange={(e) => setApproveForm((p) => ({ ...p, method: e.target.value }))}
-                            className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm min-w-[180px]">
+                            className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm min-w-[180px]">
                             <option value="">Selecione</option>
                             {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
                           </select>
                         </div>
                         <button onClick={() => handleApprove(tx.id)}
-                          className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-5 py-2 rounded-xl text-sm font-medium transition">
+                          className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-2 rounded-xl text-sm font-medium transition">
                           Confirmar
                         </button>
                         <button onClick={() => handleCancel(tx.id)}
@@ -1257,17 +1257,17 @@ export default function Financeiro() {
             <div>
               <label className="text-xs text-gray-500 mb-1 block">De</label>
               <input type="date" value={extStart} onChange={(e) => setExtStart(e.target.value)}
-                className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm" />
+                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm" />
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Até</label>
               <input type="date" value={extEnd} onChange={(e) => setExtEnd(e.target.value)}
-                className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm" />
+                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm" />
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Tipo</label>
               <select value={extType} onChange={(e) => setExtType(e.target.value)}
-                className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm">
+                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm">
                 <option value="">Todos</option>
                 <option value="receita">Receita</option>
                 <option value="despesa">Despesa</option>
@@ -1276,18 +1276,18 @@ export default function Financeiro() {
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Forma</label>
               <select value={extMethod} onChange={(e) => setExtMethod(e.target.value)}
-                className="border border-[#C2A56B] rounded-xl px-3 py-2 text-sm">
+                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm">
                 <option value="">Todas</option>
                 {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
             <button onClick={loadExtrato}
-              className="flex items-center gap-1.5 bg-[#1F4D46] hover:bg-[#285A50] text-white text-sm px-4 py-2 rounded-xl transition">
+              className="flex items-center gap-1.5 bg-[#00704A] hover:bg-[#1E3932] text-white text-sm px-4 py-2 rounded-xl transition">
               <Filter size={14} /> Filtrar
             </button>
             {extrato.length > 0 && (
               <button onClick={handleExportCSV}
-                className="flex items-center gap-1.5 border border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2] text-sm px-4 py-2 rounded-xl transition ml-auto">
+                className="flex items-center gap-1.5 border border-[#CBA258] text-[#00704A] hover:bg-[#E6E2D8] text-sm px-4 py-2 rounded-xl transition ml-auto">
                 <Download size={14} /> Exportar CSV
               </button>
             )}
@@ -1296,9 +1296,9 @@ export default function Financeiro() {
           {loadingExt ? <Spinner /> : extrato.length === 0 ? (
             <Empty icon={Wallet} text="Nenhuma movimentação encontrada" sub="Selecione um período ou ajuste os filtros" />
           ) : (
-            <div className="bg-white border border-[#D8CDB9] rounded-2xl overflow-hidden">
+            <div className="bg-white border border-[#DDD8CC] rounded-2xl overflow-hidden">
               {/* header */}
-              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-5 py-3 bg-[#F5F1EA] border-b border-[#D8CDB9] text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-5 py-3 bg-[#F2F0EB] border-b border-[#DDD8CC] text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
                 <span>Descrição</span>
                 <span>Categoria</span>
                 <span>Valor</span>
@@ -1306,11 +1306,11 @@ export default function Financeiro() {
                 <span className="text-right">Saldo</span>
               </div>
 
-              <div className="divide-y divide-[#F5F1EA]">
+              <div className="divide-y divide-[#F2F0EB]">
                 {extratoGrouped.map((item, i) => {
                   if (item.type === "header") {
                     return (
-                      <div key={`h-${i}`} className="px-5 py-2 bg-[#F9F6F1] border-b border-[#E8E0D2]">
+                      <div key={`h-${i}`} className="px-5 py-2 bg-[#F9F6F1] border-b border-[#E6E2D8]">
                         <p className="text-xs font-semibold text-[#6F7F73] capitalize">{fmtDateGroup(item.date)}</p>
                       </div>
                     );
@@ -1324,7 +1324,7 @@ export default function Financeiro() {
                           {tx.type === "receita"
                             ? <TrendingUp size={13} className="text-emerald-500 shrink-0" />
                             : <TrendingDown size={13} className="text-red-400 shrink-0" />}
-                          <p className="text-sm font-semibold text-[#1F4D46] truncate">{tx.description}</p>
+                          <p className="text-sm font-semibold text-[#00704A] truncate">{tx.description}</p>
                           {tx.isRecurring && <Repeat2 size={11} className="text-gray-400 shrink-0" />}
                         </div>
                         <div className="ml-5">
@@ -1348,7 +1348,7 @@ export default function Financeiro() {
 
                       <p className="text-xs text-gray-400">{tx.paymentMethod || "—"}</p>
 
-                      <p className={`text-sm font-bold text-right ${tx.balance >= 0 ? "text-[#1F4D46]" : "text-red-500"}`}>
+                      <p className={`text-sm font-bold text-right ${tx.balance >= 0 ? "text-[#00704A]" : "text-red-500"}`}>
                         {fmt(tx.balance)}
                       </p>
                     </div>
@@ -1357,12 +1357,12 @@ export default function Financeiro() {
               </div>
 
               {/* footer */}
-              <div className="px-5 py-3 bg-[#F5F1EA] border-t border-[#D8CDB9] flex flex-wrap items-center justify-between gap-3">
+              <div className="px-5 py-3 bg-[#F2F0EB] border-t border-[#DDD8CC] flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-gray-400">{extrato.length} lançamento{extrato.length !== 1 ? "s" : ""}</p>
                 <div className="flex gap-5 text-xs font-semibold">
                   <span className="text-emerald-600">Entradas: {fmt(extTotals.receitas)}</span>
                   <span className="text-red-500">Saídas: {fmt(extTotals.despesas)}</span>
-                  <span className={`${extTotals.receitas - extTotals.despesas >= 0 ? "text-[#1F4D46]" : "text-red-600"}`}>
+                  <span className={`${extTotals.receitas - extTotals.despesas >= 0 ? "text-[#00704A]" : "text-red-600"}`}>
                     Saldo: {fmt(extTotals.receitas - extTotals.despesas)}
                   </span>
                 </div>

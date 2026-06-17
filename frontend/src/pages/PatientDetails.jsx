@@ -431,14 +431,14 @@ export default function PatientDetails() {
             onClick={() =>
               navigate("/patients")
             }
-            className="text-[#1F4D46] hover:opacity-70 transition"
+            className="text-[#00704A] hover:opacity-70 transition"
           >
             ← Voltar
           </button>
         </div>
           
         {/* HEADER */}
-        <div className="bg-[#1F4D46] rounded-2xl p-5 md:p-6 mb-6 text-white shadow-sm">
+        <div className="bg-[#00704A] rounded-2xl p-5 md:p-6 mb-6 text-white shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-2xl md:text-3xl font-bold truncate">
@@ -468,7 +468,7 @@ export default function PatientDetails() {
               </button>
               <button
                 onClick={() => navigate(`/patients/${id}/edit`)}
-                className="bg-[#D8C3A5] hover:bg-[#C2A56B] text-[#1F4D46] px-4 py-2 rounded-lg font-medium text-sm transition"
+                className="bg-[#D8C3A5] hover:bg-[#CBA258] text-[#00704A] px-4 py-2 rounded-lg font-medium text-sm transition"
               >
                 Editar dados
               </button>
@@ -544,7 +544,7 @@ export default function PatientDetails() {
       </div>
 
       {/* MENU */}
-      <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-2 mb-6 flex gap-2 flex-wrap">
+      <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-2 mb-6 flex gap-2 flex-wrap">
         <TabButton
           active={
             activeTab ===
@@ -636,14 +636,14 @@ export default function PatientDetails() {
           {/* ROW 1 — 4 stat cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Aniversário */}
-            <div className={`rounded-2xl p-5 border ${patientStats?.birthday?.isToday ? "bg-[#C4895A] border-[#C4895A] text-white" : "bg-[#F5F1EA] border-[#D8CDB9]"}`}>
+            <div className={`rounded-2xl p-5 border ${patientStats?.birthday?.isToday ? "bg-[#CBA258] border-[#CBA258] text-white" : "bg-[#F2F0EB] border-[#DDD8CC]"}`}>
               <div className="flex items-center gap-2 mb-3">
-                <Cake size={15} className={patientStats?.birthday?.isToday ? "text-white/80" : "text-[#C4895A]"} />
+                <Cake size={15} className={patientStats?.birthday?.isToday ? "text-white/80" : "text-[#CBA258]"} />
                 <span className={`text-xs font-semibold uppercase tracking-wide ${patientStats?.birthday?.isToday ? "text-white/80" : "text-gray-400"}`}>Idade</span>
               </div>
               {patientStats?.birthday ? (
                 <>
-                  <p className={`text-2xl font-bold leading-none flex items-center gap-1.5 ${patientStats.birthday.isToday ? "text-white" : "text-[#1F4D46]"}`}>
+                  <p className={`text-2xl font-bold leading-none flex items-center gap-1.5 ${patientStats.birthday.isToday ? "text-white" : "text-[#00704A]"}`}>
                     {patientStats.birthday.age} anos{patientStats.birthday.isToday && <PartyPopper size={18} />}
                   </p>
                   <p className={`text-xs mt-1.5 ${patientStats.birthday.isToday ? "text-white/80" : "text-gray-400"}`}>
@@ -656,12 +656,12 @@ export default function PatientDetails() {
             </div>
 
             {/* Cliente há */}
-            <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5">
+            <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Users size={15} className="text-[#6F7F73]" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Cliente há</span>
               </div>
-              <p className="text-2xl font-bold text-[#1F4D46] leading-none">
+              <p className="text-2xl font-bold text-[#00704A] leading-none">
                 {patientStats?.clientSince?.label ?? "—"}
               </p>
               {patientStats?.clientSince && (
@@ -672,24 +672,24 @@ export default function PatientDetails() {
             </div>
 
             {/* Total agendamentos */}
-            <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5">
+            <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-3">
                 <CalendarDays size={15} className="text-[#4A8EC2]" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Agendamentos</span>
               </div>
-              <p className="text-2xl font-bold text-[#1F4D46] leading-none">
+              <p className="text-2xl font-bold text-[#00704A] leading-none">
                 {patientStats?.totalAppointments ?? "—"}
               </p>
               <p className="text-xs text-gray-400 mt-1.5">sessões realizadas</p>
             </div>
 
             {/* Ticket médio */}
-            <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5">
+            <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp size={15} className="text-[#3A9B6F]" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Ticket médio</span>
               </div>
-              <p className="text-2xl font-bold text-[#1F4D46] leading-none">
+              <p className="text-2xl font-bold text-[#00704A] leading-none">
                 {patientStats?.avgTicket
                   ? patientStats.avgTicket.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                   : "—"}
@@ -705,10 +705,10 @@ export default function PatientDetails() {
           {/* ROW 2 — dias da semana + procedimentos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Dias da semana */}
-            <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5">
+            <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-5">
-                <ClipboardList size={15} className="text-[#1F4D46]" />
-                <span className="text-sm font-bold text-[#1F4D46]">Dias preferidos</span>
+                <ClipboardList size={15} className="text-[#00704A]" />
+                <span className="text-sm font-bold text-[#00704A]">Dias preferidos</span>
               </div>
               {patientStats?.weekdayDistribution ? (() => {
                 const max = Math.max(...patientStats.weekdayDistribution.map((d) => d.count), 1);
@@ -722,7 +722,7 @@ export default function PatientDetails() {
                           <span className="text-[10px] font-semibold text-gray-400">{d.count || ""}</span>
                           <div className="w-full rounded-t-md transition-all" style={{
                             height: `${Math.max(pct, d.count > 0 ? 8 : 4)}%`,
-                            backgroundColor: isTop ? "#1F4D46" : d.count > 0 ? "#6F7F73" : "#E8E0D2",
+                            backgroundColor: isTop ? "#00704A" : d.count > 0 ? "#6F7F73" : "#E6E2D8",
                             minHeight: "4px",
                           }} />
                           <span className="text-[10px] text-gray-400 font-medium">{d.label}</span>
@@ -737,10 +737,10 @@ export default function PatientDetails() {
             </div>
 
             {/* Top procedimentos */}
-            <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5">
+            <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-4">
-                <ClipboardList size={15} className="text-[#1F4D46]" />
-                <span className="text-sm font-bold text-[#1F4D46]">Procedimentos frequentes</span>
+                <ClipboardList size={15} className="text-[#00704A]" />
+                <span className="text-sm font-bold text-[#00704A]">Procedimentos frequentes</span>
               </div>
               {patientStats?.topProcedures?.length > 0 ? (() => {
                 const max = patientStats.topProcedures[0].count;
@@ -749,15 +749,15 @@ export default function PatientDetails() {
                     {patientStats.topProcedures.map((p, i) => (
                       <div key={i}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-[#1F4D46] truncate max-w-[70%]">{p.name}</span>
+                          <span className="text-xs font-medium text-[#00704A] truncate max-w-[70%]">{p.name}</span>
                           <span className="text-xs text-gray-400 shrink-0">{p.count}x</span>
                         </div>
-                        <div className="h-1.5 bg-[#E8E0D2] rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-[#E6E2D8] rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all"
                             style={{
                               width: `${(p.count / max) * 100}%`,
-                              backgroundColor: i === 0 ? "#1F4D46" : "#6F7F73",
+                              backgroundColor: i === 0 ? "#00704A" : "#6F7F73",
                             }}
                           />
                         </div>
@@ -778,16 +778,16 @@ export default function PatientDetails() {
         <div className="mb-8">
 
           {/* HISTÓRICO IA */}
-          <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5 mb-4">
+          <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5 mb-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Sparkles size={15} className="text-[#1F4D46]" />
-                <span className="text-sm font-bold text-[#1F4D46]">Histórico do Paciente — IA</span>
+                <Sparkles size={15} className="text-[#00704A]" />
+                <span className="text-sm font-bold text-[#00704A]">Histórico do Paciente — IA</span>
               </div>
               <button
                 onClick={generateSummary}
                 disabled={loadingSummary}
-                className="flex items-center gap-1.5 border border-[#C2A56B] hover:bg-[#E8E0D2] disabled:opacity-50 text-[#1F4D46] px-3 py-1.5 rounded-lg transition text-xs"
+                className="flex items-center gap-1.5 border border-[#CBA258] hover:bg-[#E6E2D8] disabled:opacity-50 text-[#00704A] px-3 py-1.5 rounded-lg transition text-xs"
               >
                 <Sparkles size={12} className={loadingSummary ? "animate-pulse" : ""} />
                 {loadingSummary ? "Gerando…" : aiSummary ? "Atualizar" : "Gerar resumo"}
@@ -810,13 +810,13 @@ export default function PatientDetails() {
           </div>
 
           {/* SUBMENU */}
-          <div className="flex gap-1 bg-[#F5F1EA] border border-[#D8CDB9] rounded-xl p-1 mb-5 w-fit">
+          <div className="flex gap-1 bg-[#F2F0EB] border border-[#DDD8CC] rounded-xl p-1 mb-5 w-fit">
             {[["evolucao", "Evolução"], ["mapa", "Mapa de Aplicação"]].map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setClinicalSubTab(key)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                  clinicalSubTab === key ? "bg-[#1F4D46] text-white" : "text-[#1F4D46] hover:bg-[#E8E0D2]"
+                  clinicalSubTab === key ? "bg-[#00704A] text-white" : "text-[#00704A] hover:bg-[#E6E2D8]"
                 }`}
               >
                 {label}
@@ -826,12 +826,12 @@ export default function PatientDetails() {
 
           {/* SUBABA: EVOLUÇÃO */}
           {clinicalSubTab === "evolucao" && (
-          <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-6">
+          <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-[#1F4D46]">Evoluções</h2>
+              <h2 className="text-xl font-bold text-[#00704A]">Evoluções</h2>
               <button
                 onClick={() => setShowEvolutionForm(!showEvolutionForm)}
-                className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-4 py-2 rounded-lg transition text-sm"
+                className="bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2 rounded-lg transition text-sm"
               >
                 Nova evolução
               </button>
@@ -839,14 +839,14 @@ export default function PatientDetails() {
 
           {/* FORM */}
           {showEvolutionForm && (
-            <div className="bg-white border border-[#D8CDB9] rounded-xl p-5 mb-6 space-y-4">
+            <div className="bg-white border border-[#DDD8CC] rounded-xl p-5 mb-6 space-y-4">
               {/* Procedimento */}
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">Procedimento</label>
                 <select
                   value={selectedProcedureId}
                   onChange={(e) => handleProcedureSelect(e.target.value)}
-                  className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                  className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                 >
                   <option value="">Selecione o procedimento</option>
                   {procedures.map((p) => (
@@ -863,7 +863,7 @@ export default function PatientDetails() {
                   <label className="text-xs font-medium text-gray-500">Descrição clínica</label>
                   <div className="flex items-center gap-2">
                     {selectedProcedureId && procedures.find((p) => p.id === selectedProcedureId)?.description && (
-                      <span className="text-xs text-[#1F4D46] bg-[#E8E0D2] px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-[#00704A] bg-[#E6E2D8] px-2 py-0.5 rounded-full">
                         Pré-preenchido
                       </span>
                     )}
@@ -871,7 +871,7 @@ export default function PatientDetails() {
                       type="button"
                       disabled={!procedure || loadingDraft}
                       onClick={generateEvolutionDraft}
-                      className="flex items-center gap-1 text-xs text-[#1F4D46] hover:opacity-70 disabled:opacity-30 transition"
+                      className="flex items-center gap-1 text-xs text-[#00704A] hover:opacity-70 disabled:opacity-30 transition"
                     >
                       <Sparkles size={11} className={loadingDraft ? "animate-pulse" : ""} />
                       {loadingDraft ? "Gerando…" : "Gerar com IA"}
@@ -883,7 +883,7 @@ export default function PatientDetails() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Descrição clínica da sessão…"
                   rows={4}
-                  className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                  className="w-full border border-[#CBA258] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                 />
               </div>
 
@@ -892,7 +892,7 @@ export default function PatientDetails() {
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-medium text-gray-500">Materiais utilizados</label>
                   {materialsUsed.length > 0 && (
-                    <span className="text-xs text-[#1F4D46] bg-[#E8E0D2] px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-[#00704A] bg-[#E6E2D8] px-2 py-0.5 rounded-full">
                       {materialsUsed.length} {materialsUsed.length === 1 ? "item" : "itens"} do procedimento
                     </span>
                   )}
@@ -901,21 +901,21 @@ export default function PatientDetails() {
                   value={materials}
                   onChange={(e) => setMaterials(e.target.value)}
                   placeholder="Ex: Botox 50U, Hyalurônico 1ml…"
-                  className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                  className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                 />
               </div>
 
               <div className="flex justify-end gap-2 pt-1">
                 <button
                   onClick={() => { resetEvolutionForm(); setShowEvolutionForm(false); }}
-                  className="border border-[#C2A56B] px-4 py-2 rounded-xl text-sm hover:bg-[#E8E0D2] transition"
+                  className="border border-[#CBA258] px-4 py-2 rounded-xl text-sm hover:bg-[#E6E2D8] transition"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={createEvolution}
                   disabled={!procedure}
-                  className="bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-40 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
+                  className="bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-40 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
                 >
                   Salvar evolução
                 </button>
@@ -929,9 +929,9 @@ export default function PatientDetails() {
               <p className="text-gray-500">Nenhuma evolução cadastrada.</p>
             )}
             {evolutions.map((evolution) => (
-              <div key={evolution.id} className="bg-white border border-[#D8CDB9] rounded-xl p-4">
+              <div key={evolution.id} className="bg-white border border-[#DDD8CC] rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-[#1F4D46]">{evolution.procedure}</h3>
+                  <h3 className="font-semibold text-[#00704A]">{evolution.procedure}</h3>
                   <span className="text-sm text-gray-500">
                     {new Date(evolution.createdAt).toLocaleDateString("pt-BR")}
                   </span>
@@ -956,19 +956,19 @@ export default function PatientDetails() {
 
       {/* AGENDAMENTOS */}
       {activeTab === "appointments" && (
-        <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl overflow-hidden">
-          <div className="px-5 py-3.5 bg-[#E8E0D2] border-b border-[#D8CDB9] flex items-center justify-between">
-            <span className="text-sm font-semibold text-[#1F4D46]">Agendamentos</span>
+        <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl overflow-hidden">
+          <div className="px-5 py-3.5 bg-[#E6E2D8] border-b border-[#DDD8CC] flex items-center justify-between">
+            <span className="text-sm font-semibold text-[#00704A]">Agendamentos</span>
             <span className="text-xs text-gray-500">{appointments.length} registro{appointments.length !== 1 ? "s" : ""}</span>
           </div>
           {appointments.length === 0 ? (
             <p className="text-gray-500 text-sm p-6">Nenhum agendamento registrado.</p>
           ) : (
-            <div className="divide-y divide-[#D8CDB9]">
+            <div className="divide-y divide-[#DDD8CC]">
               {[...appointments].sort((a, b) => new Date(b.startsAt) - new Date(a.startsAt)).map((appt) => (
-                <div key={appt.id} className="flex items-center justify-between px-5 py-3.5 bg-white hover:bg-[#F5F1EA] transition">
+                <div key={appt.id} className="flex items-center justify-between px-5 py-3.5 bg-white hover:bg-[#F2F0EB] transition">
                   <div>
-                    <p className="text-sm font-semibold text-[#1F4D46]">{appt.procedureType || appt.title || "Agendamento"}</p>
+                    <p className="text-sm font-semibold text-[#00704A]">{appt.procedureType || appt.title || "Agendamento"}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {new Date(appt.startsAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       {" · "}
@@ -1013,16 +1013,16 @@ export default function PatientDetails() {
           <div className="space-y-5">
             {/* Documentos Assinados */}
             {signed.length > 0 && (
-              <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl overflow-hidden">
-                <div className="px-5 py-3.5 bg-[#E8E0D2] border-b border-[#D8CDB9]">
-                  <span className="text-sm font-semibold text-[#1F4D46]">Documentos Assinados</span>
+              <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl overflow-hidden">
+                <div className="px-5 py-3.5 bg-[#E6E2D8] border-b border-[#DDD8CC]">
+                  <span className="text-sm font-semibold text-[#00704A]">Documentos Assinados</span>
                 </div>
-                <div className="divide-y divide-[#D8CDB9]">
+                <div className="divide-y divide-[#DDD8CC]">
                   {signed.map((pd) => (
                     <div key={pd.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-[#F3EEE5] transition group">
-                      <FileText size={16} className="text-[#1F4D46] shrink-0" />
+                      <FileText size={16} className="text-[#00704A] shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[#1F4D46] truncate">{pd.document.name}</p>
+                        <p className="text-sm font-semibold text-[#00704A] truncate">{pd.document.name}</p>
                         <p className="text-xs text-gray-400">
                           {pd.signedAt ? new Date(pd.signedAt).toLocaleDateString("pt-BR") : "—"}
                         </p>
@@ -1040,11 +1040,11 @@ export default function PatientDetails() {
                         </span>
                       )}
                       <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition shrink-0">
-                        <button onClick={() => pd.signedFilePath ? openSignedFile(pd.id) : setSigningDoc(pd)} title="Abrir PDF assinado" className="w-7 h-7 flex items-center justify-center border border-[#C2A56B] rounded-lg hover:bg-white transition">
-                          <Eye size={13} className="text-[#1F4D46]" />
+                        <button onClick={() => pd.signedFilePath ? openSignedFile(pd.id) : setSigningDoc(pd)} title="Abrir PDF assinado" className="w-7 h-7 flex items-center justify-center border border-[#CBA258] rounded-lg hover:bg-white transition">
+                          <Eye size={13} className="text-[#00704A]" />
                         </button>
-                        <button onClick={() => openFile(pd.document.id)} title="Abrir PDF original" className="w-7 h-7 flex items-center justify-center border border-[#C2A56B] rounded-lg hover:bg-white transition">
-                          <Download size={13} className="text-[#1F4D46]" />
+                        <button onClick={() => openFile(pd.document.id)} title="Abrir PDF original" className="w-7 h-7 flex items-center justify-center border border-[#CBA258] rounded-lg hover:bg-white transition">
+                          <Download size={13} className="text-[#00704A]" />
                         </button>
                         <button onClick={() => deletePatientDoc(pd.id)} title="Remover" className="w-7 h-7 flex items-center justify-center border border-red-200 rounded-lg hover:bg-red-50 transition">
                           <Trash2 size={13} className="text-red-400" />
@@ -1058,16 +1058,16 @@ export default function PatientDetails() {
 
             {/* Aguardando assinatura */}
             {pending.length > 0 && (
-              <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl overflow-hidden">
-                <div className="px-5 py-3.5 bg-[#E8E0D2] border-b border-[#D8CDB9] flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#1F4D46]">Aguardando Assinatura</span>
+              <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl overflow-hidden">
+                <div className="px-5 py-3.5 bg-[#E6E2D8] border-b border-[#DDD8CC] flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[#00704A]">Aguardando Assinatura</span>
                 </div>
-                <div className="divide-y divide-[#D8CDB9]">
+                <div className="divide-y divide-[#DDD8CC]">
                   {pending.map((pd) => (
                     <div key={pd.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-[#F3EEE5] transition group">
-                      <FileText size={16} className="text-[#C4895A] shrink-0" />
+                      <FileText size={16} className="text-[#CBA258] shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[#1F4D46] truncate">{pd.document.name}</p>
+                        <p className="text-sm font-semibold text-[#00704A] truncate">{pd.document.name}</p>
                         <p className="text-xs text-gray-400">{new Date(pd.createdAt).toLocaleDateString("pt-BR")}</p>
                       </div>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${TYPE_COLORS[pd.document.type] ?? TYPE_COLORS.outro}`}>
@@ -1076,7 +1076,7 @@ export default function PatientDetails() {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           onClick={() => openDocumentFlow(pd)}
-                          className="flex items-center gap-1.5 bg-[#1F4D46] hover:bg-[#285A50] text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"
+                          className="flex items-center gap-1.5 bg-[#00704A] hover:bg-[#1E3932] text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 17l4-4 4 4 8-8"/></svg>
                           Assinar
@@ -1092,9 +1092,9 @@ export default function PatientDetails() {
             )}
 
             {/* Disponíveis para enviar */}
-            <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl overflow-hidden">
-              <div className="px-5 py-3.5 bg-[#E8E0D2] border-b border-[#D8CDB9] flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#1F4D46]">Documentos Disponíveis para Assinar</span>
+            <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl overflow-hidden">
+              <div className="px-5 py-3.5 bg-[#E6E2D8] border-b border-[#DDD8CC] flex items-center justify-between">
+                <span className="text-sm font-semibold text-[#00704A]">Documentos Disponíveis para Assinar</span>
               </div>
               {available.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-8">
@@ -1105,11 +1105,11 @@ export default function PatientDetails() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4">
                   {available.map((doc) => (
-                    <div key={doc.id} className="bg-white border border-[#D8CDB9] rounded-xl p-4 flex flex-col gap-3">
+                    <div key={doc.id} className="bg-white border border-[#DDD8CC] rounded-xl p-4 flex flex-col gap-3">
                       <div className="flex items-start gap-2.5">
-                        <FileText size={16} className="text-[#1F4D46] mt-0.5 shrink-0" />
+                        <FileText size={16} className="text-[#00704A] mt-0.5 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-[#1F4D46] truncate">{doc.name}</p>
+                          <p className="text-sm font-semibold text-[#00704A] truncate">{doc.name}</p>
                           <span className={`text-xs font-medium px-2 py-0.5 rounded-full inline-block mt-1 ${TYPE_COLORS[doc.type] ?? TYPE_COLORS.outro}`}>
                             {doc.type}
                           </span>
@@ -1118,13 +1118,13 @@ export default function PatientDetails() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => openFile(doc.id)}
-                          className="flex-1 flex items-center justify-center gap-1.5 border border-[#C2A56B] hover:bg-[#E8E0D2] py-1.5 rounded-lg text-xs text-[#1F4D46] font-medium transition"
+                          className="flex-1 flex items-center justify-center gap-1.5 border border-[#CBA258] hover:bg-[#E6E2D8] py-1.5 rounded-lg text-xs text-[#00704A] font-medium transition"
                         >
                           <Eye size={12} /> Visualizar
                         </button>
                         <button
                           onClick={() => sendDocToPatient(doc.id)}
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-[#1F4D46] hover:bg-[#285A50] text-white py-1.5 rounded-lg text-xs font-medium transition"
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-[#00704A] hover:bg-[#1E3932] text-white py-1.5 rounded-lg text-xs font-medium transition"
                         >
                           <Send size={12} /> Assinar
                         </button>
@@ -1151,15 +1151,15 @@ export default function PatientDetails() {
       {/* ORÇAMENTOS */}
       {activeTab ===
         "budgets" && (
-        <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-6 mb-8">
+        <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-[#1F4D46]">Orçamentos</h2>
+            <h2 className="text-xl font-bold text-[#00704A]">Orçamentos</h2>
             <button
               onClick={() => {
                 if (!showBudgetForm) budgetKeyRef.current = crypto.randomUUID();
                 setShowBudgetForm(!showBudgetForm);
               }}
-              className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-4 py-2 rounded-lg transition text-sm flex items-center gap-2"
+              className="bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2 rounded-lg transition text-sm flex items-center gap-2"
             >
               <Plus size={15} />
               Novo orçamento
@@ -1174,7 +1174,7 @@ export default function PatientDetails() {
             const total = Math.max(subtotal - discount, 0);
 
             return (
-              <div className="bg-white border border-[#D8CDB9] rounded-xl p-5 mb-6 space-y-5">
+              <div className="bg-white border border-[#DDD8CC] rounded-xl p-5 mb-6 space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-medium text-gray-500 block mb-1.5">Título do orçamento *</label>
@@ -1182,7 +1182,7 @@ export default function PatientDetails() {
                       value={budgetForm.title}
                       onChange={(e) => setBudgetForm((current) => ({ ...current, title: e.target.value }))}
                       placeholder="Ex: Pacote Harmonização Facial"
-                      className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                      className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                     />
                   </div>
                   <div>
@@ -1191,17 +1191,17 @@ export default function PatientDetails() {
                       type="date"
                       value={budgetForm.validUntil}
                       onChange={(e) => setBudgetForm((current) => ({ ...current, validUntil: e.target.value }))}
-                      className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                      className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                     />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-[#1F4D46]">Itens do orçamento</h3>
+                    <h3 className="text-sm font-bold text-[#00704A]">Itens do orçamento</h3>
                     <button
                       onClick={addBudgetItem}
-                      className="border border-[#C2A56B] hover:bg-[#E8E0D2] text-[#1F4D46] px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+                      className="border border-[#CBA258] hover:bg-[#E6E2D8] text-[#00704A] px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5"
                     >
                       <Plus size={13} />
                       Adicionar item
@@ -1213,14 +1213,14 @@ export default function PatientDetails() {
                       const itemTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
 
                       return (
-                        <div key={index} className="border border-[#D8CDB9] rounded-xl p-4 bg-[#F5F1EA] space-y-3">
+                        <div key={index} className="border border-[#DDD8CC] rounded-xl p-4 bg-[#F2F0EB] space-y-3">
                           <div className="grid grid-cols-1 md:grid-cols-[1.5fr_0.65fr_0.8fr_0.8fr_auto] gap-3 items-end">
                             <div>
                               <label className="text-xs font-medium text-gray-500 block mb-1.5">Procedimento</label>
                               <select
                                 value={item.procedureId}
                                 onChange={(e) => handleBudgetProcedureSelect(index, e.target.value)}
-                                className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                                className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                               >
                                 <option value="">Buscar procedimento...</option>
                                 {procedures.map((proc) => (
@@ -1237,7 +1237,7 @@ export default function PatientDetails() {
                                 min="1"
                                 value={item.quantity}
                                 onChange={(e) => updateBudgetItem(index, { quantity: e.target.value })}
-                                className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                                className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                               />
                             </div>
                             <div>
@@ -1248,12 +1248,12 @@ export default function PatientDetails() {
                                 step="0.01"
                                 value={item.unitPrice}
                                 onChange={(e) => updateBudgetItem(index, { unitPrice: e.target.value })}
-                                className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                                className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                               />
                             </div>
                             <div>
                               <label className="text-xs font-medium text-gray-500 block mb-1.5">Total</label>
-                              <div className="w-full border border-[#D8CDB9] bg-white rounded-xl p-3 text-sm text-gray-500">
+                              <div className="w-full border border-[#DDD8CC] bg-white rounded-xl p-3 text-sm text-gray-500">
                                 {itemTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                               </div>
                             </div>
@@ -1272,7 +1272,7 @@ export default function PatientDetails() {
                               value={item.observation}
                               onChange={(e) => updateBudgetItem(index, { observation: e.target.value })}
                               placeholder="Ex: Sessão única, retorno gratuito..."
-                              className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                              className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                             />
                           </div>
                         </div>
@@ -1283,24 +1283,24 @@ export default function PatientDetails() {
 
                 <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#1F4D46]">Subtotal</span>
-                    <strong className="text-[#1F4D46]">
+                    <span className="text-[#00704A]">Subtotal</span>
+                    <strong className="text-[#00704A]">
                       {subtotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </strong>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-3 items-center">
-                    <label className="text-sm text-[#1F4D46]">Desconto (R$)</label>
+                    <label className="text-sm text-[#00704A]">Desconto (R$)</label>
                     <input
                       type="number"
                       min="0"
                       step="0.01"
                       value={budgetForm.discount}
                       onChange={(e) => setBudgetForm((current) => ({ ...current, discount: e.target.value }))}
-                      className="border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                      className="border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-rose-100 pt-3">
-                    <span className="text-base font-bold text-[#1F4D46]">Total</span>
+                    <span className="text-base font-bold text-[#00704A]">Total</span>
                     <strong className="text-lg text-pink-600">
                       {total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </strong>
@@ -1314,7 +1314,7 @@ export default function PatientDetails() {
                     onChange={(e) => setBudgetForm((current) => ({ ...current, observations: e.target.value }))}
                     placeholder="Condições de pagamento, informações adicionais..."
                     rows={3}
-                    className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                    className="w-full border border-[#CBA258] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                   />
                 </div>
 
@@ -1324,7 +1324,7 @@ export default function PatientDetails() {
                   const txN = Number(budgetForm.txInstallments) || 1;
                   const set = (k) => (e) => setBudgetForm((c) => ({ ...c, [k]: e.target.value }));
                   return (
-                    <div className="border border-[#D8CDB9] rounded-xl p-4 space-y-3">
+                    <div className="border border-[#DDD8CC] rounded-xl p-4 space-y-3">
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Financeiro</p>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1333,7 +1333,7 @@ export default function PatientDetails() {
                           <select
                             value={budgetForm.txPaymentMethod}
                             onChange={set("txPaymentMethod")}
-                            className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                            className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                           >
                             <option value="">Selecione</option>
                             {["Dinheiro", "PIX", "Cartão de crédito", "Cartão de débito", "Transferência"].map((m) => (
@@ -1347,7 +1347,7 @@ export default function PatientDetails() {
                             type="number" min="1" max="60"
                             value={budgetForm.txInstallments}
                             onChange={set("txInstallments")}
-                            className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                            className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                           />
                         </div>
                       </div>
@@ -1360,7 +1360,7 @@ export default function PatientDetails() {
                           type="date"
                           value={budgetForm.txDueDate}
                           onChange={set("txDueDate")}
-                          className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                          className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                         />
                       </div>
 
@@ -1378,7 +1378,7 @@ export default function PatientDetails() {
                           value={budgetForm.txNotes}
                           onChange={set("txNotes")}
                           placeholder="Ex: entrada + 3x, pagar na consulta…"
-                          className="w-full border border-[#C2A56B] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20"
+                          className="w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                         />
                       </div>
                     </div>
@@ -1388,14 +1388,14 @@ export default function PatientDetails() {
                 <div className="flex justify-end gap-2">
                   <button
                     onClick={() => { resetBudgetForm(); setShowBudgetForm(false); }}
-                    className="border border-[#C2A56B] px-4 py-2 rounded-xl text-sm hover:bg-[#E8E0D2] transition"
+                    className="border border-[#CBA258] px-4 py-2 rounded-xl text-sm hover:bg-[#E6E2D8] transition"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={createBudget}
                     disabled={savingBudget}
-                    className="bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-60 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
+                    className="bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-60 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
                   >
                     {savingBudget ? "Criando…" : "Criar orçamento"}
                   </button>
@@ -1409,17 +1409,17 @@ export default function PatientDetails() {
               <p className="text-gray-500">Nenhum orçamento cadastrado.</p>
             ) : (
               budgets.map((budget) => (
-                <div key={budget.id} className="bg-white border border-[#D8CDB9] rounded-xl p-4">
+                <div key={budget.id} className="bg-white border border-[#DDD8CC] rounded-xl p-4">
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div>
-                      <h3 className="font-semibold text-[#1F4D46]">{budget.title}</h3>
+                      <h3 className="font-semibold text-[#00704A]">{budget.title}</h3>
                       <p className="text-xs text-gray-400 mt-0.5">
                         Criado em {new Date(budget.createdAt).toLocaleDateString("pt-BR")}
                         {budget.validUntil ? ` · válido até ${new Date(budget.validUntil).toLocaleDateString("pt-BR")}` : ""}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-base font-bold text-[#1F4D46]">
+                      <span className="text-base font-bold text-[#00704A]">
                         {budget.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       </span>
                       <button
@@ -1432,11 +1432,11 @@ export default function PatientDetails() {
                     </div>
                   </div>
 
-                  <div className="divide-y divide-[#E8E0D2] border border-[#E8E0D2] rounded-xl overflow-hidden">
+                  <div className="divide-y divide-[#E6E2D8] border border-[#E6E2D8] rounded-xl overflow-hidden">
                     {budget.items.map((item) => (
                       <div key={item.id} className="px-3 py-2.5 flex items-center justify-between gap-3 text-sm">
                         <div className="min-w-0">
-                          <p className="font-medium text-[#1F4D46] truncate">{item.procedureName}</p>
+                          <p className="font-medium text-[#00704A] truncate">{item.procedureName}</p>
                           {item.observation && (
                             <p className="text-xs text-gray-400 truncate">{item.observation}</p>
                           )}
@@ -1454,7 +1454,7 @@ export default function PatientDetails() {
 
                   {/* transações vinculadas */}
                   {budget.transactions?.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-[#E8E0D2]">
+                    <div className="mt-3 pt-3 border-t border-[#E6E2D8]">
                       <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Transações</p>
                       <div className="space-y-1.5">
                         {budget.transactions.map((tx) => {
@@ -1464,18 +1464,18 @@ export default function PatientDetails() {
                             ? "bg-amber-100 text-amber-700"
                             : "bg-gray-100 text-gray-500";
                           return (
-                            <div key={tx.id} className="flex items-center justify-between bg-[#F5F1EA] rounded-lg px-3 py-2">
+                            <div key={tx.id} className="flex items-center justify-between bg-[#F2F0EB] rounded-lg px-3 py-2">
                               <div className="flex items-center gap-2">
                                 {tx.type === "receita"
                                   ? <TrendingUp size={12} className="text-emerald-600 shrink-0" />
                                   : <TrendingDown size={12} className="text-red-500 shrink-0" />}
                                 <div>
-                                  <p className="text-xs font-medium text-[#1F4D46] truncate max-w-[180px]">{tx.description}</p>
+                                  <p className="text-xs font-medium text-[#00704A] truncate max-w-[180px]">{tx.description}</p>
                                   {tx.paymentMethod && <p className="text-[10px] text-gray-400">{tx.paymentMethod}</p>}
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-xs font-bold text-[#1F4D46]">
+                                <span className="text-xs font-bold text-[#00704A]">
                                   {Number(tx.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                                 </span>
                                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${pillColor}`}>
@@ -1503,7 +1503,7 @@ export default function PatientDetails() {
       {/* TIMELINE */}
       {activeTab === "timeline" && (() => {
         const TYPE_CONFIG = {
-          cadastro:    { label: "Cadastro",     dot: "bg-[#1F4D46]",  badge: "bg-[#E8E0D2] text-[#1F4D46]" },
+          cadastro:    { label: "Cadastro",     dot: "bg-[#00704A]",  badge: "bg-[#E6E2D8] text-[#00704A]" },
           evolution:   { label: "Evolução",     dot: "bg-emerald-500", badge: "bg-green-100 text-green-700" },
           appointment: { label: "Agendamento",  dot: "bg-blue-400",   badge: "bg-blue-100 text-blue-700" },
           transaction: { label: "Financeiro",   dot: "bg-amber-400",  badge: "bg-amber-100 text-amber-700" },
@@ -1562,21 +1562,21 @@ export default function PatientDetails() {
         ].sort((a, b) => b.date - a.date);
 
         return (
-          <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-6">
+          <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-[#1F4D46]">Timeline</h2>
+              <h2 className="text-xl font-bold text-[#00704A]">Timeline</h2>
               <span className="text-xs text-gray-400">{items.length} evento{items.length !== 1 ? "s" : ""}</span>
             </div>
             {items.length === 0 ? (
               <p className="text-gray-500">Nenhum evento registrado.</p>
             ) : (
-              <div className="relative border-l-2 border-[#D8CDB9] pl-6 space-y-5">
+              <div className="relative border-l-2 border-[#DDD8CC] pl-6 space-y-5">
                 {items.map((item, i) => {
                   const cfg = TYPE_CONFIG[item.type];
                   return (
                     <div key={i} className="relative">
                       <span className={`absolute -left-[25px] w-3.5 h-3.5 rounded-full border-2 border-white ${cfg.dot}`} />
-                      <div className="bg-white border border-[#D8CDB9] rounded-xl p-4">
+                      <div className="bg-white border border-[#DDD8CC] rounded-xl p-4">
                         <div className="flex items-center justify-between mb-1">
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.badge}`}>
                             {item.badge ?? cfg.label}
@@ -1587,7 +1587,7 @@ export default function PatientDetails() {
                             {item.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                           </span>
                         </div>
-                        <p className="font-semibold text-[#1F4D46] mt-1 text-sm">{item.label}</p>
+                        <p className="font-semibold text-[#00704A] mt-1 text-sm">{item.label}</p>
                         {item.detail && <p className="text-sm text-gray-500 mt-0.5">{item.detail}</p>}
                         {item.sub    && <p className="text-xs text-gray-400 mt-0.5">{item.sub}</p>}
                       </div>
@@ -1609,12 +1609,12 @@ function Card({
   value,
 }) {
   return (
-    <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-5">
+    <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
       <p className="text-sm text-gray-500">
         {title}
       </p>
 
-      <h2 className="text-lg font-semibold text-[#1F4D46] mt-1">
+      <h2 className="text-lg font-semibold text-[#00704A] mt-1">
         {value || "-"}
       </h2>
     </div>
@@ -1631,8 +1631,8 @@ function TabButton({
       onClick={onClick}
       className={`px-4 py-2 rounded-xl text-sm transition ${
         active
-          ? "bg-[#1F4D46] text-white"
-          : "text-[#1F4D46] hover:bg-[#E8E0D2]"
+          ? "bg-[#00704A] text-white"
+          : "text-[#00704A] hover:bg-[#E6E2D8]"
       }`}
     >
       {children}

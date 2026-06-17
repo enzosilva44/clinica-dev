@@ -564,6 +564,15 @@ model CsNote {
   createdAt DateTime @default(now())
 }
 
+// Estimativas salvas do Planejamento Financeiro (snapshot completo das premissas)
+model FinancialEstimate {
+  id         String   @id @default(cuid())
+  title      String
+  author     String
+  premissas  Json
+  createdAt  DateTime @default(now())
+}
+
 enum Role {
   ADMIN
   PROFESSIONAL

@@ -1,386 +1,364 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CalendarCheck, Map, FileSignature, MessageSquare, Sparkles,
-  BarChart2, Package, Shield, ChevronRight, Check,
-  Users, TrendingUp, Clock, Star,
+  CalendarCheck, CreditCard, FileSignature, MessageSquare, Sparkles,
+  BarChart2, Check, ChevronRight, ChevronLeft, Star, Quote,
+  Target, Compass, Heart,
 } from "lucide-react";
 
-function Logo() {
+// URL da área administrativa (app separado)
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || "https://admin.iasoclin.online";
+
+function Logo({ light = false }) {
   return (
-    <div className="flex items-center gap-3">
-      <svg viewBox="0 0 56 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-10">
-        <line x1="14" y1="7"  x2="42" y2="7"  stroke="#C2A56B" strokeWidth="3.5" strokeLinecap="round" />
-        <line x1="28" y1="7"  x2="28" y2="73" stroke="#C2A56B" strokeWidth="3.5" strokeLinecap="round" />
-        <line x1="14" y1="73" x2="42" y2="73" stroke="#C2A56B" strokeWidth="3.5" strokeLinecap="round" />
-        <path d="M28 32 Q34 24 42 20" stroke="#C2A56B" strokeWidth="2" strokeLinecap="round" fill="none" />
-        <path d="M28 32 Q40 14 44 12 Q46 22 38 28 Q34 31 28 32 Z" fill="#C2A56B" opacity="0.85" />
+    <div className="flex items-center gap-2">
+      <svg viewBox="0 0 56 80" fill="none" className="w-5 h-7">
+        <line x1="14" y1="7"  x2="42" y2="7"  stroke="#CBA258" strokeWidth="4" strokeLinecap="round" />
+        <line x1="28" y1="7"  x2="28" y2="73" stroke="#CBA258" strokeWidth="4" strokeLinecap="round" />
+        <line x1="14" y1="73" x2="42" y2="73" stroke="#CBA258" strokeWidth="4" strokeLinecap="round" />
+        <path d="M28 32 Q40 14 44 12 Q46 22 38 28 Q34 31 28 32 Z" fill="#CBA258" opacity="0.85" />
       </svg>
-      <span className="text-xl font-bold">
-        <span className="text-[#1F4D46]">Iaso</span>
-        <span className="text-[#C2A56B]">Clin</span>
+      <span className="text-lg font-bold">
+        <span className={light ? "text-white" : "text-[#00704A]"}>Iaso</span>
+        <span className="text-[#CBA258]">clin</span>
       </span>
     </div>
   );
 }
 
 const FEATURES = [
-  {
-    icon: CalendarCheck,
-    title: "Agenda Inteligente",
-    desc: "Visualização semanal e mensal, confirmação automática e lembretes via WhatsApp para zero faltas.",
-    color: "#1F4D46",
-  },
-  {
-    icon: Map,
-    title: "Mapa de Procedimentos",
-    desc: "Mapeamento facial com referência anatômica, registro de doses por músculo e histórico por sessão.",
-    color: "#6F7F73",
-  },
-  {
-    icon: FileSignature,
-    title: "Assinatura Eletrônica",
-    desc: "Fluxo completo com OTP por e-mail, geolocalização, SHA-256 e certificado de evidências em PDF.",
-    color: "#C4895A",
-  },
-  {
-    icon: MessageSquare,
-    title: "Automações WhatsApp",
-    desc: "Confirmações, lembretes, boas-vindas e aniversários enviados automaticamente via Meta Cloud API.",
-    color: "#2E6FA8",
-  },
-  {
-    icon: Sparkles,
-    title: "Inteligência Artificial",
-    desc: "Resumo clínico do paciente, rascunho de evoluções e análise financeira com insights em tempo real.",
-    color: "#7C5CBF",
-  },
-  {
-    icon: BarChart2,
-    title: "Relatórios & Analytics",
-    desc: "Tickets médios, procedimentos mais realizados, performance mensal e projeções financeiras.",
-    color: "#C4895A",
-  },
-  {
-    icon: Package,
-    title: "Estoque de Insumos",
-    desc: "Controle de produtos, movimentações, alertas de estoque baixo e rastreio de uso por procedimento.",
-    color: "#1F4D46",
-  },
-  {
-    icon: Shield,
-    title: "Documentos Digitais",
-    desc: "Pasta sanitária completa com contratos, termos e anamneses — versionados e auditáveis.",
-    color: "#6F7F73",
-  },
-];
-
-const STATS = [
-  { icon: Users,      value: "100%",   label: "Prontuário digital"           },
-  { icon: Clock,      value: "−40%",   label: "Tempo em burocracia"          },
-  { icon: TrendingUp, value: "+30%",   label: "Retenção de pacientes"        },
-  { icon: Star,       value: "8 em 1", label: "Módulos integrados"           },
+  { icon: CalendarCheck, title: "Agenda inteligente",  desc: "Agendamento online com confirmação automática por WhatsApp. Bloqueios, recorrências e lembretes sem esforço." },
+  { icon: CreditCard,    title: "Cobranças via Asaas", desc: "Link de pagamento, boleto e PIX gerados automaticamente. Receita em dia e a acompanhar tudo no painel." },
+  { icon: FileSignature, title: "Anamnese digital",    desc: "Formulários completos com assinatura digital. Conformidade legal, sem impressão, sem papel perdido." },
+  { icon: MessageSquare, title: "WhatsApp integrado",  desc: "Mensagens automáticas de confirmação, lembrete e pós-atendimento. Ilimitado em todos os planos." },
+  { icon: Sparkles,      title: "IA assistente",       desc: "Identifica pacientes sumidos, sugere reagendamentos e gera mensagens personalizadas com um clique." },
+  { icon: BarChart2,     title: "Relatórios claros",   desc: "Faturamento, ticket médio, taxa de confirmação e histórico de pacientes. Dados que fazem sentido." },
 ];
 
 const PLANS = [
   {
-    name: "Solo",
-    price: "R$ 197",
-    period: "/mês",
-    desc: "Para profissionais autônomos",
-    features: ["1 usuário", "Pacientes ilimitados", "Agenda + Evoluções", "Documentos digitais", "IA básica"],
-    cta: "Começar grátis",
+    name: "Solo", price: "R$ 69", period: "/mês", sub: "para 1 profissional",
+    features: ["Agenda completa", "WhatsApp ilimitado", "Cobranças via Asaas", "500 créditos de IA / mês", "20 assinaturas digitais / mês", "10 GB de armazenamento"],
     highlight: false,
   },
   {
-    name: "Clínica",
-    price: "R$ 397",
-    period: "/mês",
-    desc: "Para clínicas em crescimento",
-    features: ["Até 5 usuários", "Tudo do Solo", "WhatsApp Automações", "Assinatura eletrônica", "Analytics avançado", "Estoque completo"],
-    cta: "Testar 14 dias grátis",
+    name: "Clínica", price: "R$ 119", period: "/mês", sub: "até 3 profissionais",
+    features: ["Tudo do Solo", "1.500 créditos de IA / mês", "60 assinaturas digitais / mês", "30 GB de armazenamento", "Relatórios com 12 meses de histórico", "Parcelamento em até 6x"],
     highlight: true,
   },
   {
-    name: "Enterprise",
-    price: "Sob consulta",
-    period: "",
-    desc: "Para redes e franquias",
-    features: ["Usuários ilimitados", "Multi-clínica", "Suporte dedicado", "Onboarding personalizado", "SLA garantido"],
-    cta: "Falar com comercial",
+    name: "Pro", price: "R$ 189", period: "/mês", sub: "até 5 profissionais",
+    features: ["Tudo da Clínica", "5.000 créditos de IA / mês", "Assinaturas ilimitadas", "100 GB de armazenamento", "Histórico completo de analytics", "Parcelamento em até 12x"],
     highlight: false,
   },
 ];
 
-// URL da área administrativa (app separado). Configurável via env.
-const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || "https://admin.iasoclin.online";
+const DEPOIMENTOS = [
+  { nome: "Marina Figueiredo", clinica: "Estúdio de Estética · São Paulo", texto: "Antes eu controlava tudo no caderno. Hoje a agenda confirma sozinha e eu recebo por PIX sem nem precisar cobrar ninguém." },
+  { nome: "Camila Lopes",      clinica: "Clínica de Harmonização · Curitiba", texto: "A IA me avisou que três pacientes estavam sumidas. Mandei mensagem e duas delas reagendaram no mesmo dia. Isso paga o plano." },
+  { nome: "Roberto Pires",     clinica: "Dermato · Belo Horizonte", texto: "Finalmente um sistema que não parece feito para hospital. É simples, bonito e funciona. Minhas clientes adoram o link de pagamento." },
+];
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const [depoAtivo, setDepoAtivo] = useState(0);
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white font-sans text-[#1F2D2A]">
 
       {/* ── NAVBAR ── */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-[#E8E0D2]">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-[#E6E2D8]">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Logo />
-          <div className="hidden md:flex items-center gap-8 text-sm text-gray-500">
-            <a href="#features" className="hover:text-[#1F4D46] transition">Funcionalidades</a>
-            <a href="#planos" className="hover:text-[#1F4D46] transition">Planos</a>
+          <div className="hidden md:flex items-center gap-7 text-sm text-gray-500">
+            <a href="#features"    className="hover:text-[#00704A] transition">Funcionalidades</a>
+            <a href="#planos"      className="hover:text-[#00704A] transition">Planos</a>
+            <a href="#depoimentos" className="hover:text-[#00704A] transition">Depoimentos</a>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href={ADMIN_URL}
-              className="text-sm text-gray-400 font-medium hover:text-[#1F4D46] transition hidden sm:block"
-            >
-              Área Admin
-            </a>
-            <button
-              onClick={() => navigate("/login")}
-              className="text-sm text-[#1F4D46] font-medium hover:opacity-70 transition hidden sm:block"
-            >
-              Entrar
-            </button>
-            <button
-              onClick={() => navigate("/cadastro")}
-              className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5"
-            >
-              Começar grátis <ChevronRight size={14} />
+            <a href={ADMIN_URL} className="hidden sm:block text-sm text-gray-400 font-medium hover:text-[#00704A] transition">Área Admin</a>
+            <button onClick={() => navigate("/login")} className="text-sm text-[#00704A] font-medium hover:opacity-70 transition">Entrar</button>
+            <button onClick={() => navigate("/cadastro")} className="bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
+              Começar grátis
             </button>
           </div>
         </div>
       </nav>
 
       {/* ── HERO ── */}
-      <section className="bg-[#F5F1EA] pt-20 pb-24 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="inline-flex items-center gap-2 bg-[#1F4D46]/10 text-[#1F4D46] text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
-            <Sparkles size={12} /> Inteligência Artificial integrada
-          </span>
-          <h1 className="text-4xl md:text-6xl font-black text-[#1F4D46] leading-tight mb-6">
-            A clínica de estética<br />
-            <span className="text-[#C2A56B]">que se gerencia sozinha</span>
-          </h1>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Do agendamento à assinatura eletrônica avançada, do mapa facial à análise financeira com IA.
-            IasoClin é o sistema completo para clínicas de harmonização facial e estética médica.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={() => navigate("/cadastro")}
-              className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-8 py-4 rounded-2xl font-bold text-base transition flex items-center gap-2 shadow-lg shadow-[#1F4D46]/20"
-            >
-              Testar 14 dias grátis <ChevronRight size={16} />
-            </button>
-            <button
-              onClick={() => navigate("/cadastro")}
-              className="border-2 border-[#D8CDB9] hover:border-[#1F4D46] text-[#1F4D46] px-8 py-4 rounded-2xl font-semibold text-base transition"
-            >
-              Ver demonstração
-            </button>
+      <section className="bg-[#F2F0EB] border-b border-[#E6E2D8]">
+        <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <span className="inline-flex items-center gap-2 bg-[#00704A]/8 text-[#00704A] text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
+              <Sparkles size={12} /> Novo · Agenda com IA integrada
+            </span>
+            <h1 className="text-4xl md:text-5xl font-black text-[#141414] leading-[1.1] mb-5">
+              Sua clínica<br />organizada do<br />
+              <span className="italic font-serif text-[#00704A]">jeito certo.</span>
+            </h1>
+            <p className="text-gray-500 text-base leading-relaxed mb-8 max-w-md">
+              Agenda, cobranças, anamnese e WhatsApp em um só lugar. Feito para clínicas de estética que querem crescer sem complicar.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button onClick={() => navigate("/cadastro")}
+                className="bg-[#00704A] hover:bg-[#1E3932] text-white px-6 py-3.5 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-[#00704A]/15">
+                Teste grátis por 14 dias <ChevronRight size={16} />
+              </button>
+              <button onClick={() => navigate("/login")}
+                className="border border-[#DDD8CC] text-[#00704A] px-6 py-3.5 rounded-xl font-medium text-sm hover:bg-white transition">
+                Ver demonstração →
+              </button>
+            </div>
+            <div className="flex items-center gap-3 mt-8">
+              <div className="flex -space-x-2">
+                {["#00704A", "#CBA258", "#6F7F73", "#2E6FA8"].map((c) => (
+                  <div key={c} className="w-7 h-7 rounded-full border-2 border-[#F2F0EB]" style={{ backgroundColor: c }} />
+                ))}
+              </div>
+              <div>
+                <div className="flex items-center gap-0.5 text-[#CBA258]">
+                  {[...Array(5)].map((_, i) => <Star key={i} size={11} fill="#CBA258" />)}
+                </div>
+                <p className="text-[11px] text-gray-400">+200 clínicas já usam o iasoclin · sem fidelidade</p>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-gray-400 mt-4">Sem cartão de crédito · Cancele quando quiser</p>
+
+          {/* Mockup do dashboard */}
+          <div className="relative">
+            <div className="bg-white rounded-2xl shadow-2xl border border-[#E6E2D8] overflow-hidden">
+              <div className="bg-[#00704A] px-4 py-2.5 flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                </div>
+                <span className="text-white/80 text-xs font-medium ml-2">iasoclin</span>
+              </div>
+              <div className="p-4">
+                <p className="text-xs text-gray-400 mb-3">Bom dia, <span className="font-semibold text-[#00704A]">Ana Flávia</span></p>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {[
+                    { v: "8",      l: "hoje",     c: "#00704A" },
+                    { v: "R$ 9,2k",l: "+28% mês", c: "#CBA258" },
+                    { v: "14",     l: "retornos", c: "#2E6FA8" },
+                  ].map((k) => (
+                    <div key={k.l} className="bg-[#F2F0EB] rounded-xl p-2.5">
+                      <p className="text-lg font-black" style={{ color: k.c }}>{k.v}</p>
+                      <p className="text-[9px] text-gray-400">{k.l}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1.5">
+                  {[
+                    { h: "09:30", n: "Inês Rocha",    s: "Confirmado", c: "bg-green-100 text-green-700" },
+                    { h: "10:15", n: "Sandra Alves",  s: "Próximo",    c: "bg-blue-100 text-blue-700" },
+                    { h: "11:00", n: "Rafaela Santos",s: "Pendente",   c: "bg-amber-100 text-amber-700" },
+                  ].map((a) => (
+                    <div key={a.n} className="flex items-center justify-between bg-[#FAFAF9] rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-[#141414]">{a.h}</span>
+                        <span className="text-[11px] text-gray-600">{a.n}</span>
+                      </div>
+                      <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${a.c}`}>{a.s}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── STATS ── */}
-      <section className="bg-[#1F4D46] py-14 px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          {STATS.map(({ icon: Icon, value, label }) => (
-            <div key={label} className="text-center">
-              <div className="w-10 h-10 rounded-xl bg-[#C2A56B]/20 flex items-center justify-center mx-auto mb-3">
-                <Icon size={18} className="text-[#C2A56B]" />
+      {/* ── FUNCIONALIDADES ── */}
+      <section id="features" className="max-w-6xl mx-auto px-6 py-20">
+        <p className="text-xs font-semibold text-[#CBA258] uppercase tracking-widest mb-3">Funcionalidades</p>
+        <h2 className="text-3xl md:text-4xl font-black text-[#141414] leading-tight mb-3">
+          Tudo que sua clínica precisa,<br />
+          <span className="italic font-serif">sem o que não precisa.</span>
+        </h2>
+        <p className="text-gray-500 mb-12 max-w-lg">
+          Oito módulos integrados. Um sistema. Sem planilha, sem papel, sem achismo.
+        </p>
+        <div className="grid md:grid-cols-3 gap-x-8 gap-y-10">
+          {FEATURES.map(({ icon: Icon, title, desc }) => (
+            <div key={title}>
+              <div className="w-10 h-10 bg-[#F0F7F5] rounded-xl flex items-center justify-center mb-4">
+                <Icon size={18} className="text-[#00704A]" />
               </div>
-              <p className="text-3xl font-black text-white mb-1">{value}</p>
-              <p className="text-[#D8CDB9]/70 text-xs">{label}</p>
+              <h3 className="font-bold text-[#141414] mb-1.5">{title}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section id="features" className="py-24 px-6 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-[#1F4D46] mb-4">
-              Tudo que sua clínica precisa,<br />em um só lugar
-            </h2>
-            <p className="text-gray-400 max-w-xl mx-auto">
-              8 módulos integrados que conversam entre si. Sem sistemas paralelos, sem planilhas.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {FEATURES.map(({ icon: Icon, title, desc, color }) => (
-              <div key={title} className="bg-[#F5F1EA] rounded-2xl p-6 hover:shadow-md transition group">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                  style={{ backgroundColor: color + "22" }}>
-                  <Icon size={18} style={{ color }} />
-                </div>
-                <h3 className="font-bold text-[#1F4D46] text-sm mb-2">{title}</h3>
-                <p className="text-gray-400 text-xs leading-relaxed">{desc}</p>
+      {/* ── POR DENTRO DO SISTEMA ── */}
+      <section className="bg-[#F2F0EB] border-y border-[#E6E2D8]">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <p className="text-xs font-semibold text-[#CBA258] uppercase tracking-widest mb-3">Por dentro do sistema</p>
+          <h2 className="text-3xl md:text-4xl font-black text-[#141414] leading-tight mb-12">
+            Números que<br /><span className="italic font-serif">falam por si.</span>
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Gráfico faturamento */}
+            <div className="bg-white border border-[#E6E2D8] rounded-2xl p-6">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Faturamento mensal</p>
+              <p className="font-bold text-[#141414] mb-1">Acompanhe o crescimento da clínica em tempo real.</p>
+              <p className="text-xs text-gray-400 mb-6">Cada procedimento registrado vira dado. Cada dado vira decisão.</p>
+              <div className="flex items-end gap-2 h-28">
+                {[35, 45, 40, 60, 55, 80, 95].map((h, i) => (
+                  <div key={i} className="flex-1 rounded-t-md" style={{ height: `${h}%`, backgroundColor: i >= 5 ? "#00704A" : i >= 3 ? "#6F9B8E" : "#CDDFD8" }} />
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── DESTAQUE: ASSINATURA ELETRÔNICA ── */}
-      <section className="py-20 px-6 bg-[#F5F1EA]">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1">
-            <span className="text-xs font-semibold text-[#C2A56B] uppercase tracking-widest block mb-3">
-              Lei 14.063/2020
-            </span>
-            <h2 className="text-3xl font-black text-[#1F4D46] mb-5 leading-tight">
-              Assinatura eletrônica<br />avançada e auditável
-            </h2>
-            <p className="text-gray-500 mb-6 leading-relaxed text-sm">
-              Seus documentos assinados com validade jurídica completa.
-              OTP por e-mail, captura de geolocalização, hash SHA-256
-              e certificado de evidências gerado automaticamente em PDF.
-            </p>
-            <ul className="space-y-3">
-              {[
-                "Validação de identidade por código OTP",
-                "Assinatura manuscrita digital",
-                "Rastreio de IP, dispositivo e localização",
-                "Hash SHA-256 do documento original",
-                "Certificado de auditoria anexado ao PDF",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm text-gray-600">
-                  <div className="w-5 h-5 rounded-full bg-[#1F4D46] flex items-center justify-center shrink-0">
-                    <Check size={11} className="text-white" />
-                  </div>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="flex-1 bg-[#1F4D46] rounded-3xl p-8 text-white">
-            <p className="text-xs font-semibold text-[#C2A56B] uppercase tracking-widest mb-4">
-              Certificado de Evidências
-            </p>
-            {[
-              ["Assinante", "Maria da Silva"],
-              ["CPF", "•••.456.789-••"],
-              ["Data/Hora UTC", "2026-06-08T21:15:34Z"],
-              ["OTP validado", "e-mail", true],
-              ["Geolocalização", "Registrada", true],
-              ["Hash SHA-256", "f2f4db7f6e2a..."],
-            ].map(([k, v, checked]) => (
-              <div key={k} className="flex justify-between py-2.5 border-b border-white/10 text-xs">
-                <span className="text-[#D8CDB9]/60">{k}</span>
-                <span className="text-white font-medium inline-flex items-center gap-1">
-                  {checked && <Check size={11} className="text-green-400" />}{v}
-                </span>
-              </div>
-            ))}
-            <p className="text-[10px] text-[#D8CDB9]/40 mt-4 leading-relaxed">
-              Documento assinado eletronicamente em conformidade com a Lei 14.063/2020.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── DESTAQUE: IA ── */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row-reverse items-center gap-12">
-          <div className="flex-1">
-            <span className="text-xs font-semibold text-[#C2A56B] uppercase tracking-widest block mb-3">
-              Inteligência Artificial
-            </span>
-            <h2 className="text-3xl font-black text-[#1F4D46] mb-5 leading-tight">
-              IA que conhece<br />seu paciente
-            </h2>
-            <p className="text-gray-500 mb-6 leading-relaxed text-sm">
-              Cada vez que você entra no prontuário, a IA já analisou o histórico completo —
-              procedimentos, evoluções, agendamentos e financeiro — e apresenta um resumo pronto.
-            </p>
-            <ul className="space-y-3">
-              {[
-                "Resumo clínico gerado automaticamente",
-                "Rascunho de evoluções com um clique",
-                "Análise financeira e guardião de saúde fiscal",
-                "Sugestões de retorno por paciente",
-                "Frase motivacional diária personalizada",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm text-gray-600">
-                  <div className="w-5 h-5 rounded-full bg-[#C2A56B] flex items-center justify-center shrink-0">
-                    <Sparkles size={10} className="text-white" />
-                  </div>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="flex-1 bg-[#F5F1EA] rounded-3xl p-7 border border-[#D8CDB9]">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={14} className="text-[#1F4D46]" />
-              <span className="text-xs font-semibold text-[#1F4D46] uppercase tracking-wide">Resumo gerado por IA</span>
             </div>
-            <p className="text-sm text-gray-600 leading-relaxed bg-white rounded-xl p-4 border border-[#D8CDB9]">
-              "Paciente com 3 sessões de Botox realizadas nos últimos 6 meses.
-              Última evolução em 02/06 sem intercorrências. Retorno programado para
-              90 dias. Ticket médio de R$ 380. Procedimento mais frequente: frontal (3x)."
-            </p>
-            <p className="text-[11px] text-gray-400 mt-3 text-right">Gerado em 0.8s · Claude AI</p>
+            {/* Cards à direita */}
+            <div className="space-y-6">
+              <div className="bg-[#00704A] rounded-2xl p-6 text-white">
+                <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wide mb-2">Taxa de confirmação</p>
+                <p className="text-5xl font-black mb-2">87%</p>
+                <p className="text-sm text-white/70">dos agendamentos confirmados automaticamente via WhatsApp.</p>
+              </div>
+              <div className="bg-white border border-[#E6E2D8] rounded-2xl p-6">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Sparkles size={13} className="text-[#CBA258]" />
+                  <span className="text-[10px] font-semibold text-[#CBA258] uppercase tracking-wide">IA iasoclin</span>
+                </div>
+                <p className="font-bold text-[#141414] mb-1">Pacientes que somem, a IA encontra.</p>
+                <p className="text-sm text-gray-500">Detecção automática de pacientes sem retorno com sugestão de mensagem personalizada.</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── PLANOS ── */}
-      <section id="planos" className="py-24 px-6 bg-[#F5F1EA]">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-black text-[#1F4D46] mb-4">
-              Planos para cada etapa
-            </h2>
-            <p className="text-gray-400">Comece sozinho, cresça com a sua clínica.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {PLANS.map((plan) => (
-              <div key={plan.name}
-                className={`rounded-3xl p-7 flex flex-col border-2 transition ${
-                  plan.highlight
-                    ? "bg-[#1F4D46] border-[#1F4D46] shadow-2xl shadow-[#1F4D46]/20 scale-105"
-                    : "bg-white border-[#D8CDB9]"
+      <section id="planos" className="max-w-6xl mx-auto px-6 py-20">
+        <div className="text-center mb-12">
+          <p className="text-xs font-semibold text-[#CBA258] uppercase tracking-widest mb-3">Planos</p>
+          <h2 className="text-3xl md:text-4xl font-black text-[#141414] mb-2">Simples assim.</h2>
+          <p className="text-gray-500">Todos os recursos em todos os planos. O que diferencia é o volume.</p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-5 items-start">
+          {PLANS.map((plan) => (
+            <div key={plan.name}
+              className={`rounded-2xl border p-6 relative ${plan.highlight ? "border-[#00704A] shadow-xl shadow-[#00704A]/10 bg-white" : "border-[#E6E2D8] bg-white"}`}>
+              {plan.highlight && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#00704A] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                  Mais escolhido
+                </span>
+              )}
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{plan.name}</p>
+              <div className="flex items-baseline gap-1 mb-1">
+                <span className="text-3xl font-black text-[#00704A]">{plan.price}</span>
+                <span className="text-sm text-gray-400">{plan.period}</span>
+              </div>
+              <p className="text-xs text-gray-400 mb-5">{plan.sub}</p>
+              <ul className="space-y-2.5 mb-6">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-gray-600">
+                    <Check size={15} className="text-[#00704A] shrink-0 mt-0.5" /> {f}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={() => navigate("/cadastro")}
+                className={`w-full py-3 rounded-xl text-sm font-semibold transition ${
+                  plan.highlight ? "bg-[#00704A] hover:bg-[#1E3932] text-white" : "border border-[#DDD8CC] text-[#00704A] hover:bg-[#F2F0EB]"
                 }`}>
-                {plan.highlight && (
-                  <span className="text-[10px] font-bold text-[#1F4D46] bg-[#C2A56B] px-3 py-1 rounded-full w-fit mb-4">
-                    MAIS POPULAR
-                  </span>
-                )}
-                <p className={`text-lg font-bold mb-1 ${plan.highlight ? "text-white" : "text-[#1F4D46]"}`}>
-                  {plan.name}
-                </p>
-                <p className={`text-xs mb-5 ${plan.highlight ? "text-[#D8CDB9]/70" : "text-gray-400"}`}>
-                  {plan.desc}
-                </p>
-                <div className="flex items-end gap-1 mb-6">
-                  <span className={`text-3xl font-black ${plan.highlight ? "text-white" : "text-[#1F4D46]"}`}>
-                    {plan.price}
-                  </span>
-                  <span className={`text-sm mb-1 ${plan.highlight ? "text-[#D8CDB9]/60" : "text-gray-400"}`}>
-                    {plan.period}
-                  </span>
+                Começar grátis
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── COMO SURGIU ── */}
+      <section className="bg-[#F2F0EB] border-y border-[#E6E2D8]">
+        <div className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-black text-[#141414] leading-tight mb-5">
+              Uma reclamação que<br /><span className="italic font-serif">virou sistema.</span>
+            </h2>
+            <p className="text-gray-500 leading-relaxed mb-3">
+              O iasoclin nasceu de tanto ouvir reclamações de uma cunhada biomédica sobre a falta de governança da sua clínica — um sistema engessado, sem controle, sem visibilidade.
+            </p>
+            <p className="text-gray-500 leading-relaxed">
+              Percebi que o problema não era dela: era de centenas de clínicas de estética no Brasil inteiro. Então decidimos construir o que faltava.
+            </p>
+            <p className="text-xs text-gray-400 mt-4">França, SP · 2025</p>
+          </div>
+          <div className="bg-white border border-[#E6E2D8] rounded-2xl p-6">
+            <Quote size={24} className="text-[#CBA258] mb-3" />
+            <p className="text-[#141414] leading-relaxed mb-4 italic font-serif">
+              "Minha cunhada biomédica não conseguia ter controle de nada na clínica dela. Sem agenda, sem cobrança, sem histórico. Aquilo me incomodava — e não saía mais da minha cabeça."
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-[#00704A] text-white text-xs font-bold flex items-center justify-center">EO</div>
+              <div>
+                <p className="text-sm font-bold text-[#141414]">Enzo Oliveira</p>
+                <p className="text-xs text-gray-400">Co-fundador & CTO</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TIME FUNDADOR ── */}
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <p className="text-xs font-semibold text-[#CBA258] uppercase tracking-widest mb-3">Time fundador</p>
+        <h2 className="text-3xl md:text-4xl font-black text-[#141414] mb-10">Quem está por trás.</h2>
+        <div className="bg-white border border-[#E6E2D8] rounded-2xl p-6 flex flex-col md:flex-row gap-6 mb-12">
+          <div className="w-full md:w-44 h-36 bg-[#00704A] rounded-2xl flex items-center justify-center shrink-0">
+            <span className="text-3xl font-black text-white/90">EO</span>
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-[#141414] text-lg">Enzo Oliveira</p>
+            <p className="text-[10px] font-semibold text-[#CBA258] uppercase tracking-wide mb-3">Tecnologia & Produto</p>
+            <p className="text-sm text-gray-500 leading-relaxed mb-3">
+              Engenheiro de software e AWS Partner com experiência em infraestrutura cloud, FinOps e produtos SaaS. No iasoclin, cuida de toda a arquitetura técnica, produto e estratégia de plataforma.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {["AWS", "Backend", "FinOps", "Produto"].map((t) => (
+                <span key={t} className="text-[10px] font-medium bg-[#F2F0EB] text-gray-500 px-2 py-1 rounded-full">{t}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {[
+            { icon: Compass, t: "Visão",   d: "Ser a plataforma de gestão mais usada por clínicas de estética no Brasil." },
+            { icon: Target,  t: "Missão",  d: "Dar governança real a clínicas que merecem crescer sem depender de planilha ou caderno." },
+            { icon: Heart,   t: "Valores", d: "Simplicidade antes de sofisticação. Transparência com o cliente. Tecnologia a serviço de quem cuida de pessoas." },
+          ].map(({ icon: Icon, t, d }) => (
+            <div key={t}>
+              <Icon size={18} className="text-[#00704A] mb-2" />
+              <p className="font-bold text-[#141414] mb-1">{t}</p>
+              <p className="text-sm text-gray-500 leading-relaxed">{d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── DEPOIMENTOS ── */}
+      <section id="depoimentos" className="bg-[#F2F0EB] border-y border-[#E6E2D8]">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <h2 className="text-3xl md:text-4xl font-black text-[#141414] mb-10">Quem usa, recomenda.</h2>
+          <div className="grid md:grid-cols-3 gap-5">
+            {DEPOIMENTOS.map((d) => (
+              <div key={d.nome} className="bg-white border border-[#E6E2D8] rounded-2xl p-6">
+                <div className="flex items-center gap-0.5 text-[#CBA258] mb-3">
+                  {[...Array(5)].map((_, i) => <Star key={i} size={13} fill="#CBA258" />)}
                 </div>
-                <ul className="space-y-2.5 mb-8 flex-1">
-                  {plan.features.map((f) => (
-                    <li key={f} className={`flex items-center gap-2.5 text-xs ${plan.highlight ? "text-[#D8CDB9]" : "text-gray-500"}`}>
-                      <Check size={13} className={plan.highlight ? "text-[#C2A56B]" : "text-[#1F4D46]"} />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => navigate("/cadastro")}
-                  className={`w-full py-3 rounded-xl font-semibold text-sm transition ${
-                    plan.highlight
-                      ? "bg-[#C2A56B] hover:bg-[#D4B97A] text-white"
-                      : "bg-[#1F4D46] hover:bg-[#285A50] text-white"
-                  }`}>
-                  {plan.cta}
-                </button>
+                <p className="text-sm text-gray-600 leading-relaxed mb-5">"{d.texto}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#00704A] text-white text-[10px] font-bold flex items-center justify-center">
+                    {d.nome.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#141414]">{d.nome}</p>
+                    <p className="text-[10px] text-gray-400">{d.clinica}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -388,39 +366,46 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA FINAL ── */}
-      <section className="py-20 px-6 bg-[#1F4D46]">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-            Sua clínica merece mais<br />do que uma planilha
-          </h2>
-          <p className="text-[#D8CDB9]/70 mb-10 max-w-xl mx-auto">
-            Junte-se a clínicas que já automatizaram sua gestão com o IasoClin.
-            14 dias grátis, sem compromisso.
-          </p>
-          <button
-            onClick={() => navigate("/cadastro")}
-            className="bg-[#C2A56B] hover:bg-[#D4B97A] text-white px-10 py-4 rounded-2xl font-bold text-base transition shadow-lg"
-          >
-            Começar agora — grátis por 14 dias
-          </button>
-          <p className="text-[#D8CDB9]/40 text-xs mt-4">Sem cartão de crédito necessário</p>
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <div className="bg-[#00704A] rounded-3xl px-8 py-12 md:px-14 md:py-14 relative overflow-hidden">
+          <div className="relative z-10 grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <p className="text-[10px] font-semibold text-[#CBA258] uppercase tracking-widest mb-3">Comece hoje</p>
+              <h2 className="text-3xl md:text-4xl font-black text-white leading-tight mb-3">
+                Sua clínica organizada<br /><span className="italic font-serif text-[#CBA258]">em menos de uma tarde.</span>
+              </h2>
+              <p className="text-white/60 text-sm max-w-sm">
+                14 dias grátis, sem cartão de crédito. Configure em minutos e receba seu primeiro agendamento ainda hoje.
+              </p>
+            </div>
+            <div className="flex flex-col sm:items-end gap-3">
+              <button onClick={() => navigate("/cadastro")}
+                className="bg-white text-[#00704A] px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-[#F2F0EB] transition">
+                Criar conta grátis
+              </button>
+              <button onClick={() => navigate("/login")}
+                className="text-white/70 text-sm hover:text-white transition">
+                Fazer login →
+              </button>
+            </div>
+          </div>
+          <div className="absolute -right-10 -bottom-16 w-72 h-72 rounded-full bg-white/5" />
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="bg-[#163D38] py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-[#E6E2D8]">
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <Logo />
-          <p className="text-[#D8CDB9]/40 text-xs text-center">
-            © {new Date().getFullYear()} IasoClin · Sistema de Gestão para Clínicas de Estética
-          </p>
-          <div className="flex gap-4 text-xs text-[#D8CDB9]/40">
-            <span className="hover:text-[#D8CDB9] cursor-pointer transition">Privacidade</span>
-            <span className="hover:text-[#D8CDB9] cursor-pointer transition">Termos</span>
+          <div className="flex items-center gap-6 text-xs text-gray-400">
+            <a href="#features" className="hover:text-[#00704A] transition">Funcionalidades</a>
+            <a href="#planos" className="hover:text-[#00704A] transition">Planos</a>
+            <a href="#depoimentos" className="hover:text-[#00704A] transition">Depoimentos</a>
+            <a href={ADMIN_URL} className="hover:text-[#00704A] transition">Admin</a>
           </div>
+          <p className="text-xs text-gray-300">© 2026 iasoclin · França, SP</p>
         </div>
       </footer>
-
     </div>
   );
 }

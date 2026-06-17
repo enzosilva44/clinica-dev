@@ -10,9 +10,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const FIELD_TYPES = {
-  patient_sig:      { label: "Assinatura Paciente",     color: "#1F4D46", w: 220, h: 80 },
+  patient_sig:      { label: "Assinatura Paciente",     color: "#00704A", w: 220, h: 80 },
   professional_sig: { label: "Assinatura Profissional", color: "#6F7F73", w: 220, h: 80 },
-  text_name:        { label: "Nome",                    color: "#C4895A", w: 130, h: 28 },
+  text_name:        { label: "Nome",                    color: "#CBA258", w: 130, h: 28 },
   text_date:        { label: "Data",                    color: "#4A8EC2", w: 100, h: 28 },
   text_cpf:         { label: "CPF",                     color: "#9B6BB5", w: 120, h: 28 },
 };
@@ -107,7 +107,7 @@ export default function FieldPlacementModal({ patientDoc, onClose, onSaved }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div>
-            <h2 className="text-sm font-bold text-[#1F4D46]">Configurar campos — {patientDoc.document.name}</h2>
+            <h2 className="text-sm font-bold text-[#00704A]">Configurar campos — {patientDoc.document.name}</h2>
             <p className="text-xs text-gray-400 mt-0.5">Clique em um tipo de campo e depois clique no PDF para posicioná-lo</p>
           </div>
           <div className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export default function FieldPlacementModal({ patientDoc, onClose, onSaved }) {
             <button
               onClick={handleSave}
               disabled={saving || !hasPatientSig}
-              className="flex items-center gap-1.5 bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-40 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
+              className="flex items-center gap-1.5 bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-40 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
             >
               <Save size={13} /> {saving ? "Salvando…" : "Salvar configuração"}
             </button>
@@ -144,7 +144,7 @@ export default function FieldPlacementModal({ patientDoc, onClose, onSaved }) {
                     className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition border"
                     style={placing === type
                       ? { backgroundColor: ft.color, borderColor: ft.color, color: "white" }
-                      : { borderColor: "#C2A56B", color: "#1F4D46" }
+                      : { borderColor: "#CBA258", color: "#00704A" }
                     }
                   >
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: placing === type ? "white" : ft.color }} />
@@ -153,7 +153,7 @@ export default function FieldPlacementModal({ patientDoc, onClose, onSaved }) {
                 ))}
               </div>
               {placing && (
-                <p className="text-xs text-[#1F4D46] bg-[#E8F5F0] rounded-lg px-2 py-1.5 mt-2">
+                <p className="text-xs text-[#00704A] bg-[#E8F5F0] rounded-lg px-2 py-1.5 mt-2">
                   Clique no PDF para posicionar
                 </p>
               )}

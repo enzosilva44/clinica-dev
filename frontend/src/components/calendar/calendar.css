@@ -1,17 +1,17 @@
 /* ── FullCalendar — tema Iasoclin ── */
 .fc {
-  --fc-border-color: #D8CDB9;
-  --fc-button-bg-color: #1F4D46;
-  --fc-button-border-color: #1F4D46;
-  --fc-button-hover-bg-color: #285A50;
-  --fc-button-hover-border-color: #285A50;
+  --fc-border-color: #DDD8CC;
+  --fc-button-bg-color: #00704A;
+  --fc-button-border-color: #00704A;
+  --fc-button-hover-bg-color: #1E3932;
+  --fc-button-hover-border-color: #1E3932;
   --fc-button-active-bg-color: #253D2F;
   --fc-button-active-border-color: #253D2F;
   --fc-today-bg-color: rgba(49, 77, 62, 0.055);
-  --fc-neutral-bg-color: #F5F1EA;
+  --fc-neutral-bg-color: #F2F0EB;
   --fc-page-bg-color: transparent;
   --fc-highlight-color: rgba(49, 77, 62, 0.10);
-  --fc-now-indicator-color: #1F4D46;
+  --fc-now-indicator-color: #00704A;
   font-family: inherit;
 }
 
@@ -19,7 +19,7 @@
 .fc .fc-toolbar-title {
   font-size: 1.05rem !important;
   font-weight: 700 !important;
-  color: #1F4D46 !important;
+  color: #00704A !important;
   letter-spacing: -0.01em;
 }
 
@@ -58,14 +58,14 @@
 /* Day column headers */
 .fc .fc-col-header-cell {
   background-color: #F0EAE0;
-  border-color: #D8CDB9 !important;
+  border-color: #DDD8CC !important;
   padding: 0 !important;
 }
 
 .fc .fc-col-header-cell-cushion {
   font-size: 0.78rem !important;
   font-weight: 700 !important;
-  color: #1F4D46 !important;
+  color: #00704A !important;
   padding: 8px 6px !important;
   text-decoration: none !important;
   text-transform: capitalize !important;
@@ -73,7 +73,7 @@
 
 /* Today column highlight */
 .fc .fc-day-today .fc-col-header-cell-cushion {
-  color: #1F4D46 !important;
+  color: #00704A !important;
 }
 
 /* Time labels */
@@ -120,30 +120,30 @@
 
 /* Now indicator */
 .fc .fc-timegrid-now-indicator-line {
-  border-color: #1F4D46 !important;
+  border-color: #00704A !important;
   border-width: 2px !important;
 }
 
 .fc .fc-timegrid-now-indicator-arrow {
-  border-top-color: #1F4D46 !important;
-  border-bottom-color: #1F4D46 !important;
+  border-top-color: #00704A !important;
+  border-bottom-color: #00704A !important;
 }
 
 /* Scrollbar */
 .fc-scroller::-webkit-scrollbar { width: 4px; }
 .fc-scroller::-webkit-scrollbar-track { background: transparent; }
-.fc-scroller::-webkit-scrollbar-thumb { background: #C2A56B; border-radius: 2px; }
+.fc-scroller::-webkit-scrollbar-thumb { background: #CBA258; border-radius: 2px; }
 
 /* Remove all-day row border noise */
 .fc .fc-scrollgrid {
-  border-color: #D8CDB9 !important;
+  border-color: #DDD8CC !important;
   border-radius: 12px;
   overflow: hidden;
 }
 
 .fc .fc-scrollgrid td,
 .fc .fc-scrollgrid th {
-  border-color: #D8CDB9 !important;
+  border-color: #DDD8CC !important;
 }
 
 /* Month view day cells */
@@ -156,7 +156,7 @@
 }
 
 .fc .fc-day-today .fc-daygrid-day-number {
-  color: #1F4D46 !important;
+  color: #00704A !important;
   background: rgba(49,77,62,0.10);
   border-radius: 20px;
   width: 26px;

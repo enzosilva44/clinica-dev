@@ -262,23 +262,23 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
       <div className="w-full lg:w-48 lg:shrink-0 no-print">
         <button
           onClick={() => setCreating(true)}
-          className="w-full flex items-center justify-center gap-2 bg-[#1F4D46] hover:bg-[#285A50] text-white py-2 rounded-xl text-sm font-medium transition mb-3">
+          className="w-full flex items-center justify-center gap-2 bg-[#00704A] hover:bg-[#1E3932] text-white py-2 rounded-xl text-sm font-medium transition mb-3">
           <Plus size={15} /> Nova sessão
         </button>
 
         {creating && (
-          <div className="bg-white border border-[#D8CDB9] rounded-xl p-3 mb-3">
+          <div className="bg-white border border-[#DDD8CC] rounded-xl p-3 mb-3">
             <input
               autoFocus
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") createMap(); if (e.key === "Escape") setCreating(false); }}
               placeholder="Título (opcional)"
-              className="w-full border border-[#C2A56B] rounded-lg p-2 text-sm mb-2"
+              className="w-full border border-[#CBA258] rounded-lg p-2 text-sm mb-2"
             />
             <div className="flex gap-2">
-              <button onClick={createMap} className="flex-1 bg-[#1F4D46] text-white py-1.5 rounded-lg text-xs font-medium">Criar</button>
-              <button onClick={() => setCreating(false)} className="flex-1 border border-[#C2A56B] py-1.5 rounded-lg text-xs text-gray-500">Cancelar</button>
+              <button onClick={createMap} className="flex-1 bg-[#00704A] text-white py-1.5 rounded-lg text-xs font-medium">Criar</button>
+              <button onClick={() => setCreating(false)} className="flex-1 border border-[#CBA258] py-1.5 rounded-lg text-xs text-gray-500">Cancelar</button>
             </div>
           </div>
         )}
@@ -296,8 +296,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                 <div key={m.id} onClick={() => openMap(m)}
                   className={`group relative flex flex-col gap-0.5 px-3 py-2.5 rounded-xl cursor-pointer transition shrink-0 lg:shrink ${
                     m.id === selectedId
-                      ? "bg-[#1F4D46] text-white"
-                      : "bg-[#F5F1EA] border border-[#D8CDB9] text-[#1F4D46] hover:bg-[#E8E0D2]"
+                      ? "bg-[#00704A] text-white"
+                      : "bg-[#F2F0EB] border border-[#DDD8CC] text-[#00704A] hover:bg-[#E6E2D8]"
                   }`}>
                   <div className="flex items-start justify-between">
                     <p className="text-xs font-semibold truncate">{m.title || "Sem título"}</p>
@@ -322,47 +322,47 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
 
       {/* ── MAIN EDITOR ── */}
       {!selectedMap ? (
-        <div className="flex-1 bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-10 text-center">
-          <Map size={36} className="mx-auto mb-3 text-[#C2A56B]" />
+        <div className="flex-1 bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-10 text-center">
+          <Map size={36} className="mx-auto mb-3 text-[#CBA258]" />
           <p className="text-gray-500 text-sm">Crie uma nova sessão para começar a mapear pontos de aplicação</p>
         </div>
       ) : (
-        <div className="flex-1 min-w-0 bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl overflow-hidden print-area">
+        <div className="flex-1 min-w-0 bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl overflow-hidden print-area">
 
           {/* ── HEADER ── */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-[#D8CDB9] bg-white no-print">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-[#DDD8CC] bg-white no-print">
             <div className="flex items-center gap-2 min-w-0">
-              <Pencil size={15} className="text-[#1F4D46] shrink-0" />
+              <Pencil size={15} className="text-[#00704A] shrink-0" />
               {editingTitle ? (
                 <>
                   <input autoFocus value={titleInput}
                     onChange={(e) => setTitleInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") setEditingTitle(false); if (e.key === "Escape") setEditingTitle(false); }}
-                    className="border border-[#C2A56B] rounded-lg px-2 py-1 text-sm font-semibold text-[#1F4D46] w-44" />
-                  <button onClick={() => setEditingTitle(false)} className="text-[#1F4D46]"><Check size={14} /></button>
+                    className="border border-[#CBA258] rounded-lg px-2 py-1 text-sm font-semibold text-[#00704A] w-44" />
+                  <button onClick={() => setEditingTitle(false)} className="text-[#00704A]"><Check size={14} /></button>
                   <button onClick={() => setEditingTitle(false)} className="text-gray-400"><X size={14} /></button>
                 </>
               ) : (
                 <>
-                  <span className="text-sm font-bold text-[#1F4D46] truncate">
+                  <span className="text-sm font-bold text-[#00704A] truncate">
                     {titleInput || "Mapa de Aplicação"}
                   </span>
-                  <button onClick={() => setEditingTitle(true)} className="text-gray-400 hover:text-[#1F4D46]"><Edit2 size={12} /></button>
+                  <button onClick={() => setEditingTitle(true)} className="text-gray-400 hover:text-[#00704A]"><Edit2 size={12} /></button>
                 </>
               )}
               {patientName && <span className="text-xs text-gray-400 ml-1 truncate">— {patientName}</span>}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button onClick={handlePrint}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#C2A56B] text-gray-600 hover:bg-[#E8E0D2] transition">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#CBA258] text-gray-600 hover:bg-[#E6E2D8] transition">
                 <Printer size={13} /> Imprimir
               </button>
               <button onClick={() => setChoosingImage(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#C2A56B] text-gray-600 hover:bg-[#E8E0D2] transition">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#CBA258] text-gray-600 hover:bg-[#E6E2D8] transition">
                 <ImageIcon size={13} /> Imagem
               </button>
               <button onClick={() => { setMarkers([]); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#C2A56B] text-gray-600 hover:bg-[#E8E0D2] transition">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#CBA258] text-gray-600 hover:bg-[#E6E2D8] transition">
                 <RotateCcw size={13} /> Limpar
               </button>
               {autoSaved && (
@@ -371,7 +371,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                 </span>
               )}
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#1F4D46] text-white hover:bg-[#285A50] disabled:opacity-60 transition">
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#00704A] text-white hover:bg-[#1E3932] disabled:opacity-60 transition">
                 <Save size={13} /> {saving ? "Salvando…" : "Salvar"}
               </button>
             </div>
@@ -380,27 +380,27 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
           {/* ── SELEÇÃO DE IMAGEM BASE ── */}
           {choosingImage && (
             <div className="p-6">
-              <p className="text-sm font-semibold text-[#1F4D46] mb-1">Escolha a imagem base</p>
+              <p className="text-sm font-semibold text-[#00704A] mb-1">Escolha a imagem base</p>
               <p className="text-xs text-gray-400 mb-5">Selecione um modelo pré-definido ou use uma foto do paciente para começar a mapear.</p>
 
               {/* Imagens preset + foto do paciente */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {PRESET_IMAGES.map((img) => (
                   <button key={img.value} onClick={() => confirmBaseImage(img.value)}
-                    className="group border-2 border-[#D8CDB9] hover:border-[#1F4D46] rounded-2xl overflow-hidden transition text-left">
-                    <div className="bg-[#F5F1EA] flex items-center justify-center h-44 overflow-hidden">
+                    className="group border-2 border-[#DDD8CC] hover:border-[#00704A] rounded-2xl overflow-hidden transition text-left">
+                    <div className="bg-[#F2F0EB] flex items-center justify-center h-44 overflow-hidden">
                       <img src={img.value} alt={img.label} className="h-full w-full object-contain group-hover:scale-105 transition-transform duration-200" />
                     </div>
                     <div className="p-3">
-                      <p className="text-sm font-semibold text-[#1F4D46]">{img.label}</p>
+                      <p className="text-sm font-semibold text-[#00704A]">{img.label}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{img.desc}</p>
                     </div>
                   </button>
                 ))}
 
                 {/* Card: foto do paciente */}
-                <div className="border-2 border-[#D8CDB9] rounded-2xl overflow-hidden">
-                  <div className="bg-[#F5F1EA] h-44 overflow-y-auto p-2">
+                <div className="border-2 border-[#DDD8CC] rounded-2xl overflow-hidden">
+                  <div className="bg-[#F2F0EB] h-44 overflow-y-auto p-2">
                     {patientPhotos.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center text-gray-400">
                         <User size={28} className="mb-2 opacity-40" />
@@ -413,7 +413,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                           const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
                           return (
                             <button key={p.id} onClick={() => confirmPatientPhoto(p.id)}
-                              className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-[#1F4D46] transition">
+                              className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-[#00704A] transition">
                               <img src={`${BASE}/photos/${p.id}/file?token=${encodeURIComponent(token ?? "")}`}
                                 alt="" className="w-full h-full object-cover" />
                             </button>
@@ -423,7 +423,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                     )}
                   </div>
                   <div className="p-3">
-                    <p className="text-sm font-semibold text-[#1F4D46]">Foto do Paciente</p>
+                    <p className="text-sm font-semibold text-[#00704A]">Foto do Paciente</p>
                     <p className="text-xs text-gray-400 mt-0.5">Use uma foto real do paciente</p>
                   </div>
                 </div>
@@ -440,46 +440,46 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                   value={formData.productName}
                   onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
                   placeholder="Ex: Botulift, Dysport, Xeomin…"
-                  className="w-full border border-[#C2A56B] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1F4D46]"
+                  className="w-full border border-[#CBA258] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00704A]"
                 />
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-600 mb-1 block">Data da Aplicação</label>
                 <input type="date" value={formData.applicationDate}
                   onChange={(e) => setFormData({ ...formData, applicationDate: e.target.value })}
-                  className="w-full border border-[#C2A56B] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1F4D46]" />
+                  className="w-full border border-[#CBA258] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00704A]" />
               </div>
             </div>
 
             {/* Product data */}
-            <div className="bg-white border border-[#D8CDB9] rounded-xl p-4 mb-5">
+            <div className="bg-white border border-[#DDD8CC] rounded-xl p-4 mb-5">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Dados do Produto</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Data de Diluição</label>
                   <input type="date" value={formData.dilutionDate}
                     onChange={(e) => setFormData({ ...formData, dilutionDate: e.target.value })}
-                    className="w-full border border-[#C2A56B] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#1F4D46]" />
+                    className="w-full border border-[#CBA258] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#00704A]" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Volume da Diluição (ml)</label>
                   <input type="number" min="0" step="0.1" value={formData.dilutionVolume}
                     onChange={(e) => setFormData({ ...formData, dilutionVolume: e.target.value })}
                     placeholder="Ex: 2"
-                    className="w-full border border-[#C2A56B] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#1F4D46]" />
+                    className="w-full border border-[#CBA258] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#00704A]" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Número do Lote</label>
                   <input value={formData.lotNumber}
                     onChange={(e) => setFormData({ ...formData, lotNumber: e.target.value })}
                     placeholder="Ex: 007"
-                    className="w-full border border-[#C2A56B] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#1F4D46]" />
+                    className="w-full border border-[#CBA258] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#00704A]" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Data de Validade</label>
                   <input type="date" value={formData.expiryDate}
                     onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                    className="w-full border border-[#C2A56B] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#1F4D46]" />
+                    className="w-full border border-[#CBA258] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#00704A]" />
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className="text-xs text-gray-500 mb-1 block">Apresentação do Frasco</label>
@@ -487,10 +487,10 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                     <input type="number" min="0" step="any" value={formData.vialQuantity}
                       onChange={(e) => setFormData({ ...formData, vialQuantity: e.target.value })}
                       placeholder="Qtd. (ex: 100)"
-                      className="flex-1 min-w-0 border border-[#C2A56B] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#1F4D46]" />
+                      className="flex-1 min-w-0 border border-[#CBA258] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#00704A]" />
                     <select value={formData.vialUnit}
                       onChange={(e) => setFormData({ ...formData, vialUnit: e.target.value })}
-                      className="w-20 shrink-0 border border-[#C2A56B] rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#1F4D46]">
+                      className="w-20 shrink-0 border border-[#CBA258] rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#00704A]">
                       {VIAL_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </div>
@@ -504,9 +504,9 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                 type="checkbox"
                 checked={showMuscles}
                 onChange={(e) => setShowMuscles(e.target.checked)}
-                className="w-4 h-4 accent-[#1F4D46]"
+                className="w-4 h-4 accent-[#00704A]"
               />
-              <span className="text-sm font-medium text-[#1F4D46]">Mostrar referência muscular</span>
+              <span className="text-sm font-medium text-[#00704A]">Mostrar referência muscular</span>
               <span className="text-xs text-gray-400">
                 ({activeMuscles === GLUTEAL_MUSCLES ? "glúteos" : "face"})
               </span>
@@ -537,9 +537,9 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                     compact
                   />
                   <div className="mt-2 text-center text-xs text-gray-500">
-                    <span className="font-semibold text-[#1F4D46]">{totalPoints} ponto{totalPoints !== 1 ? "s" : ""}</span>
+                    <span className="font-semibold text-[#00704A]">{totalPoints} ponto{totalPoints !== 1 ? "s" : ""}</span>
                     {totalUnitEntries.map(([unit, total]) => (
-                      <span key={unit}> · <span className="font-semibold text-[#1F4D46]">{fmtNum(total)}{unit} total</span></span>
+                      <span key={unit}> · <span className="font-semibold text-[#00704A]">{fmtNum(total)}{unit} total</span></span>
                     ))}
                   </div>
                   {totalPoints > 0 && (
@@ -566,13 +566,13 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                         className={`w-full text-left px-3 py-2.5 rounded-xl border transition ${
                           isSelected
                             ? "border-2 bg-white"
-                            : "border-[#D8CDB9] bg-white hover:bg-[#F5F1EA]"
+                            : "border-[#DDD8CC] bg-white hover:bg-[#F2F0EB]"
                         }`}
                         style={isSelected ? { borderColor: muscle.color } : {}}>
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: muscle.color }} />
-                            <span className="text-sm font-semibold text-[#1F4D46] truncate">{muscle.name}</span>
+                            <span className="text-sm font-semibold text-[#00704A] truncate">{muscle.name}</span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${TAG_COLORS[muscle.tag] ?? "bg-gray-100 text-gray-600"}`}>
                               {TAG_LABELS[muscle.tag] ?? muscle.tag}
                             </span>
@@ -594,7 +594,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
 
             {/* ── SUMMARY ── */}
             {markers.length > 0 && (
-              <div className="bg-white border border-[#D8CDB9] rounded-xl p-4 mb-4">
+              <div className="bg-white border border-[#DDD8CC] rounded-xl p-4 mb-4">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5"><ClipboardList size={13} /> Resumo da Aplicação</p>
 
                 {/* Lista detalhada — cada marcador com tipo, nome, quantidade e unidade */}
@@ -605,7 +605,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                     const qty = parseFloat(m.units) || 0;
                     const color = vividColor(m.color);
                     return (
-                      <div key={m.id ?? i} className="flex items-center justify-between gap-2 py-1 border-b border-[#F0EBE3] last:border-0">
+                      <div key={m.id ?? i} className="flex items-center justify-between gap-2 py-1 border-b border-[#E6E2D8] last:border-0">
                         <div className="flex items-center gap-2 min-w-0">
                           {/* ícone tipo: traço ou ponto */}
                           {isLine
@@ -616,7 +616,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                             style={{ color }}>
                             {isLine ? "Traço" : "Ponto"}
                           </span>
-                          <span className="text-sm text-[#1F4D46] truncate">{name}</span>
+                          <span className="text-sm text-[#00704A] truncate">{name}</span>
                         </div>
                         {qty > 0 && (
                           <span className="text-xs font-bold shrink-0 px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: color }}>
@@ -629,7 +629,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                 </div>
 
                 {/* Contagem de pontos x traços */}
-                <div className="flex items-center gap-4 text-xs text-gray-500 mb-3 pb-3 border-b border-[#D8CDB9]">
+                <div className="flex items-center gap-4 text-xs text-gray-500 mb-3 pb-3 border-b border-[#DDD8CC]">
                   <span className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
                     {markers.filter((m) => !m.type || m.type === "point").length} ponto(s)
@@ -645,14 +645,14 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                     <p className="text-xs text-gray-400">Total Aplicado</p>
                     <div className="flex items-baseline gap-3 flex-wrap">
                       {totalUnitEntries.length > 0 ? totalUnitEntries.map(([unit, total]) => (
-                        <p key={unit} className="text-3xl font-black text-[#1F4D46]">{fmtNum(total)}<span className="text-lg">{unit}</span></p>
-                      )) : <p className="text-3xl font-black text-[#1F4D46]">0</p>}
+                        <p key={unit} className="text-3xl font-black text-[#00704A]">{fmtNum(total)}<span className="text-lg">{unit}</span></p>
+                      )) : <p className="text-3xl font-black text-[#00704A]">0</p>}
                     </div>
                   </div>
                   {formData.productName && (
                     <div className="text-right">
                       <p className="text-xs text-gray-400">Produto</p>
-                      <p className="text-sm font-semibold text-[#1F4D46]">{formData.productName}</p>
+                      <p className="text-sm font-semibold text-[#00704A]">{formData.productName}</p>
                       {formData.vialQuantity && <p className="text-xs text-gray-400">{formData.vialQuantity}{formData.vialUnit}</p>}
                     </div>
                   )}
@@ -668,7 +668,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                 value={formData.clinicalNotes}
                 onChange={(e) => setFormData({ ...formData, clinicalNotes: e.target.value })}
                 placeholder="Anotações sobre a aplicação, reações, recomendações pós-procedimento…"
-                className="w-full border border-[#C2A56B] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1F4D46] resize-none"
+                className="w-full border border-[#CBA258] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00704A] resize-none"
               />
             </div>
           </div>

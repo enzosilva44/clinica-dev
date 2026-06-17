@@ -8,11 +8,11 @@ function IasoLogo({ size = "md" }) {
   const s = size === "sm" ? { svg: "w-8 h-12", stroke: 2.5 } : { svg: "w-14 h-20", stroke: 3.5 };
   return (
     <svg viewBox="0 0 56 80" fill="none" xmlns="http://www.w3.org/2000/svg" className={s.svg}>
-      <line x1="14" y1="7"  x2="42" y2="7"  stroke="#C2A56B" strokeWidth={s.stroke} strokeLinecap="round" />
-      <line x1="28" y1="7"  x2="28" y2="73" stroke="#C2A56B" strokeWidth={s.stroke} strokeLinecap="round" />
-      <line x1="14" y1="73" x2="42" y2="73" stroke="#C2A56B" strokeWidth={s.stroke} strokeLinecap="round" />
-      <path d="M28 32 Q34 24 42 20" stroke="#C2A56B" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M28 32 Q40 14 44 12 Q46 22 38 28 Q34 31 28 32 Z" fill="#C2A56B" opacity="0.85" />
+      <line x1="14" y1="7"  x2="42" y2="7"  stroke="#CBA258" strokeWidth={s.stroke} strokeLinecap="round" />
+      <line x1="28" y1="7"  x2="28" y2="73" stroke="#CBA258" strokeWidth={s.stroke} strokeLinecap="round" />
+      <line x1="14" y1="73" x2="42" y2="73" stroke="#CBA258" strokeWidth={s.stroke} strokeLinecap="round" />
+      <path d="M28 32 Q34 24 42 20" stroke="#CBA258" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M28 32 Q40 14 44 12 Q46 22 38 28 Q34 31 28 32 Z" fill="#CBA258" opacity="0.85" />
     </svg>
   );
 }
@@ -80,22 +80,22 @@ export default function Login() {
     document.body.appendChild(script);
   }, [loginWithGoogle]);
 
-  const INPUT = "w-full border border-[#D8CDB9] bg-[#FDFCFA] rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20 focus:border-[#1F4D46] transition";
+  const INPUT = "w-full border border-[#DDD8CC] bg-[#FDFCFA] rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20 focus:border-[#00704A] transition";
 
   return (
-    <div className="min-h-screen bg-[#F5F1EA] flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-[#F2F0EB] flex flex-col lg:flex-row">
 
       {/* ── PAINEL ESQUERDO — Brand + Features ── */}
-      <div className="lg:w-[55%] bg-[#1F4D46] flex flex-col px-10 py-12 lg:px-16 lg:py-16">
+      <div className="lg:w-[55%] bg-[#00704A] flex flex-col px-10 py-12 lg:px-16 lg:py-16">
 
         {/* Logo */}
         <div className="flex items-center gap-4 mb-12">
           <IasoLogo />
           <div>
             <p className="text-2xl font-bold tracking-wide">
-              <span className="text-white">Iaso</span><span className="text-[#C2A56B]">Clin</span>
+              <span className="text-white">Iaso</span><span className="text-[#CBA258]">Clin</span>
             </p>
-            <p className="text-[#D8CDB9]/70 text-xs mt-0.5">Sistema de Gestão Clínica</p>
+            <p className="text-[#DDD8CC]/70 text-xs mt-0.5">Sistema de Gestão Clínica</p>
           </div>
         </div>
 
@@ -103,9 +103,9 @@ export default function Login() {
         <div className="mb-10">
           <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight mb-3">
             Gestão completa para<br />
-            <span className="text-[#C2A56B]">clínicas de estética</span>
+            <span className="text-[#CBA258]">clínicas de estética</span>
           </h1>
-          <p className="text-[#D8CDB9]/80 text-sm leading-relaxed max-w-md">
+          <p className="text-[#DDD8CC]/80 text-sm leading-relaxed max-w-md">
             Do agendamento à assinatura eletrônica, do mapa facial à análise financeira —
             tudo integrado com Inteligência Artificial.
           </p>
@@ -115,19 +115,19 @@ export default function Login() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {FEATURES.map(({ icon: Icon, label, desc }) => (
             <div key={label} className="flex items-start gap-3 bg-white/5 hover:bg-white/10 transition rounded-2xl px-4 py-3.5">
-              <div className="w-8 h-8 rounded-xl bg-[#C2A56B]/20 flex items-center justify-center shrink-0 mt-0.5">
-                <Icon size={15} className="text-[#C2A56B]" />
+              <div className="w-8 h-8 rounded-xl bg-[#CBA258]/20 flex items-center justify-center shrink-0 mt-0.5">
+                <Icon size={15} className="text-[#CBA258]" />
               </div>
               <div>
                 <p className="text-white text-xs font-semibold leading-tight">{label}</p>
-                <p className="text-[#D8CDB9]/60 text-[11px] mt-0.5 leading-relaxed">{desc}</p>
+                <p className="text-[#DDD8CC]/60 text-[11px] mt-0.5 leading-relaxed">{desc}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Footer */}
-        <p className="text-[#D8CDB9]/30 text-[11px] mt-auto pt-10">
+        <p className="text-[#DDD8CC]/30 text-[11px] mt-auto pt-10">
           © {new Date().getFullYear()} IasoClin · Todos os direitos reservados
         </p>
       </div>
@@ -140,11 +140,11 @@ export default function Login() {
           <div className="flex lg:hidden items-center gap-3 mb-10 justify-center">
             <IasoLogo size="sm" />
             <p className="text-xl font-bold">
-              <span className="text-[#1F4D46]">Iaso</span><span className="text-[#C2A56B]">Clin</span>
+              <span className="text-[#00704A]">Iaso</span><span className="text-[#CBA258]">Clin</span>
             </p>
           </div>
 
-          <h2 className="text-2xl font-bold text-[#1F4D46] mb-1">Bem-vindo(a)!</h2>
+          <h2 className="text-2xl font-bold text-[#00704A] mb-1">Bem-vindo(a)!</h2>
           <p className="text-sm text-gray-400 mb-8">Acesse sua conta para continuar</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -185,7 +185,7 @@ export default function Login() {
             </div>
 
             <div className="flex justify-end">
-              <button type="button" className="text-xs text-gray-400 hover:text-[#1F4D46] transition">
+              <button type="button" className="text-xs text-gray-400 hover:text-[#00704A] transition">
                 Esqueci minha senha
               </button>
             </div>
@@ -193,7 +193,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-60 text-white py-3 rounded-xl font-semibold text-sm transition"
+              className="w-full bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-60 text-white py-3 rounded-xl font-semibold text-sm transition"
             >
               {loading ? "Entrando…" : "Entrar"}
             </button>
@@ -202,16 +202,16 @@ export default function Login() {
           {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
             <>
               <div className="flex items-center gap-3 my-6">
-                <div className="h-px bg-[#D8CDB9] flex-1" />
+                <div className="h-px bg-[#DDD8CC] flex-1" />
                 <span className="text-xs text-gray-400">ou continue com</span>
-                <div className="h-px bg-[#D8CDB9] flex-1" />
+                <div className="h-px bg-[#DDD8CC] flex-1" />
               </div>
               <div className="flex justify-center gap-3">
                 <div ref={googleButtonRef} />
                 <button
                   type="button"
                   onClick={() => toast("Login com Apple em breve")}
-                  className="w-11 h-11 rounded-xl border border-[#D8CDB9] bg-white hover:bg-[#F5F1EA] flex items-center justify-center transition"
+                  className="w-11 h-11 rounded-xl border border-[#DDD8CC] bg-white hover:bg-[#F2F0EB] flex items-center justify-center transition"
                 >
                   <svg viewBox="0 0 24 24" className="w-5 h-5 fill-gray-700">
                     <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.42c1.39.07 2.35.74 3.15.8 1.19-.24 2.33-.93 3.62-.84 1.53.12 2.68.72 3.43 1.84-3.14 1.88-2.4 5.97.55 7.13-.65 1.59-1.47 3.14-2.75 3.93zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
@@ -223,7 +223,7 @@ export default function Login() {
 
           <p className="text-center text-sm text-gray-400 mt-6">
             Não tem conta?{" "}
-            <Link to="/register" className="text-[#1F4D46] font-semibold hover:underline">
+            <Link to="/register" className="text-[#00704A] font-semibold hover:underline">
               Criar conta
             </Link>
           </p>

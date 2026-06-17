@@ -84,7 +84,7 @@ function fmtDate(d) {
   return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-const INPUT = "w-full border border-[#D8CDB9] bg-white rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20 focus:border-[#1F4D46] transition";
+const INPUT = "w-full border border-[#DDD8CC] bg-white rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20 focus:border-[#00704A] transition";
 
 // ─── status / method config ───────────────────────────────────────────────────
 
@@ -104,23 +104,23 @@ const STATUS = {
 };
 
 const METHOD = {
-  pix:         { label: "PIX",    icon: Smartphone, color: "text-[#1F4D46]" },
+  pix:         { label: "PIX",    icon: Smartphone, color: "text-[#00704A]" },
   credit_card: { label: "Cartão", icon: CreditCard, color: "text-[#4A8EC2]" },
-  boleto:      { label: "Boleto", icon: Barcode,    color: "text-[#C4895A]" },
+  boleto:      { label: "Boleto", icon: Barcode,    color: "text-[#CBA258]" },
 };
 
 // ─── shared components ────────────────────────────────────────────────────────
 
 function KpiCard({ label, value, sub, color, icon: Icon }) {
   return (
-    <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+    <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
         <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${color}18` }}>
           <Icon size={15} style={{ color }} />
         </div>
       </div>
-      <p className="text-2xl font-black text-[#1F4D46]">{value}</p>
+      <p className="text-2xl font-black text-[#00704A]">{value}</p>
       {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
     </div>
   );
@@ -185,18 +185,18 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#E8E0D2]">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#E6E2D8]">
           <div>
-            <p className="text-sm font-bold text-[#1F4D46]">{charge.patient}</p>
+            <p className="text-sm font-bold text-[#00704A]">{charge.patient}</p>
             <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[260px]">{charge.description}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl hover:bg-[#F5F1EA] flex items-center justify-center text-gray-400 transition">
+          <button onClick={onClose} className="w-8 h-8 rounded-xl hover:bg-[#F2F0EB] flex items-center justify-center text-gray-400 transition">
             <X size={16} />
           </button>
         </div>
         <div className="px-6 py-5 space-y-5">
           <div className="flex items-center justify-between">
-            <p className="text-3xl font-black text-[#1F4D46]">{fmt(charge.amount)}</p>
+            <p className="text-3xl font-black text-[#00704A]">{fmt(charge.amount)}</p>
             <StatusBadge status={charge.status} />
           </div>
           <div className="grid grid-cols-2 gap-3 text-xs">
@@ -206,12 +206,12 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
             </div>
             <div className="bg-[#FAF8F5] rounded-xl p-3">
               <p className="text-gray-400 mb-1">Vencimento</p>
-              <p className="font-semibold text-[#1F4D46]">{fmtDate(charge.dueDate)}</p>
+              <p className="font-semibold text-[#00704A]">{fmtDate(charge.dueDate)}</p>
             </div>
             {charge.installments && (
               <div className="bg-[#FAF8F5] rounded-xl p-3">
                 <p className="text-gray-400 mb-1">Parcelamento</p>
-                <p className="font-semibold text-[#1F4D46]">{charge.installments}x de {fmt(charge.amount / charge.installments)}</p>
+                <p className="font-semibold text-[#00704A]">{charge.installments}x de {fmt(charge.amount / charge.installments)}</p>
               </div>
             )}
             {charge.paidAt && (
@@ -222,12 +222,12 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
             )}
           </div>
           {charge.method === "pix" && charge.status === "pending" && (
-            <div className="border border-[#D8CDB9] rounded-2xl p-4">
-              <p className="text-xs font-semibold text-[#1F4D46] mb-3 flex items-center gap-1.5">
+            <div className="border border-[#DDD8CC] rounded-2xl p-4">
+              <p className="text-xs font-semibold text-[#00704A] mb-3 flex items-center gap-1.5">
                 <QrCode size={14} /> QR Code PIX
               </p>
               <div className="flex items-center justify-center bg-[#FAF8F5] rounded-xl py-6 mb-3">
-                <div className="w-32 h-32 bg-[#1F4D46] rounded-xl flex items-center justify-center opacity-10">
+                <div className="w-32 h-32 bg-[#00704A] rounded-xl flex items-center justify-center opacity-10">
                   <QrCode size={64} className="text-white" />
                 </div>
               </div>
@@ -235,14 +235,14 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
             </div>
           )}
           {charge.paymentLink && charge.status !== "cancelled" && (
-            <div className="border border-[#D8CDB9] rounded-2xl p-4">
-              <p className="text-xs font-semibold text-[#1F4D46] mb-2 flex items-center gap-1.5">
+            <div className="border border-[#DDD8CC] rounded-2xl p-4">
+              <p className="text-xs font-semibold text-[#00704A] mb-2 flex items-center gap-1.5">
                 <Link2 size={14} /> Link de pagamento
               </p>
               <div className="flex items-center gap-2 bg-[#FAF8F5] rounded-xl px-3 py-2.5">
                 <p className="text-xs text-gray-500 flex-1 truncate">{charge.paymentLink}</p>
                 <button onClick={() => copy(charge.paymentLink)}
-                  className="shrink-0 w-7 h-7 rounded-lg bg-[#1F4D46] flex items-center justify-center text-white transition hover:bg-[#285A50]">
+                  className="shrink-0 w-7 h-7 rounded-lg bg-[#00704A] flex items-center justify-center text-white transition hover:bg-[#1E3932]">
                   {copied ? <Check size={12} /> : <Copy size={12} />}
                 </button>
               </div>
@@ -252,13 +252,13 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">
                 <button onClick={() => { copy(charge.paymentLink ?? ""); }}
-                  className="flex-1 flex items-center justify-center gap-2 bg-[#1F4D46] hover:bg-[#285A50] text-white py-2.5 rounded-xl text-xs font-semibold transition">
+                  className="flex-1 flex items-center justify-center gap-2 bg-[#00704A] hover:bg-[#1E3932] text-white py-2.5 rounded-xl text-xs font-semibold transition">
                   <Copy size={13} /> Copiar link
                 </button>
                 <button
                   onClick={handleSendLink}
                   disabled={sendingLink}
-                  className="flex-1 flex items-center justify-center gap-2 border border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2] py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-60">
+                  className="flex-1 flex items-center justify-center gap-2 border border-[#CBA258] text-[#00704A] hover:bg-[#E6E2D8] py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-60">
                   {sendingLink
                     ? <RefreshCw size={13} className="animate-spin" />
                     : <ExternalLink size={13} />}
@@ -328,9 +328,9 @@ function NewChargeModal({ onClose, onSave }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#E8E0D2]">
-          <p className="text-base font-bold text-[#1F4D46]">Nova cobrança</p>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl hover:bg-[#F5F1EA] flex items-center justify-center text-gray-400 transition">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#E6E2D8]">
+          <p className="text-base font-bold text-[#00704A]">Nova cobrança</p>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl hover:bg-[#F2F0EB] flex items-center justify-center text-gray-400 transition">
             <X size={16} />
           </button>
         </div>
@@ -339,8 +339,8 @@ function NewChargeModal({ onClose, onSave }) {
           <div className="relative">
             <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Paciente</label>
             {form.patientId ? (
-              <div className="flex items-center justify-between border border-[#1F4D46] bg-[#F0F7F5] rounded-xl px-4 py-2.5">
-                <span className="text-sm font-medium text-[#1F4D46]">{form.patient}</span>
+              <div className="flex items-center justify-between border border-[#00704A] bg-[#F0F7F5] rounded-xl px-4 py-2.5">
+                <span className="text-sm font-medium text-[#00704A]">{form.patient}</span>
                 <button type="button" onClick={() => set("patientId", "") || set("patient", "") || setPatientSearch("")}
                   className="text-gray-400 hover:text-red-500 transition"><X size={14} /></button>
               </div>
@@ -353,11 +353,11 @@ function NewChargeModal({ onClose, onSave }) {
                   className={INPUT}
                 />
                 {patientResults.length > 0 && (
-                  <div className="absolute z-10 top-full mt-1 w-full bg-white border border-[#D8CDB9] rounded-xl shadow-lg overflow-hidden">
+                  <div className="absolute z-10 top-full mt-1 w-full bg-white border border-[#DDD8CC] rounded-xl shadow-lg overflow-hidden">
                     {patientResults.map((p) => (
                       <button key={p.id} type="button"
                         onClick={() => { set("patientId", p.id); set("patient", p.name); setPatientSearch(""); setPatientResults([]); }}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#F5F1EA] transition border-b border-[#F0EAE0] last:border-0">
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#F2F0EB] transition border-b border-[#F0EAE0] last:border-0">
                         <p className="font-medium text-gray-800">{p.name}</p>
                         <p className="text-xs text-gray-400">{p.phone}</p>
                       </button>
@@ -386,7 +386,7 @@ function NewChargeModal({ onClose, onSave }) {
             <div className="grid grid-cols-3 gap-2">
               {[{ key: "pix", icon: Smartphone, label: "PIX" }, { key: "credit_card", icon: CreditCard, label: "Cartão" }, { key: "boleto", icon: Barcode, label: "Boleto" }].map(({ key, icon: Icon, label }) => (
                 <button key={key} type="button" onClick={() => set("method", key)}
-                  className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-semibold transition ${form.method === key ? "bg-[#1F4D46] text-white border-[#1F4D46]" : "border-[#D8CDB9] text-gray-500 hover:bg-[#F5F1EA]"}`}>
+                  className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-semibold transition ${form.method === key ? "bg-[#00704A] text-white border-[#00704A]" : "border-[#DDD8CC] text-gray-500 hover:bg-[#F2F0EB]"}`}>
                   <Icon size={16} />{label}
                 </button>
               ))}
@@ -403,14 +403,14 @@ function NewChargeModal({ onClose, onSave }) {
             </div>
           )}
           {form.amount > 0 && (
-            <div className="bg-[#FAF8F5] border border-[#D8CDB9] rounded-xl p-3 text-xs text-gray-500 flex items-center justify-between">
+            <div className="bg-[#FAF8F5] border border-[#DDD8CC] rounded-xl p-3 text-xs text-gray-500 flex items-center justify-between">
               <span>Total a cobrar</span>
-              <span className="font-bold text-[#1F4D46] text-sm">{fmt(Number(form.amount))}</span>
+              <span className="font-bold text-[#00704A] text-sm">{fmt(Number(form.amount))}</span>
             </div>
           )}
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-[#D8CDB9] text-sm font-medium text-gray-500 hover:bg-[#F5F1EA] transition">Cancelar</button>
-            <button type="submit" disabled={loading} className="flex-1 py-2.5 rounded-xl bg-[#1F4D46] hover:bg-[#285A50] text-white text-sm font-semibold transition disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-[#DDD8CC] text-sm font-medium text-gray-500 hover:bg-[#F2F0EB] transition">Cancelar</button>
+            <button type="submit" disabled={loading} className="flex-1 py-2.5 rounded-xl bg-[#00704A] hover:bg-[#1E3932] text-white text-sm font-semibold transition disabled:opacity-60 flex items-center justify-center gap-2">
               {loading ? <RefreshCw size={14} className="animate-spin" /> : <Receipt size={14} />}
               {loading ? "Gerando…" : "Gerar cobrança"}
             </button>
@@ -482,7 +482,7 @@ function SaldoTab() {
     <div className="space-y-5">
       {/* saldo cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-[#1F4D46] rounded-2xl p-5 text-white">
+        <div className="bg-[#00704A] rounded-2xl p-5 text-white">
           <div className="flex items-center gap-2 mb-3 opacity-70">
             <Wallet size={14} />
             <p className="text-xs font-semibold uppercase tracking-wide">Disponível para saque</p>
@@ -494,26 +494,26 @@ function SaldoTab() {
           <p className="text-xs opacity-60 mt-1">Saldo Asaas em tempo real</p>
         </div>
 
-        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+        <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-3 text-gray-400">
             <Clock size={14} />
             <p className="text-xs font-semibold uppercase tracking-wide">Em trânsito</p>
           </div>
           {loadingBalance
-            ? <div className="h-9 w-28 bg-[#E8E0D2] rounded-lg animate-pulse" />
-            : <p className="text-3xl font-black text-[#1F4D46]">{fmt(0)}</p>
+            ? <div className="h-9 w-28 bg-[#E6E2D8] rounded-lg animate-pulse" />
+            : <p className="text-3xl font-black text-[#00704A]">{fmt(0)}</p>
           }
           <p className="text-xs text-gray-400 mt-1">Cobranças pagas aguardando compensação</p>
         </div>
 
-        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+        <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-3 text-gray-400">
             <TrendingUp size={14} />
             <p className="text-xs font-semibold uppercase tracking-wide">Transferências realizadas</p>
           </div>
           {loadingBalance
-            ? <div className="h-9 w-24 bg-[#E8E0D2] rounded-lg animate-pulse" />
-            : <p className="text-3xl font-black text-[#1F4D46]">{withdrawals.length}</p>
+            ? <div className="h-9 w-24 bg-[#E6E2D8] rounded-lg animate-pulse" />
+            : <p className="text-3xl font-black text-[#00704A]">{withdrawals.length}</p>
           }
           <p className="text-xs text-gray-400 mt-1">Total no histórico</p>
         </div>
@@ -521,12 +521,12 @@ function SaldoTab() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* formulário de saque */}
-        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+        <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-8 h-8 rounded-xl bg-[#1F4D46]/10 flex items-center justify-center">
-              <ArrowUpFromLine size={15} className="text-[#1F4D46]" />
+            <div className="w-8 h-8 rounded-xl bg-[#00704A]/10 flex items-center justify-center">
+              <ArrowUpFromLine size={15} className="text-[#00704A]" />
             </div>
-            <p className="text-sm font-bold text-[#1F4D46]">Transferir para PIX</p>
+            <p className="text-sm font-bold text-[#00704A]">Transferir para PIX</p>
           </div>
 
           <form onSubmit={handleWithdraw} className="space-y-4">
@@ -556,14 +556,14 @@ function SaldoTab() {
                 <button
                   type="button"
                   onClick={() => setAmount(String(MOCK_BALANCE.available))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#1F4D46] bg-[#E8E0D2] px-2 py-1 rounded-lg hover:bg-[#D8CDB9] transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#00704A] bg-[#E6E2D8] px-2 py-1 rounded-lg hover:bg-[#DDD8CC] transition"
                 >
                   Tudo disponível
                 </button>
               </div>
               {amount && Number(amount) > 0 && (
                 <p className="text-xs text-gray-400 mt-1.5">
-                  Saldo após transferência: <span className="font-semibold text-[#1F4D46]">{fmt(MOCK_BALANCE.available - Number(amount))}</span>
+                  Saldo após transferência: <span className="font-semibold text-[#00704A]">{fmt(MOCK_BALANCE.available - Number(amount))}</span>
                 </p>
               )}
             </div>
@@ -578,7 +578,7 @@ function SaldoTab() {
             <button
               type="submit"
               disabled={loading || !pixKey || !amount}
-              className="w-full py-3 rounded-xl bg-[#1F4D46] hover:bg-[#285A50] text-white text-sm font-semibold transition disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-[#00704A] hover:bg-[#1E3932] text-white text-sm font-semibold transition disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading
                 ? <><RefreshCw size={14} className="animate-spin" /> Transferindo…</>
@@ -589,12 +589,12 @@ function SaldoTab() {
         </div>
 
         {/* histórico de saques */}
-        <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+        <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-8 h-8 rounded-xl bg-[#1F4D46]/10 flex items-center justify-center">
-              <History size={15} className="text-[#1F4D46]" />
+            <div className="w-8 h-8 rounded-xl bg-[#00704A]/10 flex items-center justify-center">
+              <History size={15} className="text-[#00704A]" />
             </div>
-            <p className="text-sm font-bold text-[#1F4D46]">Histórico de transferências</p>
+            <p className="text-sm font-bold text-[#00704A]">Histórico de transferências</p>
           </div>
 
           {withdrawals.length === 0 ? (
@@ -661,7 +661,7 @@ function ConfigTab() {
     return (
       <button onClick={onToggle} className="transition">
         {active
-          ? <ToggleRight size={24} className="text-[#1F4D46]" />
+          ? <ToggleRight size={24} className="text-[#00704A]" />
           : <ToggleLeft  size={24} className="text-gray-300" />
         }
       </button>
@@ -670,12 +670,12 @@ function ConfigTab() {
 
   function Section({ icon: Icon, title, children }) {
     return (
-      <div className="bg-white border border-[#D8CDB9] rounded-2xl p-5">
+      <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-5">
-          <div className="w-8 h-8 rounded-xl bg-[#1F4D46]/10 flex items-center justify-center">
-            <Icon size={15} className="text-[#1F4D46]" />
+          <div className="w-8 h-8 rounded-xl bg-[#00704A]/10 flex items-center justify-center">
+            <Icon size={15} className="text-[#00704A]" />
           </div>
-          <p className="text-sm font-bold text-[#1F4D46]">{title}</p>
+          <p className="text-sm font-bold text-[#00704A]">{title}</p>
         </div>
         {children}
       </div>
@@ -686,9 +686,9 @@ function ConfigTab() {
     <div className="space-y-5">
       {/* banner conectar */}
       {!apiKey && (
-        <div className="bg-[#1F4D46] rounded-2xl p-5 flex items-center gap-4">
+        <div className="bg-[#00704A] rounded-2xl p-5 flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-            <Sparkles size={18} className="text-[#C2A56B]" />
+            <Sparkles size={18} className="text-[#CBA258]" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-bold text-white">Conecte sua conta Asaas</p>
@@ -696,7 +696,7 @@ function ConfigTab() {
           </div>
           <button
             onClick={() => toast("Abra sandbox.asaas.com no navegador")}
-            className="shrink-0 text-xs font-semibold bg-[#C2A56B] text-white px-3.5 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[#A88A58] transition"
+            className="shrink-0 text-xs font-semibold bg-[#CBA258] text-white px-3.5 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[#A88A58] transition"
           >
             Criar conta <ChevronRight size={12} />
           </button>
@@ -719,13 +719,13 @@ function ConfigTab() {
               <button
                 type="button"
                 onClick={() => setShowKey((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 hover:text-[#1F4D46] transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 hover:text-[#00704A] transition"
               >
                 {showKey ? "Ocultar" : "Mostrar"}
               </button>
             </div>
             <p className="text-[11px] text-gray-400 mt-1.5">
-              Encontre sua API Key em <span className="text-[#1F4D46] font-medium">Minha conta → Integrações</span> no Asaas.
+              Encontre sua API Key em <span className="text-[#00704A] font-medium">Minha conta → Integrações</span> no Asaas.
             </p>
           </div>
 
@@ -782,10 +782,10 @@ function ConfigTab() {
             { key: "credit_card", icon: CreditCard, label: "Cartão de crédito", sub: "Taxa 2,99%–4,99% · Parcelamento disponível" },
             { key: "boleto",      icon: Barcode,    label: "Boleto bancário",  sub: "Taxa R$ 3,49 fixo · Compensação em 1–3 dias" },
           ].map(({ key, icon: Icon, label, sub }) => (
-            <div key={key} className="flex items-center justify-between p-3 rounded-xl border border-[#E8E0D2] hover:bg-[#FAF8F5] transition">
+            <div key={key} className="flex items-center justify-between p-3 rounded-xl border border-[#E6E2D8] hover:bg-[#FAF8F5] transition">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#F5F1EA] flex items-center justify-center">
-                  <Icon size={15} className="text-[#1F4D46]" />
+                <div className="w-8 h-8 rounded-lg bg-[#F2F0EB] flex items-center justify-center">
+                  <Icon size={15} className="text-[#00704A]" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-700">{label}</p>
@@ -806,7 +806,7 @@ function ConfigTab() {
             { key: "overdue", label: "Lembrete de vencimento",   sub: "Lembra o paciente 1 dia antes do vencimento"   },
             { key: "webhook", label: "Notificação de cobrança",  sub: "Avisa quando uma nova cobrança é gerada"        },
           ].map(({ key, label, sub }) => (
-            <div key={key} className="flex items-center justify-between p-3 rounded-xl border border-[#E8E0D2] hover:bg-[#FAF8F5] transition">
+            <div key={key} className="flex items-center justify-between p-3 rounded-xl border border-[#E6E2D8] hover:bg-[#FAF8F5] transition">
               <div>
                 <p className="text-xs font-semibold text-gray-700">{label}</p>
                 <p className="text-[10px] text-gray-400">{sub}</p>
@@ -821,7 +821,7 @@ function ConfigTab() {
       <button
         onClick={save}
         disabled={saving}
-        className="w-full py-3 rounded-xl bg-[#1F4D46] hover:bg-[#285A50] text-white text-sm font-semibold transition disabled:opacity-60 flex items-center justify-center gap-2"
+        className="w-full py-3 rounded-xl bg-[#00704A] hover:bg-[#1E3932] text-white text-sm font-semibold transition disabled:opacity-60 flex items-center justify-center gap-2"
       >
         {saving ? <><RefreshCw size={14} className="animate-spin" /> Salvando…</> : <><Settings size={14} /> Salvar configurações</>}
       </button>
@@ -922,20 +922,20 @@ export default function Faturamento() {
       {/* header */}
       <div className="flex items-start justify-between mb-7 gap-3 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold text-[#1F4D46]">Faturamento</h1>
+          <h1 className="text-3xl font-bold text-[#00704A]">Faturamento</h1>
           <p className="text-gray-500 mt-1 text-sm">Cobranças, saldo e transferências</p>
         </div>
         {tab === "cobrancas" && (
           <div className="flex items-center gap-2">
             <button
               onClick={() => toast("Exportação disponível em breve")}
-              className="flex items-center gap-2 border border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2] px-3.5 py-2.5 rounded-xl text-sm font-medium transition"
+              className="flex items-center gap-2 border border-[#CBA258] text-[#00704A] hover:bg-[#E6E2D8] px-3.5 py-2.5 rounded-xl text-sm font-medium transition"
             >
               <Download size={14} /> Exportar
             </button>
             <button
               onClick={() => setShowNew(true)}
-              className="flex items-center gap-2 bg-[#1F4D46] hover:bg-[#285A50] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition"
+              className="flex items-center gap-2 bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition"
             >
               <Plus size={15} /> Nova cobrança
             </button>
@@ -944,7 +944,7 @@ export default function Faturamento() {
         {tab === "saldo" && (
           <button
             onClick={() => toast("Extrato completo disponível com integração Asaas")}
-            className="flex items-center gap-2 border border-[#C2A56B] text-[#1F4D46] hover:bg-[#E8E0D2] px-3.5 py-2.5 rounded-xl text-sm font-medium transition"
+            className="flex items-center gap-2 border border-[#CBA258] text-[#00704A] hover:bg-[#E6E2D8] px-3.5 py-2.5 rounded-xl text-sm font-medium transition"
           >
             <Download size={14} /> Extrato
           </button>
@@ -964,13 +964,13 @@ export default function Faturamento() {
       </div>
 
       {/* tabs */}
-      <div className="flex gap-1 bg-[#F5F1EA] border border-[#D8CDB9] rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-[#F2F0EB] border border-[#DDD8CC] rounded-xl p-1 mb-6 w-fit">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
-              tab === id ? "bg-white text-[#1F4D46] shadow-sm" : "text-gray-500 hover:text-[#1F4D46]"
+              tab === id ? "bg-white text-[#00704A] shadow-sm" : "text-gray-500 hover:text-[#00704A]"
             }`}
           >
             <Icon size={14} /> {label}
@@ -983,21 +983,21 @@ export default function Faturamento() {
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <KpiCard label="Recebido no mês"    value={fmt(totalPaid)}    sub={`${paid.length} cobranças pagas`}      color="#3A9B6F" icon={CheckCircle2} />
-            <KpiCard label="Aguardando"         value={fmt(totalPending)} sub={`${pending.length} cobranças abertas`} color="#C4895A" icon={Clock}        />
+            <KpiCard label="Aguardando"         value={fmt(totalPending)} sub={`${pending.length} cobranças abertas`} color="#CBA258" icon={Clock}        />
             <KpiCard label="Vencidas"           value={fmt(totalOverdue)} sub={`${overdue.length} em atraso`}         color="#B05248" icon={XCircle}      />
             <KpiCard label="Taxa de conversão"  value={`${convRate}%`}    sub={`${charges.length} cobranças total`}   color="#4A8EC2" icon={TrendingUp}   />
           </div>
 
           {/* filtros */}
-          <div className="bg-white border border-[#D8CDB9] rounded-2xl px-4 py-3 mb-5 flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 flex-1 min-w-48 border border-[#D8CDB9] rounded-xl px-3 py-2">
+          <div className="bg-white border border-[#DDD8CC] rounded-2xl px-4 py-3 mb-5 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 flex-1 min-w-48 border border-[#DDD8CC] rounded-xl px-3 py-2">
               <Search size={14} className="text-gray-300 shrink-0" />
               <input value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar paciente ou descrição…"
                 className="flex-1 text-sm bg-transparent focus:outline-none placeholder-gray-300 text-gray-700" />
             </div>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-              className="border border-[#D8CDB9] rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none bg-white">
+              className="border border-[#DDD8CC] rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none bg-white">
               <option value="">Todos os status</option>
               <option value="paid">Pago</option>
               <option value="pending">Aguardando</option>
@@ -1005,7 +1005,7 @@ export default function Faturamento() {
               <option value="cancelled">Cancelada</option>
             </select>
             <select value={filterMethod} onChange={(e) => setFilterMethod(e.target.value)}
-              className="border border-[#D8CDB9] rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none bg-white">
+              className="border border-[#DDD8CC] rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none bg-white">
               <option value="">Todas as formas</option>
               <option value="pix">PIX</option>
               <option value="credit_card">Cartão</option>
@@ -1013,22 +1013,22 @@ export default function Faturamento() {
             </select>
             {(search || filterStatus || filterMethod) && (
               <button onClick={() => { setSearch(""); setFilterStatus(""); setFilterMethod(""); }}
-                className="text-xs text-gray-400 hover:text-[#1F4D46] flex items-center gap-1 transition">
+                className="text-xs text-gray-400 hover:text-[#00704A] flex items-center gap-1 transition">
                 <X size={12} /> Limpar
               </button>
             )}
           </div>
 
           {/* tabela */}
-          <div className="bg-white border border-[#D8CDB9] rounded-2xl overflow-hidden">
-            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-5 py-3 border-b border-[#E8E0D2] bg-[#FAF8F5]">
+          <div className="bg-white border border-[#DDD8CC] rounded-2xl overflow-hidden">
+            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-5 py-3 border-b border-[#E6E2D8] bg-[#FAF8F5]">
               {["Paciente / Descrição", "Valor", "Forma", "Vencimento", "Status", ""].map((h) => (
                 <p key={h} className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">{h}</p>
               ))}
             </div>
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
-                <Receipt size={32} className="text-[#C2A56B] opacity-40" />
+                <Receipt size={32} className="text-[#CBA258] opacity-40" />
                 <p className="text-sm text-gray-400">Nenhuma cobrança encontrada</p>
               </div>
             ) : (
@@ -1044,7 +1044,7 @@ export default function Faturamento() {
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-[#1F4D46]">{fmt(charge.amount)}</p>
+                      <p className="text-sm font-bold text-[#00704A]">{fmt(charge.amount)}</p>
                       {charge.installments && (
                         <p className="text-[10px] text-gray-400">{charge.installments}x de {fmt(charge.amount / charge.installments)}</p>
                       )}
@@ -1057,7 +1057,7 @@ export default function Faturamento() {
                     <div><StatusBadge status={charge.status} /></div>
                     <div className="flex items-center gap-1">
                       <button onClick={() => setDetail(charge)}
-                        className="w-8 h-8 rounded-xl border border-[#D8CDB9] hover:bg-[#F5F1EA] flex items-center justify-center text-gray-400 hover:text-[#1F4D46] transition">
+                        className="w-8 h-8 rounded-xl border border-[#DDD8CC] hover:bg-[#F2F0EB] flex items-center justify-center text-gray-400 hover:text-[#00704A] transition">
                         <Eye size={13} />
                       </button>
                       {(charge.status === "PENDING" || charge.status === "pending" || charge.status === "OVERDUE" || charge.status === "overdue") && (

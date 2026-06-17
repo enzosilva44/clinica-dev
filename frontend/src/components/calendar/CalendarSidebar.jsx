@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 const PROFESSIONALS = [
-  { name: "Dra Ana",    color: "#1F4D46" },
+  { name: "Dra Ana",    color: "#00704A" },
   { name: "Dra Julia",  color: "#6F7F73" },
-  { name: "Dra Camila", color: "#C2A56B" },
+  { name: "Dra Camila", color: "#CBA258" },
 ];
 
 const DAYS_PT = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -62,21 +62,21 @@ function MiniCalendar({ allEvents, gotoDate }) {
   const cells = buildCalendarGrid(viewYear, viewMonth);
 
   return (
-    <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-3.5">
+    <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-3.5">
       {/* Month header */}
       <div className="flex items-center justify-between mb-2.5">
         <button
           onClick={prevMonth}
-          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#E8E0D2] text-[#1F4D46] transition"
+          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#E6E2D8] text-[#00704A] transition"
         >
           <ChevronLeft size={13} />
         </button>
-        <span className="text-xs font-semibold text-[#1F4D46]">
+        <span className="text-xs font-semibold text-[#00704A]">
           {MONTHS_PT[viewMonth].slice(0, 3)} {viewYear}
         </span>
         <button
           onClick={nextMonth}
-          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#E8E0D2] text-[#1F4D46] transition"
+          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#E6E2D8] text-[#00704A] transition"
         >
           <ChevronRight size={13} />
         </button>
@@ -103,17 +103,17 @@ function MiniCalendar({ allEvents, gotoDate }) {
               onClick={() => gotoDate?.(new Date(cell.year, cell.month, cell.day))}
               className={`relative flex flex-col items-center justify-center h-7 rounded-lg transition ${
                 isToday
-                  ? "bg-[#1F4D46] text-white"
+                  ? "bg-[#00704A] text-white"
                   : cell.current
-                  ? "hover:bg-[#E8E0D2] text-[#1F4D46]"
-                  : "text-gray-300 hover:bg-[#E8E0D2]"
+                  ? "hover:bg-[#E6E2D8] text-[#00704A]"
+                  : "text-gray-300 hover:bg-[#E6E2D8]"
               }`}
             >
               <span className="text-[0.62rem] font-medium leading-none">{cell.day}</span>
               {hasEvent && (
                 <span
                   className="absolute bottom-0.5 w-1 h-1 rounded-full"
-                  style={{ backgroundColor: isToday ? "rgba(255,255,255,0.7)" : "#1F4D46", opacity: isToday ? 1 : 0.45 }}
+                  style={{ backgroundColor: isToday ? "rgba(255,255,255,0.7)" : "#00704A", opacity: isToday ? 1 : 0.45 }}
                 />
               )}
             </button>
@@ -147,14 +147,14 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
 
       {/* Profissionais — só exibe no plano dev */}
       {showProfessionals && (
-        <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-4">
+        <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Profissionais
             </p>
             <button
               onClick={toggleAll}
-              className="text-xs text-[#1F4D46] hover:opacity-70 transition font-medium"
+              className="text-xs text-[#00704A] hover:opacity-70 transition font-medium"
             >
               {allSelected ? "Limpar" : "Todos"}
             </button>
@@ -169,15 +169,15 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
                   onClick={() => toggleProfessional(p.name)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition text-left ${
                     active
-                      ? "bg-white border border-[#D8CDB9] shadow-sm"
-                      : "hover:bg-[#E8E0D2] opacity-45 hover:opacity-70"
+                      ? "bg-white border border-[#DDD8CC] shadow-sm"
+                      : "hover:bg-[#E6E2D8] opacity-45 hover:opacity-70"
                   }`}
                 >
                   <div
                     className="w-3 h-3 rounded-full shrink-0"
                     style={{ backgroundColor: p.color }}
                   />
-                  <span className="text-sm font-medium text-[#1F4D46] flex-1 truncate">
+                  <span className="text-sm font-medium text-[#00704A] flex-1 truncate">
                     {p.name}
                   </span>
                   {active && (
@@ -196,13 +196,13 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
       )}
 
       {/* Legenda de status */}
-      <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-4">
+      <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-4">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
           Status
         </p>
         <div className="space-y-2">
           {[
-            { label: "Agendado",       color: "#C4895A" },
+            { label: "Agendado",       color: "#CBA258" },
             { label: "Confirmado",     color: "#4A8EC2" },
             { label: "Em atendimento", color: "#D4A017" },
             { label: "Concluído",      color: "#3A9B6F" },

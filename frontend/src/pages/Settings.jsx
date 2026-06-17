@@ -41,7 +41,7 @@ const TABS = [
   { id: "senha",     icon: Lock,       label: "Senha"          },
 ];
 
-const INPUT  = "w-full border border-[#D8CDB9] bg-white rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20 focus:border-[#1F4D46] transition";
+const INPUT  = "w-full border border-[#DDD8CC] bg-white rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20 focus:border-[#00704A] transition";
 const LABEL  = "text-xs font-semibold text-gray-500 mb-1.5 block";
 const SELECT = INPUT;
 
@@ -209,23 +209,23 @@ export default function Settings() {
     <MainLayout>
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#1F4D46]">Configurações</h1>
+          <h1 className="text-2xl font-bold text-[#00704A]">Configurações</h1>
           <p className="text-sm text-gray-400 mt-1">Gerencie seus dados, clínica e preferências.</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-white border border-[#E8E0D2] rounded-2xl p-1 mb-6 overflow-x-auto">
+        <div className="flex gap-1 bg-white border border-[#E6E2D8] rounded-2xl p-1 mb-6 overflow-x-auto">
           {TABS.map(({ id, icon: Icon, label }) => (
             <button key={id} onClick={() => setTab(id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap ${
-                tab === id ? "bg-[#1F4D46] text-white shadow-sm" : "text-gray-500 hover:text-[#1F4D46]"}`}>
+                tab === id ? "bg-[#00704A] text-white shadow-sm" : "text-gray-500 hover:text-[#00704A]"}`}>
               <Icon size={14} />
               {label}
             </button>
           ))}
         </div>
 
-        <div className="bg-white rounded-3xl border border-[#E8E0D2] p-8 shadow-sm">
+        <div className="bg-white rounded-3xl border border-[#E6E2D8] p-8 shadow-sm">
 
           {/* ── DADOS PESSOAIS ── */}
           {tab === "pessoal" && (
@@ -236,7 +236,7 @@ export default function Settings() {
                   {[{value:"F",label:"Dra."},{value:"M",label:"Dr."}].map((o) => (
                     <button key={o.value} type="button" onClick={() => setGender(o.value)}
                       className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition ${
-                        gender===o.value?"border-[#1F4D46] bg-[#1F4D46] text-white":"border-[#D8CDB9] text-gray-600 hover:border-[#1F4D46]/40"}`}>
+                        gender===o.value?"border-[#00704A] bg-[#00704A] text-white":"border-[#DDD8CC] text-gray-600 hover:border-[#00704A]/40"}`}>
                       {gender===o.value && <Check size={13} className="inline mr-1"/>}{o.label}
                     </button>
                   ))}
@@ -282,7 +282,7 @@ export default function Settings() {
                   {[{value:"pf",label:"Pessoa Física"},{value:"pj",label:"Pessoa Jurídica"}].map((o) => (
                     <button key={o.value} type="button" onClick={() => setPersonType(o.value)}
                       className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition ${
-                        personType===o.value?"border-[#1F4D46] bg-[#1F4D46] text-white":"border-[#D8CDB9] text-gray-600"}`}>
+                        personType===o.value?"border-[#00704A] bg-[#00704A] text-white":"border-[#DDD8CC] text-gray-600"}`}>
                       {o.label}
                     </button>
                   ))}
@@ -379,7 +379,7 @@ export default function Settings() {
           {tab === "plano" && (
             <div className="space-y-5">
               <div>
-                <p className="text-sm font-bold text-[#1F4D46] mb-1">Seu plano atual: <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ml-1 ${PLANS[profile?.plan]?.color ?? "bg-gray-100 text-gray-600"}`}>{PLANS[profile?.plan]?.label ?? profile?.plan}</span></p>
+                <p className="text-sm font-bold text-[#00704A] mb-1">Seu plano atual: <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ml-1 ${PLANS[profile?.plan]?.color ?? "bg-gray-100 text-gray-600"}`}>{PLANS[profile?.plan]?.label ?? profile?.plan}</span></p>
                 <p className="text-xs text-gray-400">Selecione um plano abaixo para fazer upgrade ou downgrade.</p>
               </div>
 
@@ -390,21 +390,21 @@ export default function Settings() {
                   return (
                     <button key={p.id} type="button" onClick={() => setSelectedPlan(p.id)}
                       className={`relative text-left rounded-2xl p-5 border-2 transition ${
-                        isSelected ? "border-[#1F4D46] bg-[#1F4D46] text-white shadow-lg scale-[1.02]"
-                          : "border-[#D8CDB9] bg-white hover:border-[#1F4D46]/40"}`}>
+                        isSelected ? "border-[#00704A] bg-[#00704A] text-white shadow-lg scale-[1.02]"
+                          : "border-[#DDD8CC] bg-white hover:border-[#00704A]/40"}`}>
                       {isCurrent && (
-                        <span className="absolute -top-2.5 left-4 text-[10px] font-bold bg-[#C2A56B] text-white px-2.5 py-0.5 rounded-full">
+                        <span className="absolute -top-2.5 left-4 text-[10px] font-bold bg-[#CBA258] text-white px-2.5 py-0.5 rounded-full">
                           ATUAL
                         </span>
                       )}
-                      <p className={`font-bold text-sm mb-0.5 ${isSelected?"text-white":"text-[#1F4D46]"}`}>{p.label}</p>
+                      <p className={`font-bold text-sm mb-0.5 ${isSelected?"text-white":"text-[#00704A]"}`}>{p.label}</p>
                       <p className={`text-[11px] mb-3 ${isSelected?"text-white/60":"text-gray-400"}`}>{p.desc}</p>
-                      <p className={`text-2xl font-black mb-1 ${isSelected?"text-white":"text-[#1F4D46]"}`}>{p.price}</p>
+                      <p className={`text-2xl font-black mb-1 ${isSelected?"text-white":"text-[#00704A]"}`}>{p.price}</p>
                       <p className={`text-[11px] mb-4 ${isSelected?"text-white/50":"text-gray-400"}`}>{p.period}</p>
                       <ul className="space-y-1.5">
                         {p.features.map((f) => (
                           <li key={f} className={`flex items-start gap-1.5 text-[11px] ${isSelected?"text-white/80":"text-gray-500"}`}>
-                            <Check size={11} className={`mt-0.5 shrink-0 ${isSelected?"text-[#C2A56B]":"text-[#1F4D46]"}`}/>
+                            <Check size={11} className={`mt-0.5 shrink-0 ${isSelected?"text-[#CBA258]":"text-[#00704A]"}`}/>
                             {f}
                           </li>
                         ))}
@@ -415,12 +415,12 @@ export default function Settings() {
               </div>
 
               {selectedPlan && selectedPlan !== profile?.plan && (
-                <div className="bg-[#F0F7F5] border border-[#1F4D46]/20 rounded-xl p-4 flex items-center justify-between">
-                  <p className="text-sm text-[#1F4D46]">
+                <div className="bg-[#F0F7F5] border border-[#00704A]/20 rounded-xl p-4 flex items-center justify-between">
+                  <p className="text-sm text-[#00704A]">
                     Solicitação de alteração para <strong>{PLAN_OPTIONS.find(p=>p.id===selectedPlan)?.label}</strong>
                   </p>
                   <button onClick={requestPlanChange} disabled={planSaving}
-                    className="bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-50 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">
+                    className="bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-50 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">
                     {planSaving ? "Enviando…" : "Confirmar"}
                   </button>
                 </div>
@@ -433,7 +433,7 @@ export default function Settings() {
             <div className="space-y-6">
               {/* Cartão salvo */}
               {cardLast4 && (
-                <div className="bg-gradient-to-br from-[#1F4D46] to-[#2D6B60] rounded-2xl p-5 text-white">
+                <div className="bg-gradient-to-br from-[#00704A] to-[#2D6B60] rounded-2xl p-5 text-white">
                   <p className="text-[11px] text-white/50 uppercase tracking-widest mb-3">Cartão cadastrado</p>
                   <p className="text-lg font-mono tracking-widest mb-2">•••• •••• •••• {cardLast4}</p>
                   <div className="flex justify-between items-end">
@@ -454,7 +454,7 @@ export default function Settings() {
               )}
 
               <div>
-                <p className="text-sm font-bold text-[#1F4D46] mb-4">{cardLast4 ? "Atualizar cartão" : "Adicionar cartão"}</p>
+                <p className="text-sm font-bold text-[#00704A] mb-4">{cardLast4 ? "Atualizar cartão" : "Adicionar cartão"}</p>
                 <div className="space-y-4">
                   <div>
                     <label className={LABEL}>Número do cartão</label>
@@ -528,11 +528,11 @@ export default function Settings() {
 
           {/* Botão salvar — oculto na aba de plano (tem botão próprio) */}
           {tab !== "plano" && (
-            <div className="mt-8 pt-6 border-t border-[#E8E0D2] flex justify-end">
+            <div className="mt-8 pt-6 border-t border-[#E6E2D8] flex justify-end">
               <button
                 onClick={tab === "senha" ? changePassword : tab === "pagamento" ? saveCard : saveProfile}
                 disabled={saving || (profile?.authProvider === "google" && tab === "senha")}
-                className="flex items-center gap-2 bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-50 text-white px-8 py-3 rounded-xl font-semibold text-sm transition">
+                className="flex items-center gap-2 bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-50 text-white px-8 py-3 rounded-xl font-semibold text-sm transition">
                 <Save size={15} />
                 {saving ? "Salvando…"
                   : tab === "senha"     ? "Alterar senha"

@@ -16,7 +16,7 @@ function Field({ label, children }) {
   );
 }
 
-const INPUT = "w-full border border-[#C2A56B] rounded-xl p-3 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4D46]/20";
+const INPUT = "w-full border border-[#CBA258] rounded-xl p-3 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20";
 
 export default function EditPatient() {
   const { id } = useParams();
@@ -115,12 +115,12 @@ export default function EditPatient() {
       <div className="flex items-center gap-3 mb-8">
         <button
           onClick={() => navigate(`/patients/${id}`)}
-          className="w-9 h-9 flex items-center justify-center rounded-xl border border-[#C2A56B] hover:bg-[#E8E0D2] transition"
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-[#CBA258] hover:bg-[#E6E2D8] transition"
         >
-          <ArrowLeft size={16} className="text-[#1F4D46]" />
+          <ArrowLeft size={16} className="text-[#00704A]" />
         </button>
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-[#1F4D46]">Editar paciente</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#00704A]">Editar paciente</h1>
           <p className="text-gray-500 text-sm mt-0.5">Atualize os dados cadastrais</p>
         </div>
       </div>
@@ -128,8 +128,8 @@ export default function EditPatient() {
       <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
 
         {/* DADOS PESSOAIS */}
-        <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-6">
-          <h2 className="text-sm font-bold text-[#1F4D46] uppercase tracking-wide mb-5">Dados pessoais</h2>
+        <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6">
+          <h2 className="text-sm font-bold text-[#00704A] uppercase tracking-wide mb-5">Dados pessoais</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Nome completo">
               <input className={INPUT} value={form.name} onChange={f("name")} required placeholder="Nome completo" />
@@ -176,8 +176,8 @@ export default function EditPatient() {
         </div>
 
         {/* ENDEREÇO */}
-        <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-6">
-          <h2 className="text-sm font-bold text-[#1F4D46] uppercase tracking-wide mb-5">Endereço</h2>
+        <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6">
+          <h2 className="text-sm font-bold text-[#00704A] uppercase tracking-wide mb-5">Endereço</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="CEP">
               <IMaskInput
@@ -210,8 +210,8 @@ export default function EditPatient() {
         </div>
 
         {/* OBSERVAÇÕES */}
-        <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl p-6">
-          <h2 className="text-sm font-bold text-[#1F4D46] uppercase tracking-wide mb-5">Observações clínicas</h2>
+        <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6">
+          <h2 className="text-sm font-bold text-[#00704A] uppercase tracking-wide mb-5">Observações clínicas</h2>
           <textarea
             className={`${INPUT} resize-none`}
             rows={4}
@@ -226,14 +226,14 @@ export default function EditPatient() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 bg-[#1F4D46] hover:bg-[#285A50] text-white px-6 py-3 rounded-xl text-sm font-medium transition disabled:opacity-50"
+            className="flex items-center gap-2 bg-[#00704A] hover:bg-[#1E3932] text-white px-6 py-3 rounded-xl text-sm font-medium transition disabled:opacity-50"
           >
             <Save size={15} />{saving ? "Salvando…" : "Salvar alterações"}
           </button>
           <button
             type="button"
             onClick={() => navigate(`/patients/${id}`)}
-            className="border border-[#C2A56B] text-[#1F4D46] px-5 py-3 rounded-xl text-sm hover:bg-[#E8E0D2] transition"
+            className="border border-[#CBA258] text-[#00704A] px-5 py-3 rounded-xl text-sm hover:bg-[#E6E2D8] transition"
           >
             Cancelar
           </button>

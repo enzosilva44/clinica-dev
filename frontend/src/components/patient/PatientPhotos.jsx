@@ -75,7 +75,7 @@ export default function PatientPhotos({ patientId }) {
   const groups = groupByDate(photos);
 
   return (
-    <div className="bg-[#F5F1EA] border border-[#D8CDB9] rounded-2xl overflow-hidden">
+    <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl overflow-hidden">
 
       {/* Upload zone */}
       <div
@@ -85,8 +85,8 @@ export default function PatientPhotos({ patientId }) {
         onClick={() => fileRef.current?.click()}
         className={`border-2 border-dashed rounded-xl mx-5 mt-5 p-8 text-center cursor-pointer transition-all ${
           dragging
-            ? "border-[#1F4D46] bg-[#E8E0D2]"
-            : "border-[#C2A56B] hover:border-[#1F4D46]/40 hover:bg-white"
+            ? "border-[#00704A] bg-[#E6E2D8]"
+            : "border-[#CBA258] hover:border-[#00704A]/40 hover:bg-white"
         }`}
       >
         <input
@@ -99,15 +99,15 @@ export default function PatientPhotos({ patientId }) {
         />
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 border-2 border-[#1F4D46]/30 border-t-[#1F4D46] rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#00704A]/30 border-t-[#00704A] rounded-full animate-spin" />
             <p className="text-sm text-gray-500">Enviando fotos…</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-[#E8E0D2] flex items-center justify-center">
-              <Upload size={18} className="text-[#1F4D46]" />
+            <div className="w-10 h-10 rounded-xl bg-[#E6E2D8] flex items-center justify-center">
+              <Upload size={18} className="text-[#00704A]" />
             </div>
-            <p className="text-sm font-medium text-[#1F4D46]">
+            <p className="text-sm font-medium text-[#00704A]">
               Arraste fotos ou clique para selecionar
             </p>
             <p className="text-xs text-gray-400">JPG, PNG, WebP · até 15 MB · múltiplas de uma vez</p>
@@ -119,12 +119,12 @@ export default function PatientPhotos({ patientId }) {
       <div className="p-5">
         {loading ? (
           <div className="space-y-3">
-            {[1, 2].map((i) => <div key={i} className="h-32 bg-[#E8E0D2] rounded-xl animate-pulse" />)}
+            {[1, 2].map((i) => <div key={i} className="h-32 bg-[#E6E2D8] rounded-xl animate-pulse" />)}
           </div>
         ) : photos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-[#E8E0D2] flex items-center justify-center">
-              <ImageOff size={22} className="text-[#C2A56B]" />
+            <div className="w-14 h-14 rounded-2xl bg-[#E6E2D8] flex items-center justify-center">
+              <ImageOff size={22} className="text-[#CBA258]" />
             </div>
             <p className="text-sm text-gray-400">Nenhuma foto ainda. Faça o upload acima.</p>
           </div>
@@ -134,10 +134,10 @@ export default function PatientPhotos({ patientId }) {
               <div key={date}>
                 {/* Date divider */}
                 <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs font-bold text-[#1F4D46] uppercase tracking-wide whitespace-nowrap">
+                  <span className="text-xs font-bold text-[#00704A] uppercase tracking-wide whitespace-nowrap">
                     {date}
                   </span>
-                  <div className="flex-1 h-px bg-[#D8CDB9]" />
+                  <div className="flex-1 h-px bg-[#DDD8CC]" />
                   <span className="text-xs text-gray-400 shrink-0">
                     {items.length} foto{items.length > 1 ? "s" : ""}
                   </span>
@@ -146,7 +146,7 @@ export default function PatientPhotos({ patientId }) {
                 {/* Photos grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {items.map((photo) => (
-                    <div key={photo.id} className="group relative aspect-square rounded-xl overflow-hidden bg-[#E8E0D2]">
+                    <div key={photo.id} className="group relative aspect-square rounded-xl overflow-hidden bg-[#E6E2D8]">
                       <img
                         src={photoUrl(photo.id)}
                         alt={photo.fileName}
@@ -160,7 +160,7 @@ export default function PatientPhotos({ patientId }) {
                           onClick={(e) => { e.stopPropagation(); setLightbox(photo); }}
                           className="w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition"
                         >
-                          <ZoomIn size={14} className="text-[#1F4D46]" />
+                          <ZoomIn size={14} className="text-[#00704A]" />
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDelete(photo.id); }}

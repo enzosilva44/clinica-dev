@@ -207,10 +207,10 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#E8E0D2] rounded-lg flex items-center justify-center">
-              <FileSpreadsheet size={15} className="text-[#1F4D46]" />
+            <div className="w-8 h-8 bg-[#E6E2D8] rounded-lg flex items-center justify-center">
+              <FileSpreadsheet size={15} className="text-[#00704A]" />
             </div>
-            <h2 className="text-base font-bold text-[#1F4D46]">Importar Pacientes</h2>
+            <h2 className="text-base font-bold text-[#00704A]">Importar Pacientes</h2>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
             <X size={18} />
@@ -225,9 +225,9 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                          (s === "review" && ["importing","done"].includes(step));
             return (
               <div key={s} className="flex items-center gap-1.5">
-                {i > 0 && <div className={`h-px w-6 ${done ? "bg-[#1F4D46]" : "bg-gray-200"}`} />}
+                {i > 0 && <div className={`h-px w-6 ${done ? "bg-[#00704A]" : "bg-gray-200"}`} />}
                 <span className={`text-xs font-medium px-2.5 py-1 rounded-full transition ${
-                  active ? "bg-[#1F4D46] text-white" : done ? "text-[#1F4D46]" : "text-gray-400"
+                  active ? "bg-[#00704A] text-white" : done ? "text-[#00704A]" : "text-gray-400"
                 }`}>{label}</span>
               </div>
             );
@@ -245,9 +245,9 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                 onDragLeave={() => setDragOver(false)}
                 onClick={() => !rawRows.length && fileRef.current.click()}
                 className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition ${
-                  rawRows.length ? "cursor-default border-[#1F4D46]/30 bg-[#F0F7F5]"
-                  : dragOver ? "cursor-pointer border-[#1F4D46] bg-[#F0F7F5]"
-                  : "cursor-pointer border-[#D8CDB9] hover:border-[#1F4D46] hover:bg-[#F5F1EA]"
+                  rawRows.length ? "cursor-default border-[#00704A]/30 bg-[#F0F7F5]"
+                  : dragOver ? "cursor-pointer border-[#00704A] bg-[#F0F7F5]"
+                  : "cursor-pointer border-[#DDD8CC] hover:border-[#00704A] hover:bg-[#F2F0EB]"
                 }`}
               >
                 <input
@@ -259,8 +259,8 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                 />
                 {rawRows.length > 0 ? (
                   <>
-                    <CheckCircle size={28} className="text-[#1F4D46] mb-2" />
-                    <p className="text-sm font-semibold text-[#1F4D46]">
+                    <CheckCircle size={28} className="text-[#00704A] mb-2" />
+                    <p className="text-sm font-semibold text-[#00704A]">
                       {parsedPatients.length} paciente{parsedPatients.length !== 1 ? "s" : ""} encontrado{parsedPatients.length !== 1 ? "s" : ""}
                     </p>
                     <button
@@ -272,10 +272,10 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                   </>
                 ) : (
                   <>
-                    <div className="w-12 h-12 bg-[#E8E0D2] rounded-2xl flex items-center justify-center mb-3">
-                      <Upload size={20} className="text-[#1F4D46]" />
+                    <div className="w-12 h-12 bg-[#E6E2D8] rounded-2xl flex items-center justify-center mb-3">
+                      <Upload size={20} className="text-[#00704A]" />
                     </div>
-                    <p className="text-sm font-semibold text-[#1F4D46] mb-1">Arraste ou clique para selecionar</p>
+                    <p className="text-sm font-semibold text-[#00704A] mb-1">Arraste ou clique para selecionar</p>
                     <p className="text-xs text-gray-400">.xlsx · .xls · .csv</p>
                   </>
                 )}
@@ -290,12 +290,12 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
 
               {/* Mapping panel */}
               {rawRows.length > 0 && (
-                <div className="border border-[#D8CDB9] rounded-xl overflow-hidden">
+                <div className="border border-[#DDD8CC] rounded-xl overflow-hidden">
                   <button
                     onClick={() => setShowMapping((v) => !v)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-[#F5F1EA] hover:bg-[#E8E0D2] transition text-left"
+                    className="w-full flex items-center justify-between px-4 py-3 bg-[#F2F0EB] hover:bg-[#E6E2D8] transition text-left"
                   >
-                    <span className="text-sm font-semibold text-[#1F4D46]">Mapeamento de colunas</span>
+                    <span className="text-sm font-semibold text-[#00704A]">Mapeamento de colunas</span>
                     <ChevronDown size={14} className={`text-gray-400 transition-transform ${showMapping ? "rotate-180" : ""}`} />
                   </button>
                   {showMapping && (
@@ -306,7 +306,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                           <select
                             value={mapping[field] || "__none__"}
                             onChange={(e) => setMapping((m) => ({ ...m, [field]: e.target.value }))}
-                            className="border border-[#D8CDB9] rounded-lg px-2.5 py-1.5 text-xs text-[#1F4D46] bg-white focus:outline-none"
+                            className="border border-[#DDD8CC] rounded-lg px-2.5 py-1.5 text-xs text-[#00704A] bg-white focus:outline-none"
                           >
                             <option value="__none__">— Ignorar —</option>
                             {headers.map((h) => <option key={h} value={h}>{h}</option>)}
@@ -323,8 +323,8 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
           {/* ── CHECKING ── */}
           {step === "checking" && (
             <div className="flex items-center justify-center gap-3 py-6">
-              <RefreshCw size={18} className="text-[#1F4D46] animate-spin" />
-              <p className="text-sm text-[#1F4D46] font-medium">Verificando duplicatas…</p>
+              <RefreshCw size={18} className="text-[#00704A] animate-spin" />
+              <p className="text-sm text-[#00704A] font-medium">Verificando duplicatas…</p>
             </div>
           )}
 
@@ -347,7 +347,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
 
               <p className="text-xs text-gray-400 text-center">
                 Selecione os pacientes que deseja importar.{" "}
-                <span className="font-semibold text-[#1F4D46]">{selected.size} selecionado{selected.size !== 1 ? "s" : ""}</span>
+                <span className="font-semibold text-[#00704A]">{selected.size} selecionado{selected.size !== 1 ? "s" : ""}</span>
               </p>
 
               {/* Groups */}
@@ -382,10 +382,10 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                             type="checkbox"
                             checked={selected.has(row._idx)}
                             onChange={() => toggleRow(row._idx)}
-                            className="accent-[#1F4D46] w-3.5 h-3.5 shrink-0"
+                            className="accent-[#00704A] w-3.5 h-3.5 shrink-0"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#1F4D46] truncate">{row.name || "—"}</p>
+                            <p className="text-sm font-medium text-[#00704A] truncate">{row.name || "—"}</p>
                             <p className="text-xs text-gray-400 truncate">
                               {row.phone || "sem telefone"}
                               {row.cpf ? ` · CPF ${row.cpf}` : ""}
@@ -412,8 +412,8 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
           {/* ── IMPORTING ── */}
           {step === "importing" && (
             <div className="flex items-center justify-center gap-3 py-4">
-              <RefreshCw size={18} className="text-[#1F4D46] animate-spin" />
-              <p className="text-sm text-[#1F4D46] font-medium">Importando {selected.size} paciente{selected.size !== 1 ? "s" : ""}…</p>
+              <RefreshCw size={18} className="text-[#00704A] animate-spin" />
+              <p className="text-sm text-[#00704A] font-medium">Importando {selected.size} paciente{selected.size !== 1 ? "s" : ""}…</p>
             </div>
           )}
 
@@ -433,9 +433,9 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                   <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-4">
                     <CheckCircle size={26} className="text-green-500" />
                   </div>
-                  <p className="text-base font-bold text-[#1F4D46] mb-1">Importação concluída!</p>
+                  <p className="text-base font-bold text-[#00704A] mb-1">Importação concluída!</p>
                   <p className="text-sm text-gray-500 mb-4">
-                    <span className="font-semibold text-[#1F4D46]">{result.created}</span>{" "}
+                    <span className="font-semibold text-[#00704A]">{result.created}</span>{" "}
                     paciente{result.created !== 1 ? "s" : ""} importado{result.created !== 1 ? "s" : ""}
                     {result.skipped > 0 && ` · ${result.skipped} ignorado${result.skipped !== 1 ? "s" : ""}`}
                   </p>
@@ -469,7 +469,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
             {step === "done" ? (
               <button
                 onClick={() => { onSuccess?.(); onClose(); }}
-                className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-5 py-2 rounded-xl text-sm font-medium transition"
+                className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-2 rounded-xl text-sm font-medium transition"
               >
                 Concluir
               </button>
@@ -481,7 +481,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                 <button
                   onClick={doImport}
                   disabled={selected.size === 0}
-                  className="bg-[#1F4D46] hover:bg-[#285A50] disabled:opacity-40 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
+                  className="bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-40 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
                 >
                   Importar {selected.size > 0 ? `${selected.size} paciente${selected.size !== 1 ? "s" : ""}` : ""}
                 </button>
@@ -494,7 +494,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                 {rawRows.length > 0 && step !== "checking" && (
                   <button
                     onClick={runCheck}
-                    className="bg-[#1F4D46] hover:bg-[#285A50] text-white px-5 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2"
+                    className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2"
                   >
                     <Users size={14} />
                     Verificar {parsedPatients.length} registro{parsedPatients.length !== 1 ? "s" : ""}

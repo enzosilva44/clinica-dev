@@ -682,4 +682,33 @@ router.patch("/cs/clinics/:id/reactivate", async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
+// ── FINANCIAL ESTIMATES (Planejamento Financeiro) ────────────────────────────
+router.get("/financial/estimates", async (req, res) => {
+  try {
+    const estimates = await prisma.financialEstimate.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(estimates);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+router.post("/financial/estimates", async (req, res) => {
+  try {
+    const { title, premissas } = req.body;
+    if (!title?.trim()) return res.status(400).json({ error: "Título obrigatório." });
+    if (!premissas || typeof premissas !== "object") return res.status(400).json({ error: "Premissas inválidas." });
+    const estimate = await prisma.financialEstimate.create({
+      data: { title: title.trim(), author: req.user.name ?? "Admin", premissas },
+    });
+    res.status(201).json(estimate);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+router.delete("/financial/estimates/:id", async (req, res) => {
+  try {
+    await prisma.financialEstimate.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
 export default router;
