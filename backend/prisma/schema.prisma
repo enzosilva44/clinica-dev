@@ -573,6 +573,15 @@ model FinancialEstimate {
   createdAt  DateTime @default(now())
 }
 
+// Configurações globais do admin (key-value). Ex.: premissas oficiais do
+// Planejamento Financeiro, compartilhadas entre todos os sócios.
+model AdminSetting {
+  key        String   @id
+  value      Json
+  updatedBy  String?
+  updatedAt  DateTime @updatedAt
+}
+
 enum Role {
   ADMIN
   PROFESSIONAL

@@ -711,4 +711,34 @@ router.delete("/financial/estimates/:id", async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
+// ── PREMISSAS OFICIAIS (compartilhadas entre todos os sócios) ─────────────────
+const PREMISSAS_KEY = "planejamento_premissas";
+
+router.get("/financial/premissas", async (req, res) => {
+  try {
+    const row = await prisma.adminSetting.findUnique({ where: { key: PREMISSAS_KEY } });
+    res.json({
+      premissas: row?.value ?? null,
+      updatedBy: row?.updatedBy ?? null,
+      updatedAt: row?.updatedAt ?? null,
+    });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+router.put("/financial/premissas", async (req, res) => {
+  try {
+    const { premissas } = req.body;
+    if (!premissas || typeof premissas !== "object") {
+      return res.status(400).json({ error: "Premissas inválidas." });
+    }
+    const updatedBy = req.user?.name ?? "Admin";
+    const row = await prisma.adminSetting.upsert({
+      where:  { key: PREMISSAS_KEY },
+      update: { value: premissas, updatedBy },
+      create: { key: PREMISSAS_KEY, value: premissas, updatedBy },
+    });
+    res.json({ premissas: row.value, updatedBy: row.updatedBy, updatedAt: row.updatedAt });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
 export default router;
