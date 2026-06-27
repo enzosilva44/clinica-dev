@@ -1,6 +1,5 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "path";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
@@ -10,6 +9,7 @@ import { requireFeature } from "../../middlewares/feature.middleware.js";
 import { getFeatures } from "../../config/features.js";
 import { requestOtp, validateOtp } from "../signature/otp.service.js";
 import { deleteFile, fileExists, getFile, saveFile } from "../../providers/storage/index.js";
+import { buildStorageKey } from "../../providers/storage/storageKey.js";
 
 const router = Router();
 
@@ -235,8 +235,13 @@ async function generateSignedPdf({ patientDocument, fields, fieldValues, audit }
   const signedBytes = await pdfDoc.save();
   const signedBuffer = Buffer.from(signedBytes);
   const signedHash = sha256(signedBuffer);
-  const signedFileName = `signed-${patientDocument.id}-${Date.now()}-${sanitizeFileName(patientDocument.document.name)}.pdf`;
-  const signedFilePath = path.posix.join("signed", patientDocument.userId, signedFileName);
+  const signedFilePath = buildStorageKey({
+    type: "signed",
+    clinicId: patientDocument.userId,
+    patientId: patientDocument.patientId,
+    originalName: `${sanitizeFileName(patientDocument.document.name)}.pdf`,
+    defaultExt: ".pdf",
+  });
   await saveFile(signedBuffer, signedFilePath, "application/pdf");
 
   return {
@@ -271,9 +276,13 @@ function handlePdfUpload(req, res, next) {
 }
 
 function documentStorageKey({ userId, originalName }) {
-  const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-  const extension = path.extname(originalName) || ".pdf";
-  return path.posix.join("documents", userId, `${unique}${extension}`);
+  // Documento-modelo não tem paciente vinculado, então sem patientId no path.
+  return buildStorageKey({
+    type: "documents",
+    clinicId: userId,
+    originalName,
+    defaultExt: ".pdf",
+  });
 }
 
 // --- Pasta Sanitária ---

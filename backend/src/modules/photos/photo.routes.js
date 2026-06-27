@@ -1,10 +1,10 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "path";
 import jwt from "jsonwebtoken";
 import { prisma } from "../../config/prisma.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { deleteFile, fileExists, getFile, saveFile } from "../../providers/storage/index.js";
+import { buildStorageKey } from "../../providers/storage/storageKey.js";
 
 const router = Router();
 
@@ -20,9 +20,13 @@ const upload = multer({
 });
 
 function storageKey({ userId, patientId, originalName }) {
-  const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-  const extension = path.extname(originalName) || ".jpg";
-  return path.posix.join("photos", userId, patientId, `${unique}${extension}`);
+  return buildStorageKey({
+    type: "photos",
+    clinicId: userId,
+    patientId,
+    originalName,
+    defaultExt: ".jpg",
+  });
 }
 
 // List photos for a patient
