@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { authRoutes } from "./modules/auth/auth.routes.js";
+import { prisma } from "./config/prisma.js";
 import { authMiddleware } from "./middlewares/auth.middleware.js";
 import { requireFeature } from "./middlewares/feature.middleware.js";
 import patientsRoutes from "./modules/patients/patient.routes.js";
@@ -57,6 +58,15 @@ app.get("/", (req, res) => {
   res.json({
     ok: true,
   });
+});
+
+app.get("/health", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return res.json({ status: "ok", db: "ok" });
+  } catch (err) {
+    return res.status(503).json({ status: "error", db: "down", message: err.message });
+  }
 });
 
 app.get(
