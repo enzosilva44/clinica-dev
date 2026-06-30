@@ -23,6 +23,7 @@ import automationRoutes from "./modules/automations/automation.routes.js";
 import billingRoutes from "./modules/billing/billing.routes.js";
 import adminRoutes from "./modules/admin/admin.routes.js";
 import profileRoutes from "./modules/profile/profile.routes.js";
+import anamnesisRoutes from "./modules/anamnesis/anamnesis.routes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -53,6 +54,7 @@ app.use("/automations", authMiddleware, requireFeature("whatsapp"), automationRo
 app.use("/billing", billingRoutes);
 app.use("/admin", adminRoutes);
 app.use("/profile", profileRoutes);
+app.use("/anamnesis", anamnesisRoutes);
 
 app.get("/", (req, res) => {
   res.json({

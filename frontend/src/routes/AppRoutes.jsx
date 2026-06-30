@@ -21,6 +21,8 @@ import Register from "../pages/Register";
 import Signup from "../pages/Signup";
 import FeatureRoute from "./FeatureRoute";
 import Settings from "../pages/Settings";
+import TrocarSenha from "../pages/TrocarSenha";
+import AnamneseModelos from "../pages/AnamneseModelos";
 
 export default function AppRoutes() {
   return (
@@ -31,6 +33,9 @@ export default function AppRoutes() {
       <Route path="/login"    element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/cadastro" element={<Signup />} />
+
+      {/* ── Troca de senha obrigatória (1º acesso) ── */}
+      <Route path="/trocar-senha"      element={<PrivateRoute allowPasswordChange><TrocarSenha /></PrivateRoute>} />
 
       {/* ── Sistema clínica ── */}
       <Route path="/dashboard"         element={<PrivateRoute><Dashboard /></PrivateRoute>} />
@@ -44,6 +49,7 @@ export default function AppRoutes() {
       <Route path="/financeiro"        element={<PrivateRoute><FeatureRoute feature="financial"><Financeiro /></FeatureRoute></PrivateRoute>} />
       <Route path="/clube"             element={<PrivateRoute><FeatureRoute feature="clube"><Clube /></FeatureRoute></PrivateRoute>} />
       <Route path="/documents"         element={<PrivateRoute><FeatureRoute feature="documents"><Documents /></FeatureRoute></PrivateRoute>} />
+      <Route path="/anamnese-modelos"  element={<PrivateRoute><AnamneseModelos /></PrivateRoute>} />
       <Route path="/analytics"         element={<PrivateRoute><FeatureRoute feature="analytics"><Analytics /></FeatureRoute></PrivateRoute>} />
       <Route path="/faturamento"       element={<PrivateRoute><FeatureRoute feature="faturamento"><Faturamento /></FeatureRoute></PrivateRoute>} />
       <Route path="/automacoes"        element={<PrivateRoute><FeatureRoute feature="whatsapp"><Automacoes /></FeatureRoute></PrivateRoute>} />

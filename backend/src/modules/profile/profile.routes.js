@@ -72,7 +72,10 @@ router.patch("/password", async (req, res) => {
     if (!match) return res.status(400).json({ error: "Senha atual incorreta." });
 
     const hash = await bcrypt.hash(newPassword, 8);
-    await prisma.user.update({ where: { id: req.user.id }, data: { password: hash } });
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { password: hash, mustChangePassword: false },
+    });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

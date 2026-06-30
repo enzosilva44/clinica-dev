@@ -52,6 +52,9 @@ const PLAN_FEATURES = {
   },
 };
 
+// Demo herda as features do plano Solo; ajustes finos são feitos por featureOverrides.
+PLAN_FEATURES.demo = PLAN_FEATURES.solo;
+
 export function getFeatures(plan) {
   return PLAN_FEATURES[plan] ?? PLAN_FEATURES.solo;
 }

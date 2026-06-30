@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem("user", JSON.stringify(user));
 
     setUser(user);
-    navigate("/dashboard");
+    navigate(user.mustChangePassword ? "/trocar-senha" : "/dashboard");
   }
 
   async function loginWithGoogle(credential) {
@@ -67,6 +67,14 @@ export function AuthProvider({ children }) {
     navigate("/dashboard");
   }
 
+  function updateUser(patch) {
+    setUser((prev) => {
+      const next = { ...prev, ...patch };
+      localStorage.setItem("user", JSON.stringify(next));
+      return next;
+    });
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -74,6 +82,7 @@ export function AuthProvider({ children }) {
         login,
         loginWithGoogle,
         registerAndLogin,
+        updateUser,
         logout,
       }}
     >

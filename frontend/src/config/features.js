@@ -52,6 +52,8 @@ const PLAN_FEATURES = {
   },
 };
 
+PLAN_FEATURES.demo = PLAN_FEATURES.solo;
+
 export function getFeatures(plan) {
   return PLAN_FEATURES[plan] ?? PLAN_FEATURES.solo;
 }

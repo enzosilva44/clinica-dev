@@ -1,4 +1,5 @@
 import { Router } from "express";
+import bcrypt from "bcryptjs";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { prisma } from "../../config/prisma.js";
 
@@ -25,6 +26,45 @@ router.get("/clinics", async (req, res) => {
     });
     res.json(clinics);
   } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── cria uma nova clínica (onboarding manual pelo admin) ──────────────────────
+router.post("/clinics", async (req, res) => {
+  try {
+    const { name, email, password, plan, clinicName } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: "Nome, e-mail e senha são obrigatórios." });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: "A senha deve ter ao menos 6 caracteres." });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (existing) {
+      return res.status(409).json({ error: "Já existe uma conta com este e-mail." });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 8);
+
+    const clinic = await prisma.user.create({
+      data: {
+        name,
+        email: normalizedEmail,
+        password: passwordHash,
+        plan: plan || "solo",
+        clinicName: clinicName || null,
+        role: "PROFESSIONAL",
+        mustChangePassword: true,
+      },
+      select: { id: true, name: true, email: true, plan: true, createdAt: true },
+    });
+
+    res.status(201).json(clinic);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
 });
 
 // ── atualiza plano / dados de uma clínica ─────────────────────────────────────

@@ -309,7 +309,7 @@ export default function Agenda() {
         toast.success("Agendamento criado");
       }
 
-      if (sendWhatsApp && whatsappMessage) {
+      if (features.whatsapp && sendWhatsApp && whatsappMessage) {
         const phone = editing
           ? editing.extendedProps.patientPhone
           : patients.find((p) => p.id === form.patientId)?.phone;
@@ -777,6 +777,7 @@ export default function Agenda() {
               })()}
 
               {/* WHATSAPP */}
+              {features.whatsapp && (
               <div className="border-t border-[#DDD8CC] pt-4">
                 <button
                   type="button"
@@ -847,6 +848,7 @@ export default function Agenda() {
                   </div>
                 )}
               </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">

@@ -1,0 +1,46 @@
+// Template de anamnese padrão — transcrito do modelo usado pela clínica.
+// Tipos: "text" (resposta aberta) | "boolean" (sim/não) | "choice" (múltipla escolha)
+// As perguntas marcadas como boolean no print eram selects de Sim/Não.
+
+export const DEFAULT_ANAMNESIS_QUESTIONS = [
+  { id: "q1",  label: "Queixa Principal",                                  type: "text" },
+  { id: "q2",  label: "Já realizou procedimento estético",                 type: "boolean" },
+  { id: "q3",  label: "Possui preenchimento definitivo",                   type: "boolean" },
+  { id: "q4",  label: "Ingere água com frequência",                        type: "boolean" },
+  { id: "q5",  label: "Usa bebida alcoólica com frequência",               type: "boolean" },
+  { id: "q6",  label: "Pratica exercícios físicos",                        type: "boolean" },
+  { id: "q7",  label: "Tabagismo",                                         type: "boolean" },
+  { id: "q8",  label: "Rotina de cuidados com a pele",                     type: "boolean" },
+  { id: "q9",  label: "Método anticoncepcional",                           type: "boolean" },
+  { id: "q10", label: "DUM",                                               type: "text" },
+  { id: "q11", label: "Intolerância alimentar",                            type: "boolean" },
+  { id: "q12", label: "Uso de medicamentos",                               type: "boolean" },
+  { id: "q13", label: "Uso de Isotretinoína",                              type: "boolean" },
+  { id: "q14", label: "Uso de antibiótico ou anti-inflamatório recente",   type: "boolean" },
+  { id: "q15", label: "Problemas de coagulação sanguínea",                 type: "boolean" },
+  { id: "q16", label: "Gestante / lactante",                               type: "boolean" },
+  { id: "q17", label: "Vacinas recente (covid/tétano)",                    type: "boolean" },
+  { id: "q18", label: "Algum tipo de alergia",                             type: "boolean" },
+  { id: "q19", label: "Já submeteu anestesia",                             type: "boolean" },
+  { id: "q20", label: "Diabetes",                                          type: "boolean" },
+  { id: "q21", label: "Alteração Cardíaca",                                type: "boolean" },
+  { id: "q22", label: "Disfunção Renal",                                   type: "boolean" },
+  { id: "q23", label: "Antecedentes oncológico",                           type: "boolean" },
+  { id: "q24", label: "Doença autoimune",                                  type: "boolean" },
+  { id: "q25", label: "Trombose",                                          type: "boolean" },
+  { id: "q26", label: "Doença Hepática",                                   type: "boolean" },
+  { id: "q27", label: "Usa ácidos na pele",                                type: "boolean" },
+  { id: "q28", label: "Já fez cirurgia ou harmonização facial",           type: "boolean" },
+  { id: "q29", label: "Alguma doença dermatológica",                       type: "boolean" },
+  { id: "q30", label: "Reposição hormonal",                                type: "boolean" },
+  { id: "q31", label: "Hematomas com facilidade",                          type: "boolean" },
+  { id: "q32", label: "Alteração vascular",                                type: "boolean" },
+  { id: "q33", label: "Doença em órgãos essenciais (rim, fígado)",         type: "boolean" },
+  { id: "q34", label: "Já desmaiou ou convulsão",                          type: "boolean" },
+  { id: "q35", label: "Distúrbio respiratório",                            type: "boolean" },
+  { id: "q36", label: "Perca ou ganho de peso recente",                    type: "boolean" },
+  { id: "q37", label: "Pré disposição para queloide",                      type: "boolean" },
+  { id: "q38", label: "Sinusite recorrente",                               type: "boolean", required: true },
+];
+
+export const DEFAULT_TEMPLATE_NAME = "Anamnese Padrão";

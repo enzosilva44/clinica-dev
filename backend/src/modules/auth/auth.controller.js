@@ -34,6 +34,7 @@ function publicUser(user) {
     featureOverrides: user.featureOverrides ?? {},
     avatarUrl: user.avatarUrl,
     authProvider: user.authProvider,
+    mustChangePassword: user.mustChangePassword ?? false,
   };
 }
 

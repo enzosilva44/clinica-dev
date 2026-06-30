@@ -6,6 +6,7 @@ import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
 import ProcedureMapTab from "../components/procedure-map/ProcedureMapTab";
+import AnamnesisTab from "../components/anamnesis/AnamnesisTab";
 import SigningModal from "../components/documents/SigningModal";
 import PatientPhotos from "../components/patient/PatientPhotos";
 
@@ -811,7 +812,7 @@ export default function PatientDetails() {
 
           {/* SUBMENU */}
           <div className="flex gap-1 bg-[#F2F0EB] border border-[#DDD8CC] rounded-xl p-1 mb-5 w-fit">
-            {[["evolucao", "Evolução"], ["mapa", "Mapa de Aplicação"]].map(([key, label]) => (
+            {[["evolucao", "Evolução"], ["mapa", "Mapa de Aplicação"], ["anamnese", "Anamnese"]].map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setClinicalSubTab(key)}
@@ -949,6 +950,10 @@ export default function PatientDetails() {
           {/* SUBABA: MAPA */}
           {clinicalSubTab === "mapa" && (
             <ProcedureMapTab patientId={id} procedures={procedures} />
+          )}
+
+          {clinicalSubTab === "anamnese" && (
+            <AnamnesisTab patientId={id} />
           )}
 
         </div>

@@ -32,6 +32,7 @@ model User {
   googleId              String?              @unique
   plan                  String               @default("solo")
   featureOverrides      Json?
+  mustChangePassword    Boolean              @default(false)
   cardBrand             String?
   cardLast4             String?
   cardHolderName        String?
@@ -75,6 +76,8 @@ model User {
   stockRequests         StockRequest[]
   transactions          Transaction[]
   documentVersions      DocumentVersion[]
+  anamnesisTemplates    AnamnesisTemplate[]
+  anamnesisResponses    AnamnesisResponse[]
   clinic                Clinic?              @relation(fields: [clinicId], references: [id])
 }
 
@@ -110,6 +113,7 @@ model Patient {
   photos           PatientPhoto[]
   procedureMaps    ProcedureMap[]
   transactions     Transaction[]
+  anamnesisResponses AnamnesisResponse[]
 }
 
 model Budget {
@@ -592,4 +596,35 @@ enum AppointmentStatus {
   CONFIRMED
   COMPLETED
   CANCELED
+}
+
+// Modelo de anamnese da clínica (várias por clínica). As perguntas ficam em JSON:
+// [{ id, label, type: "text"|"boolean"|"choice", options?: string[], required?: bool }]
+model AnamnesisTemplate {
+  id        String              @id @default(cuid())
+  name      String
+  questions Json
+  userId    String
+  isActive  Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  user      User                @relation(fields: [userId], references: [id])
+  responses AnamnesisResponse[]
+}
+
+// Anamnese preenchida de um paciente. answers em JSON: { [questionId]: valor }
+model AnamnesisResponse {
+  id           String             @id @default(cuid())
+  templateId   String
+  patientId    String
+  userId       String
+  answers      Json
+  status       String             @default("draft") // draft | finalized
+  documentPath String?            // PDF gerado no S3 ao finalizar
+  finalizedAt  DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  template     AnamnesisTemplate  @relation(fields: [templateId], references: [id])
+  patient      Patient            @relation(fields: [patientId], references: [id])
+  user         User               @relation(fields: [userId], references: [id])
 }

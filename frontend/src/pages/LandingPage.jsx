@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 // URL da área administrativa (app separado)
-const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || "https://admin.iasoclin.online";
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || "https://admin.iasoclin.com.br";
 
 function Logo({ light = false }) {
   return (
