@@ -154,7 +154,7 @@ model Appointment {
   description    String?
   startsAt       DateTime
   endsAt         DateTime
-  patientId      String
+  patientId      String?
   userId         String
   createdAt      DateTime     @default(now())
   color          String?
@@ -163,7 +163,10 @@ model Appointment {
   professional   String?
   status         String       @default("SCHEDULED")
   idempotencyKey String?      @unique
-  patient        Patient      @relation(fields: [patientId], references: [id])
+  category       String       @default("consulta") // consulta | retorno | lembrete | compromisso
+  isAllDay       Boolean      @default(false)
+  parentAppointmentId String?  // liga o retorno ao agendamento de origem
+  patient        Patient?     @relation(fields: [patientId], references: [id])
   user           User         @relation(fields: [userId], references: [id])
   transaction    Transaction?
 }

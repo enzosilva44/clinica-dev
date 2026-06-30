@@ -2,16 +2,17 @@ import { prisma } from "../../config/prisma.js";
 import { createPending } from "../financial/transaction.service.js";
 
 export async function create(data, user) {
-  const patientExists = await prisma.patient.findFirst({
-    where: {
-      id: data.patientId,
-      userId: user.id,
-      isActive: true,
-    },
-  });
+  const category = data.category || "consulta";
+  // Lembrete e compromisso pessoal podem não ter paciente vinculado.
+  const requiresPatient = category === "consulta" || category === "retorno";
 
-  if (!patientExists) {
-    throw new Error("Paciente não encontrado");
+  if (data.patientId) {
+    const patientExists = await prisma.patient.findFirst({
+      where: { id: data.patientId, userId: user.id, isActive: true },
+    });
+    if (!patientExists) throw new Error("Paciente não encontrado");
+  } else if (requiresPatient) {
+    throw new Error("Paciente é obrigatório para consultas e retornos.");
   }
 
   const startsAt = new Date(data.startsAt);
@@ -41,7 +42,10 @@ export async function create(data, user) {
         status: data.status || "SCHEDULED",
         color: data.color,
         idempotencyKey,
-        patient: { connect: { id: data.patientId } },
+        category,
+        isAllDay: data.isAllDay ?? false,
+        parentAppointmentId: data.parentAppointmentId || null,
+        ...(data.patientId ? { patient: { connect: { id: data.patientId } } } : {}),
         user: { connect: { id: user.id } },
       },
       include: { patient: true },
@@ -58,13 +62,26 @@ export async function create(data, user) {
     throw error;
   }
 
-  // busca preço do procedimento para já preencher o valor
+  // Lembrete e compromisso pessoal não geram cobrança.
+  if (!requiresPatient) {
+    return appointment;
+  }
+
+  // busca preço do procedimento para já preencher o valor + dados de retorno
   let amount = 0;
+  let suggestedReturn = null;
   if (appointment.procedureType) {
     const procedure = await prisma.procedure.findFirst({
       where: { name: appointment.procedureType, userId: user.id },
     });
     if (procedure?.price) amount = procedure.price;
+    // Se o procedimento exige retorno, sugere uma data (data do agend. + returnDays)
+    if (procedure?.requiresReturn && category !== "retorno") {
+      const days = procedure.returnDays ?? 0;
+      const returnDate = new Date(startsAt);
+      returnDate.setDate(returnDate.getDate() + days);
+      suggestedReturn = { date: returnDate.toISOString(), days, procedureName: procedure.name };
+    }
   }
 
   await createPending(user.id, {
@@ -78,7 +95,7 @@ export async function create(data, user) {
     notes: data.txNotes || `Agendamento criado em ${new Date(appointment.startsAt).toLocaleDateString("pt-BR")} com ${appointment.professional || "profissional não informado"}.`,
   });
 
-  return appointment;
+  return { ...appointment, suggestedReturn };
 }
 
 export async function findAll(user) {
@@ -98,6 +115,93 @@ export async function findAll(user) {
   });
 
   return appointments;
+}
+
+// Cores por categoria de agendamento / tipo financeiro
+const CALENDAR_COLORS = {
+  consulta:    "#00704A",
+  retorno:     "#2E6FA8",
+  lembrete:    "#CBA258",
+  compromisso: "#6F7F73",
+  receivable:  "#1E9E5A",
+  payable:     "#D9534F",
+};
+
+// Calendário unificado: agendamentos + itens financeiros (a receber / a pagar)
+// types: lista de categorias/tipos a incluir. Se vazio, inclui tudo.
+export async function getCalendar(user, { from, to, types } = {}) {
+  const range = {};
+  if (from) range.gte = new Date(from);
+  if (to) range.lte = new Date(to);
+  const hasRange = from || to;
+
+  const include = (t) => !types || types.length === 0 || types.includes(t);
+  const events = [];
+
+  // ── Agendamentos ──
+  const apptCategories = ["consulta", "retorno", "lembrete", "compromisso"].filter(include);
+  if (apptCategories.length > 0) {
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        userId: user.id,
+        category: { in: apptCategories },
+        ...(hasRange ? { startsAt: range } : {}),
+      },
+      include: { patient: true },
+      orderBy: { startsAt: "asc" },
+    });
+    for (const a of appointments) {
+      events.push({
+        id: a.id,
+        kind: "appointment",
+        category: a.category,
+        title: a.title || a.patient?.name || a.procedureType || "Agendamento",
+        patientName: a.patient?.name ?? null,
+        start: a.startsAt,
+        end: a.endsAt,
+        isAllDay: a.isAllDay,
+        color: a.color || CALENDAR_COLORS[a.category] || CALENDAR_COLORS.consulta,
+        status: a.status,
+      });
+    }
+  }
+
+  // ── Financeiro (a receber / a pagar) — plotado pela dueDate ──
+  const wantReceivable = include("receivable");
+  const wantPayable = include("payable");
+  if (wantReceivable || wantPayable) {
+    const txTypes = [];
+    if (wantReceivable) txTypes.push("receita");
+    if (wantPayable) txTypes.push("despesa");
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        userId: user.id,
+        type: { in: txTypes },
+        dueDate: hasRange ? range : { not: null },
+      },
+      include: { patient: true },
+      orderBy: { dueDate: "asc" },
+    });
+    for (const t of transactions) {
+      const isReceivable = t.type === "receita";
+      events.push({
+        id: `tx-${t.id}`,
+        kind: isReceivable ? "receivable" : "payable",
+        category: isReceivable ? "receivable" : "payable",
+        title: `${isReceivable ? "A receber" : "A pagar"}: ${t.description}`,
+        patientName: t.patient?.name ?? null,
+        start: t.dueDate,
+        end: t.dueDate,
+        isAllDay: true,
+        color: CALENDAR_COLORS[isReceivable ? "receivable" : "payable"],
+        amount: t.amount,
+        status: t.status,
+        transactionId: t.id,
+      });
+    }
+  }
+
+  return events;
 }
 
 export async function findById(id, user) {

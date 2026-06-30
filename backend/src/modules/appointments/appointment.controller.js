@@ -28,6 +28,17 @@ export async function findAll(req, res) {
   }
 }
 
+export async function getCalendar(req, res) {
+  try {
+    const { from, to, types } = req.query;
+    const typesArr = types ? String(types).split(",").filter(Boolean) : null;
+    const events = await appointmentService.getCalendar(req.user, { from, to, types: typesArr });
+    return res.json(events);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+}
+
 export async function findById(req, res) {
   try {
     const appointment =

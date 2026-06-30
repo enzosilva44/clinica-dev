@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -25,6 +26,22 @@ const STATUS_COLORS = {
   FINISHED:    "#3A9B6F",
   CANCELED:    "#B05248",
 };
+const CATEGORY_COLORS = {
+  consulta:    "#00704A",
+  retorno:     "#2E6FA8",
+  lembrete:    "#CBA258",
+  compromisso: "#6F7F73",
+  receivable:  "#1E9E5A",
+  payable:     "#D9534F",
+};
+const CATEGORY_FILTERS = [
+  { key: "consulta",    label: "Consultas" },
+  { key: "retorno",     label: "Retornos" },
+  { key: "lembrete",    label: "Lembretes" },
+  { key: "compromisso", label: "Compromissos" },
+  { key: "receivable",  label: "A receber" },
+  { key: "payable",     label: "A pagar" },
+];
 const STATUS_OPTIONS = [
   { value: "SCHEDULED",   label: "Agendado" },
   { value: "CONFIRMED",   label: "Confirmado" },
@@ -74,6 +91,7 @@ function getInitialScrollTime(date = new Date()) {
 
 export default function Agenda() {
   const features    = useFeatures();
+  const navigate    = useNavigate();
   const calendarRef = useRef(null);
   const idempotencyKeyRef = useRef(null);
   const [now, setNow] = useState(new Date());
@@ -86,6 +104,8 @@ export default function Agenda() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm());
+  const [returnSuggestion, setReturnSuggestion] = useState(null); // { date, days, patientId, professional, procedureName }
+  const [activeCategories, setActiveCategories] = useState(CATEGORY_FILTERS.map((c) => c.key));
   const [confirmTemplate, setConfirmTemplate] = useState(null);
   const [sendWhatsApp, setSendWhatsApp] = useState(false);
   const [whatsappMessage, setWhatsappMessage] = useState("");
@@ -132,36 +152,66 @@ export default function Agenda() {
 
   async function loadAppointments() {
     try {
-      const res = await api.get("/appointments");
-      setAllEvents(
-        res.data.map((a) => {
-          const statusColor =
-            STATUS_COLORS[a.status] ??
-            STATUS_COLORS[a.status?.toUpperCase()] ??
-            PROFESSIONAL_COLORS[a.professional] ??
-            "#00704A";
-          return {
-            id: a.id,
-            title: a.title || "Agendamento",
-            start: a.startsAt,
-            end: a.endsAt,
-            backgroundColor: statusColor,
-            borderColor: "transparent",
-            extendedProps: {
-              professional: a.professional,
-              procedureType: a.procedureType,
-              notes: a.notes,
-              status: a.status,
-              statusColor,
-              professionalColor: PROFESSIONAL_COLORS[a.professional] ?? "#00704A",
-              patientName: a.patient?.name ?? null,
-              patientPhone: a.patient?.phone ?? null,
-              patientId: a.patientId ?? null,
-              transaction: a.transaction ?? null,
-            },
-          };
-        })
-      );
+      // Agendamentos (clicáveis/editáveis) + itens financeiros (visuais) do calendário unificado
+      const [appts, calendar] = await Promise.all([
+        api.get("/appointments"),
+        api.get("/calendar").catch(() => ({ data: [] })),
+      ]);
+
+      const apptEvents = appts.data.map((a) => {
+        const category = a.category || "consulta";
+        const statusColor =
+          (category !== "consulta" ? CATEGORY_COLORS[category] : null) ??
+          STATUS_COLORS[a.status] ??
+          STATUS_COLORS[a.status?.toUpperCase()] ??
+          PROFESSIONAL_COLORS[a.professional] ??
+          "#00704A";
+        return {
+          id: a.id,
+          title: a.title || "Agendamento",
+          start: a.startsAt,
+          end: a.endsAt,
+          allDay: a.isAllDay ?? false,
+          backgroundColor: statusColor,
+          borderColor: "transparent",
+          extendedProps: {
+            kind: "appointment",
+            category,
+            professional: a.professional,
+            procedureType: a.procedureType,
+            notes: a.notes,
+            status: a.status,
+            statusColor,
+            professionalColor: PROFESSIONAL_COLORS[a.professional] ?? "#00704A",
+            patientName: a.patient?.name ?? null,
+            patientPhone: a.patient?.phone ?? null,
+            patientId: a.patientId ?? null,
+            transaction: a.transaction ?? null,
+          },
+        };
+      });
+
+      // Itens financeiros (a receber / a pagar) — apenas visuais no calendário
+      const finEvents = (calendar.data || [])
+        .filter((e) => e.kind === "receivable" || e.kind === "payable")
+        .map((e) => ({
+          id: e.id,
+          title: e.title,
+          start: e.start,
+          end: e.end,
+          allDay: true,
+          backgroundColor: e.color,
+          borderColor: "transparent",
+          extendedProps: {
+            kind: e.kind,
+            category: e.category,
+            amount: e.amount,
+            status: e.status,
+            transactionId: e.transactionId,
+          },
+        }));
+
+      setAllEvents([...apptEvents, ...finEvents]);
     } catch (error) {
       console.error(error);
     }
@@ -219,14 +269,25 @@ export default function Agenda() {
   }, [form.patientId, form.selectedDate]);
 
   useEffect(() => {
-    setEvents(
-      features.multiProfessional
-        ? allEvents.filter(
-            (e) => !e.extendedProps.professional || selectedProfessionals.includes(e.extendedProps.professional)
-          )
-        : allEvents
+    let list = allEvents.filter((e) =>
+      activeCategories.includes(e.extendedProps?.category || "consulta")
     );
-  }, [allEvents, selectedProfessionals, features.multiProfessional]);
+    if (features.multiProfessional) {
+      list = list.filter(
+        (e) =>
+          e.extendedProps.kind !== "appointment" ||
+          !e.extendedProps.professional ||
+          selectedProfessionals.includes(e.extendedProps.professional)
+      );
+    }
+    setEvents(list);
+  }, [allEvents, selectedProfessionals, features.multiProfessional, activeCategories]);
+
+  function toggleCategory(key) {
+    setActiveCategories((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  }
 
   function toggleProfessional(name) {
     setSelectedProfessionals((prev) =>
@@ -253,6 +314,12 @@ export default function Agenda() {
   }
 
   function openEdit(event) {
+    // Itens financeiros (a receber/a pagar) são visuais; clicar leva ao Financeiro.
+    const kind = event.extendedProps?.kind;
+    if (kind === "receivable" || kind === "payable") {
+      navigate("/financeiro");
+      return;
+    }
     setEditing(event);
     setForm({
       title: event.title,
@@ -287,7 +354,7 @@ export default function Agenda() {
       } else {
         const start = new Date(form.selectedDate);
         const end = new Date(start.getTime() + 60 * 60 * 1000);
-        await api.post("/appointments", {
+        const res = await api.post("/appointments", {
           title: form.title,
           startsAt: start,
           endsAt: end,
@@ -307,6 +374,15 @@ export default function Agenda() {
         // Renova a chave para o próximo agendamento
         idempotencyKeyRef.current = crypto.randomUUID();
         toast.success("Agendamento criado");
+
+        // Procedimento exige retorno → guarda sugestão pra abrir o modal depois
+        if (res.data?.suggestedReturn) {
+          setReturnSuggestion({
+            ...res.data.suggestedReturn,
+            patientId: form.patientId,
+            professional: form.professional,
+          });
+        }
       }
 
       if (features.whatsapp && sendWhatsApp && whatsappMessage) {
@@ -350,6 +426,34 @@ export default function Agenda() {
       loadAppointments();
     } catch (error) {
       toast.error("Erro ao excluir agendamento");
+    }
+  }
+
+  // ── Retorno de procedimento ──
+  async function createReturn(category, dateOverride) {
+    if (!returnSuggestion) return;
+    const start = new Date(dateOverride || returnSuggestion.date);
+    const isReminder = category === "lembrete";
+    const patientName = patients.find((p) => p.id === returnSuggestion.patientId)?.name || "";
+    try {
+      await api.post("/appointments", {
+        title: isReminder
+          ? `Lembrete de retorno — ${patientName}`
+          : `Retorno — ${returnSuggestion.procedureName}`,
+        startsAt: start,
+        endsAt: new Date(start.getTime() + 60 * 60 * 1000),
+        patientId: returnSuggestion.patientId,
+        professional: returnSuggestion.professional,
+        category,
+        isAllDay: isReminder,
+        color: PROFESSIONAL_COLORS[returnSuggestion.professional],
+        idempotencyKey: crypto.randomUUID(),
+      });
+      toast.success(isReminder ? "Lembrete de retorno criado" : "Retorno agendado");
+      setReturnSuggestion(null);
+      loadAppointments();
+    } catch {
+      toast.error("Erro ao criar retorno");
     }
   }
 
@@ -418,6 +522,29 @@ export default function Agenda() {
             >
               <Plus size={16} /> Novo agendamento
             </button>
+          </div>
+
+          {/* FILTROS POR CATEGORIA */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {CATEGORY_FILTERS.map((c) => {
+              const on = activeCategories.includes(c.key);
+              return (
+                <button
+                  key={c.key}
+                  onClick={() => toggleCategory(c.key)}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition ${
+                    on ? "text-white border-transparent" : "text-gray-400 border-[#DDD8CC] bg-white"
+                  }`}
+                  style={on ? { backgroundColor: CATEGORY_COLORS[c.key] } : {}}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: on ? "#fff" : CATEGORY_COLORS[c.key] }}
+                  />
+                  {c.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* CALENDÁRIO */}
@@ -505,6 +632,40 @@ export default function Agenda() {
           </div>
         </div>
       </div>
+
+      {/* MODAL DE RETORNO */}
+      {returnSuggestion && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-[#00704A] mb-1">Agendar retorno?</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              O procedimento <strong>{returnSuggestion.procedureName}</strong> requer retorno
+              em <strong>{returnSuggestion.days} dias</strong>.
+            </p>
+            <label className="text-xs font-medium text-gray-500">Data sugerida (editável)</label>
+            <input
+              type="datetime-local"
+              defaultValue={formatForInput(returnSuggestion.date)}
+              onChange={(e) => setReturnSuggestion((p) => ({ ...p, date: new Date(e.target.value).toISOString() }))}
+              className="w-full border border-[#DDD8CC] rounded-xl px-3 py-2 text-sm mt-1 mb-5 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+            />
+            <div className="flex flex-col gap-2">
+              <button onClick={() => createReturn("retorno")}
+                className="bg-[#00704A] hover:bg-[#1E3932] text-white text-sm font-semibold py-2.5 rounded-xl transition">
+                Marcar retorno nesta data
+              </button>
+              <button onClick={() => createReturn("lembrete")}
+                className="border border-[#CBA258] text-[#7a5c1e] bg-[#CBA258]/10 text-sm font-medium py-2.5 rounded-xl transition hover:bg-[#CBA258]/20">
+                Deixar como lembrete
+              </button>
+              <button onClick={() => setReturnSuggestion(null)}
+                className="text-gray-400 text-sm py-2 rounded-xl hover:bg-gray-50 transition">
+                Desconsiderar retorno
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL */}
       {showModal && (

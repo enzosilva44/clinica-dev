@@ -9,6 +9,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/", appointmentController.findAll);
+router.get("/calendar", appointmentController.getCalendar);
 router.get("/patient/:patientId", appointmentController.findByPatient);
 router.get("/:id", appointmentController.findById);
 router.put("/:id", appointmentController.update);
