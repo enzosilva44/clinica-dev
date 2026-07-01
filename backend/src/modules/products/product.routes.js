@@ -3,9 +3,10 @@ import * as productController from "./product.controller.js";
 import * as movementController from "./movement.controller.js";
 import * as stockRequestController from "./stockRequest.controller.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { requireFeature } from "../../middlewares/feature.middleware.js";
 
 const router = Router();
-router.use(authMiddleware);
+router.use(authMiddleware, requireFeature("stock"));
 
 router.get("/", productController.findAll);
 router.post("/", productController.create);

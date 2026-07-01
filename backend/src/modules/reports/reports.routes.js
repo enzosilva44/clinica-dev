@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { prisma } from "../../config/prisma.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { requireFeature } from "../../middlewares/feature.middleware.js";
 
 const router = Router();
-router.use(authMiddleware);
+router.use(authMiddleware, requireFeature("analytics"));
 
 router.get("/", async (req, res) => {
   try {

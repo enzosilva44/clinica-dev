@@ -1,9 +1,10 @@
 import { Router } from "express";
 import * as clubController from "./club.controller.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { requireFeature } from "../../middlewares/feature.middleware.js";
 
 const router = Router();
-router.use(authMiddleware);
+router.use(authMiddleware, requireFeature("clube"));
 
 // Planos
 router.get("/plans", clubController.findAllPlans);

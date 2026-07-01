@@ -1,9 +1,10 @@
 import { Router } from "express";
 import * as transactionController from "./transaction.controller.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { requireFeature } from "../../middlewares/feature.middleware.js";
 
 const router = Router();
-router.use(authMiddleware);
+router.use(authMiddleware, requireFeature("financial"));
 
 router.get("/summary",   transactionController.getSummary);
 router.get("/analytics", transactionController.getAnalytics);

@@ -239,11 +239,13 @@ export default function Agenda() {
     loadAppointments();
     loadPatients();
     loadProcedures();
-    api.get("/automations/templates").then((res) => {
-      const tpl = res.data.find((t) => t.type === "confirmation");
-      if (tpl) setConfirmTemplate(tpl);
-    }).catch(() => {});
-  }, []);
+    if (features.whatsapp) {
+      api.get("/automations/templates").then((res) => {
+        const tpl = res.data.find((t) => t.type === "confirmation");
+        if (tpl) setConfirmTemplate(tpl);
+      }).catch(() => {});
+    }
+  }, [features.whatsapp]);
 
   useEffect(() => {
     const timer = setInterval(() => {
