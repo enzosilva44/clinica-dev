@@ -5,6 +5,7 @@ import {
   ArrowRight, TrendingUp, Clock, ChevronRight, Cake, PartyPopper,
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
+import { Card, Button } from "../components/ui";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useFeatures } from "../hooks/useFeatures";
@@ -60,6 +61,26 @@ const QUICK_ACCESS = [
   { to: "/financeiro", icon: Wallet,    label: "Financeiro", sub: "Fluxo de caixa" },
   { to: "/relatorios", icon: BarChart2, label: "Relatórios", sub: "Analytics" },
 ];
+
+// Cabeçalho de seção padrão do Dashboard (ícone + título + subtítulo).
+function SectionHeader({ icon: Icon, title, subtitle, iconTone = "creme", action }) {
+  const box = iconTone === "verde" ? "bg-verde" : "bg-creme-100";
+  const glyph = iconTone === "verde" ? "text-white" : "text-ambar";
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2.5">
+        <div className={`w-8 h-8 ${box} rounded-lg flex items-center justify-center`}>
+          <Icon size={15} className={glyph} />
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-verde leading-none">{title}</h2>
+          {subtitle && <p className="text-xs text-gray-400 mt-0.5 capitalize">{subtitle}</p>}
+        </div>
+      </div>
+      {action}
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -131,16 +152,8 @@ export default function Dashboard() {
       </div>
 
       {/* ANIVERSARIANTES DO MÊS */}
-      <div className="bg-creme-50 border border-creme-200 rounded-2xl p-6 mb-6">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 bg-creme-100 rounded-lg flex items-center justify-center">
-              <Cake size={15} className="text-ambar" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-verde leading-none">Aniversariantes</h2>
-              <p className="text-xs text-gray-400 mt-0.5 capitalize">{currentMonthName}</p>
-            </div>
-          </div>
+      <Card className="bg-creme-50! p-6 mb-6">
+          <SectionHeader icon={Cake} title="Aniversariantes" subtitle={currentMonthName} />
 
           {loading ? (
             <div className="flex gap-2">
@@ -181,31 +194,24 @@ export default function Dashboard() {
               Nenhum aniversariante em {currentMonthName}.
             </p>
           )}
-        </div>
+        </Card>
 
       {/* AGENDA DE HOJE */}
-      <div className="bg-creme-50 border border-creme-200 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-verde rounded-lg flex items-center justify-center">
-              <Calendar size={15} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-verde leading-none">Agenda de hoje</h2>
-              {hasSchedule && (
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {todaySchedule.length} {todaySchedule.length === 1 ? "consulta" : "consultas"} agendadas
-                </p>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={() => navigate("/agenda")}
-            className="text-xs text-verde hover:opacity-70 transition flex items-center gap-1 font-medium"
-          >
-            Ver agenda completa <ArrowRight size={13} />
-          </button>
-        </div>
+      <Card className="bg-creme-50! p-6">
+        <SectionHeader
+          icon={Calendar}
+          iconTone="verde"
+          title="Agenda de hoje"
+          subtitle={hasSchedule ? `${todaySchedule.length} ${todaySchedule.length === 1 ? "consulta" : "consultas"} agendadas` : undefined}
+          action={
+            <button
+              onClick={() => navigate("/agenda")}
+              className="text-xs text-verde hover:opacity-70 transition flex items-center gap-1 font-medium"
+            >
+              Ver agenda completa <ArrowRight size={13} />
+            </button>
+          }
+        />
 
         {loading ? (
           <div className="space-y-3">
@@ -220,12 +226,9 @@ export default function Dashboard() {
             </div>
             <p className="text-gray-500 text-sm font-medium">Nenhuma consulta hoje</p>
             <p className="text-gray-400 text-xs mt-1">Aproveite para organizar a semana</p>
-            <button
-              onClick={() => navigate("/agenda")}
-              className="mt-4 bg-verde hover:bg-verde-900 text-white px-4 py-2 rounded-xl text-xs font-medium transition"
-            >
+            <Button size="sm" className="mt-4" onClick={() => navigate("/agenda")}>
               Abrir agenda
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -300,7 +303,7 @@ export default function Dashboard() {
             })}
           </div>
         )}
-      </div>
+      </Card>
     </MainLayout>
   );
 }
