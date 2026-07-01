@@ -89,7 +89,7 @@ export default function Dashboard() {
   return (
     <MainLayout>
       {/* GREETING */}
-      <div className="relative bg-[#00704A] rounded-2xl px-5 py-6 md:px-8 md:py-7 mb-6 overflow-hidden shadow-sm">
+      <div className="relative bg-verde rounded-2xl px-5 py-6 md:px-8 md:py-7 mb-6 overflow-hidden shadow-sm">
         <div className="relative z-10">
           <p className="text-white/50 text-xs font-medium capitalize tracking-widest mb-2">
             {today}
@@ -116,28 +116,28 @@ export default function Dashboard() {
           <button
             key={to}
             onClick={() => navigate(to)}
-            className="group bg-[#FAF7F2] border border-[#E5D8C5] hover:border-[#00704A]/30 hover:bg-white rounded-2xl p-4 flex items-center justify-between transition-all shadow-sm text-left"
+            className="group bg-creme-50 border border-creme-200 hover:border-verde/30 hover:bg-white rounded-2xl p-4 flex items-center justify-between transition-all shadow-sm text-left"
           >
             <div>
-              <div className="w-9 h-9 bg-[#EFE7DA] group-hover:bg-[#00704A] rounded-xl flex items-center justify-center mb-3 transition-colors">
-                <Icon size={17} className="text-[#00704A] group-hover:text-white transition-colors" />
+              <div className="w-9 h-9 bg-creme-100 group-hover:bg-verde rounded-xl flex items-center justify-center mb-3 transition-colors">
+                <Icon size={17} className="text-verde group-hover:text-white transition-colors" />
               </div>
-              <p className="font-semibold text-sm text-[#00704A]">{label}</p>
+              <p className="font-semibold text-sm text-verde">{label}</p>
               <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
             </div>
-            <ChevronRight size={15} className="text-gray-300 group-hover:text-[#00704A] transition-colors shrink-0" />
+            <ChevronRight size={15} className="text-gray-300 group-hover:text-verde transition-colors shrink-0" />
           </button>
         ))}
       </div>
 
       {/* ANIVERSARIANTES DO MÊS */}
-      <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6 mb-6">
+      <div className="bg-creme-50 border border-creme-200 rounded-2xl p-6 mb-6">
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 bg-[#EFE7DA] rounded-lg flex items-center justify-center">
-              <Cake size={15} className="text-[#C4895A]" />
+            <div className="w-8 h-8 bg-creme-100 rounded-lg flex items-center justify-center">
+              <Cake size={15} className="text-ambar" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#00704A] leading-none">Aniversariantes</h2>
+              <h2 className="text-base font-bold text-verde leading-none">Aniversariantes</h2>
               <p className="text-xs text-gray-400 mt-0.5 capitalize">{currentMonthName}</p>
             </div>
           </div>
@@ -145,7 +145,7 @@ export default function Dashboard() {
           {loading ? (
             <div className="flex gap-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 w-28 bg-[#EFE7DA] rounded-xl animate-pulse shrink-0" />
+                <div key={i} className="h-16 w-28 bg-creme-100 rounded-xl animate-pulse shrink-0" />
               ))}
             </div>
           ) : (
@@ -156,15 +156,15 @@ export default function Dashboard() {
                   onClick={() => navigate(`/patients/${p.id}`)}
                   className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border transition text-left ${
                     p.isToday
-                      ? "bg-[#C4895A] border-[#C4895A] shadow-sm"
-                      : "bg-white border-[#E5D8C5] hover:border-[#C4895A]/40 hover:bg-[#FBF1E9]"
+                      ? "bg-ambar border-ambar shadow-sm"
+                      : "bg-white border-creme-200 hover:border-ambar/40 hover:bg-ambar-50"
                   }`}
                 >
                   <div className={`leading-none ${p.isToday ? "animate-bounce" : ""}`}>
-                    <Cake size={18} className={p.isToday ? "text-white" : "text-[#C4895A]"} />
+                    <Cake size={18} className={p.isToday ? "text-white" : "text-ambar"} />
                   </div>
                   <div>
-                    <p className={`text-xs font-semibold leading-tight truncate max-w-27.5 ${p.isToday ? "text-white" : "text-[#00704A]"}`}>
+                    <p className={`text-xs font-semibold leading-tight truncate max-w-27.5 ${p.isToday ? "text-white" : "text-verde"}`}>
                       {p.name.split(" ")[0]}
                     </p>
                     <p className={`text-[10px] mt-0.5 flex items-center gap-1 ${p.isToday ? "text-white/80" : "text-gray-400"}`}>
@@ -184,14 +184,14 @@ export default function Dashboard() {
         </div>
 
       {/* AGENDA DE HOJE */}
-      <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6">
+      <div className="bg-creme-50 border border-creme-200 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#00704A] rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-verde rounded-lg flex items-center justify-center">
               <Calendar size={15} className="text-white" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#00704A] leading-none">Agenda de hoje</h2>
+              <h2 className="text-base font-bold text-verde leading-none">Agenda de hoje</h2>
               {hasSchedule && (
                 <p className="text-xs text-gray-400 mt-0.5">
                   {todaySchedule.length} {todaySchedule.length === 1 ? "consulta" : "consultas"} agendadas
@@ -201,7 +201,7 @@ export default function Dashboard() {
           </div>
           <button
             onClick={() => navigate("/agenda")}
-            className="text-xs text-[#00704A] hover:opacity-70 transition flex items-center gap-1 font-medium"
+            className="text-xs text-verde hover:opacity-70 transition flex items-center gap-1 font-medium"
           >
             Ver agenda completa <ArrowRight size={13} />
           </button>
@@ -210,19 +210,19 @@ export default function Dashboard() {
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-[#EFE7DA] rounded-xl animate-pulse" />
+              <div key={i} className="h-16 bg-creme-100 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : !hasSchedule ? (
           <div className="text-center py-10">
-            <div className="w-12 h-12 bg-[#EFE7DA] rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <Calendar size={22} className="text-[#C4895A]" />
+            <div className="w-12 h-12 bg-creme-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Calendar size={22} className="text-ambar" />
             </div>
             <p className="text-gray-500 text-sm font-medium">Nenhuma consulta hoje</p>
             <p className="text-gray-400 text-xs mt-1">Aproveite para organizar a semana</p>
             <button
               onClick={() => navigate("/agenda")}
-              className="mt-4 bg-[#00704A] hover:bg-[#0A3326] text-white px-4 py-2 rounded-xl text-xs font-medium transition"
+              className="mt-4 bg-verde hover:bg-verde-900 text-white px-4 py-2 rounded-xl text-xs font-medium transition"
             >
               Abrir agenda
             </button>
@@ -248,7 +248,7 @@ export default function Dashboard() {
                 <div
                   key={appt.id}
                   className={`flex items-center gap-4 bg-white border rounded-xl px-4 py-3.5 transition ${
-                    isPast ? "opacity-45" : "border-[#E5D8C5]"
+                    isPast ? "opacity-45" : "border-creme-200"
                   } ${isNow ? "border-l-4 shadow-sm" : ""}`}
                   style={isNow ? { borderLeftColor: color } : {}}
                 >
@@ -260,18 +260,18 @@ export default function Dashboard() {
 
                   {/* Horário */}
                   <div className="text-right shrink-0 w-16">
-                    <p className="text-sm font-bold text-[#00704A]">{time}</p>
+                    <p className="text-sm font-bold text-verde">{time}</p>
                     {endTime && (
                       <p className="text-xs text-gray-400">{endTime}</p>
                     )}
                   </div>
 
                   {/* Divider */}
-                  <div className="w-px h-8 bg-[#E5D8C5] shrink-0" />
+                  <div className="w-px h-8 bg-creme-200 shrink-0" />
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[#00704A] text-sm truncate">
+                    <p className="font-semibold text-verde text-sm truncate">
                       {appt.patient?.name ?? appt.title}
                     </p>
                     <p className="text-xs text-gray-400 truncate">

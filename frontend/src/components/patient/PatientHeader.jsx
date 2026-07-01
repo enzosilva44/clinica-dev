@@ -1,6 +1,6 @@
 export default function PatientHeader({ patient, onBack }) {
   return (
-    <div className="bg-[#00704A] rounded-2xl p-6 mb-6 text-white shadow-sm">
+    <div className="bg-verde rounded-2xl p-6 mb-6 text-white shadow-sm">
       <button
         onClick={onBack}
         className="mb-4 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition"
@@ -36,7 +36,7 @@ export default function PatientHeader({ patient, onBack }) {
           </div>
         </div>
 
-        <button className="bg-[#D8C3A5] text-[#00704A] px-4 py-2 rounded-lg font-medium">
+        <button className="bg-[#D8C3A5] text-verde px-4 py-2 rounded-lg font-medium">
           Editar dados
         </button>
       </div>

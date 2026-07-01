@@ -186,7 +186,7 @@ export default function FaceMap({
         <div className="bg-white border-2 rounded-2xl p-4 mb-4 shadow-sm" style={{ borderColor: selectedMuscle?.color ?? "#00704A" }}>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-sm font-bold text-[#00704A]">
+              <p className="text-sm font-bold text-verde">
                 {selectedMuscle ? selectedMuscle.name : "Novo ponto"}
               </p>
               {selectedMuscle && <p className="text-xs text-gray-400">{selectedMuscle.description}</p>}
@@ -206,13 +206,13 @@ export default function FaceMap({
                     value={pendingUnits}
                     onChange={(e) => setPendingUnits(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && confirmMarker()}
-                    className="flex-1 border border-[#C4895A] rounded-lg p-2 text-sm"
+                    className="flex-1 border border-ambar rounded-lg p-2 text-sm"
                     placeholder="Ex: 4"
                   />
                   <select
                     value={pendingUnit}
                     onChange={(e) => setPendingUnit(e.target.value)}
-                    className="border border-[#C4895A] rounded-lg p-2 text-sm bg-white"
+                    className="border border-ambar rounded-lg p-2 text-sm bg-white"
                   >
                     <option value="U">U</option>
                     <option value="ml">ml</option>
@@ -227,22 +227,22 @@ export default function FaceMap({
               <>
                 {procedures.length > 0 ? (
                   <select value={form.procedure} onChange={(e) => setForm({ ...form, procedure: e.target.value })}
-                    className="w-full border border-[#C4895A] rounded-lg p-2 text-sm">
+                    className="w-full border border-ambar rounded-lg p-2 text-sm">
                     <option value="">Selecione o procedimento</option>
                     {procedures.map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
                   </select>
                 ) : (
                   <input value={form.procedure} onChange={(e) => setForm({ ...form, procedure: e.target.value })}
-                    placeholder="Procedimento" className="w-full border border-[#C4895A] rounded-lg p-2 text-sm" />
+                    placeholder="Procedimento" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 )}
                 <div className="flex gap-2">
                   <input value={pendingUnits} onChange={(e) => setPendingUnits(e.target.value)}
                     type="number" min="0" step="0.5"
-                    placeholder="Quantidade" className="flex-1 border border-[#C4895A] rounded-lg p-2 text-sm" />
+                    placeholder="Quantidade" className="flex-1 border border-ambar rounded-lg p-2 text-sm" />
                   <select
                     value={form.unit}
                     onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                    className="border border-[#C4895A] rounded-lg p-2 text-sm bg-white"
+                    className="border border-ambar rounded-lg p-2 text-sm bg-white"
                   >
                     <option value="U">U</option>
                     <option value="ml">ml</option>
@@ -253,7 +253,7 @@ export default function FaceMap({
                   </select>
                 </div>
                 <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Observação" className="w-full border border-[#C4895A] rounded-lg p-2 text-sm" />
+                  placeholder="Observação" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 <ColorPicker color={form.color} onChange={(c) => setForm({ ...form, color: c })} />
               </>
             )}
@@ -271,7 +271,7 @@ export default function FaceMap({
         <div className="bg-white border-2 rounded-2xl p-4 mb-4 shadow-sm" style={{ borderColor: selectedMuscle?.color ?? "#00704A" }}>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-sm font-bold text-[#00704A]">
+              <p className="text-sm font-bold text-verde">
                 {selectedMuscle ? selectedMuscle.name : "Traço em andamento"}
               </p>
               {selectedMuscle && <p className="text-xs text-gray-400">{selectedMuscle.description}</p>}
@@ -294,13 +294,13 @@ export default function FaceMap({
                     value={lineForm.units}
                     onChange={(e) => setLineForm({ ...lineForm, units: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && confirmLine()}
-                    className="flex-1 border border-[#C4895A] rounded-lg p-2 text-sm"
+                    className="flex-1 border border-ambar rounded-lg p-2 text-sm"
                     placeholder={`Ex: ${selectedMuscle.defaultUnits}`}
                   />
                   <select
                     value={lineForm.unit}
                     onChange={(e) => setLineForm({ ...lineForm, unit: e.target.value })}
-                    className="border border-[#C4895A] rounded-lg p-2 text-sm bg-white"
+                    className="border border-ambar rounded-lg p-2 text-sm bg-white"
                   >
                     <option value="U">U</option>
                     <option value="ml">ml</option>
@@ -314,15 +314,15 @@ export default function FaceMap({
             ) : (
               <>
                 <input value={lineForm.label} onChange={(e) => setLineForm({ ...lineForm, label: e.target.value })}
-                  placeholder="Rótulo (ex: Botox frontal)" className="w-full border border-[#C4895A] rounded-lg p-2 text-sm" />
+                  placeholder="Rótulo (ex: Botox frontal)" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 <div className="flex gap-2">
                   <input value={lineForm.units} onChange={(e) => setLineForm({ ...lineForm, units: e.target.value })}
                     type="number" min="0" step="0.5"
-                    placeholder="Quantidade" className="flex-1 border border-[#C4895A] rounded-lg p-2 text-sm" />
+                    placeholder="Quantidade" className="flex-1 border border-ambar rounded-lg p-2 text-sm" />
                   <select
                     value={lineForm.unit}
                     onChange={(e) => setLineForm({ ...lineForm, unit: e.target.value })}
-                    className="border border-[#C4895A] rounded-lg p-2 text-sm bg-white"
+                    className="border border-ambar rounded-lg p-2 text-sm bg-white"
                   >
                     <option value="U">U</option>
                     <option value="ml">ml</option>
@@ -333,7 +333,7 @@ export default function FaceMap({
                   </select>
                 </div>
                 <input value={lineForm.notes} onChange={(e) => setLineForm({ ...lineForm, notes: e.target.value })}
-                  placeholder="Observação" className="w-full border border-[#C4895A] rounded-lg p-2 text-sm" />
+                  placeholder="Observação" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 <ColorPicker color={lineForm.color} onChange={(c) => setLineForm({ ...lineForm, color: c })} />
               </>
             )}
@@ -356,13 +356,13 @@ export default function FaceMap({
         {!readOnly && (
           <div className="no-print">
             {/* Tool bar */}
-            <div className="flex gap-1 mb-2 bg-[#FAF7F2] border border-[#E5D8C5] rounded-xl p-1">
+            <div className="flex gap-1 mb-2 bg-creme-50 border border-creme-200 rounded-xl p-1">
               <button onClick={() => switchTool("point")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${tool === "point" ? "bg-[#00704A] text-white" : "text-[#00704A] hover:bg-[#EFE7DA]"}`}>
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${tool === "point" ? "bg-verde text-white" : "text-verde hover:bg-creme-100"}`}>
                 <Dot size={14} /> Ponto
               </button>
               <button onClick={() => switchTool("line")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${tool === "line" ? "bg-[#00704A] text-white" : "text-[#00704A] hover:bg-[#EFE7DA]"}`}>
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${tool === "line" ? "bg-verde text-white" : "text-verde hover:bg-creme-100"}`}>
                 <Minus size={14} /> Traço
               </button>
             </div>
@@ -373,15 +373,15 @@ export default function FaceMap({
                 onClick={() => setShowPhotoPicker((v) => !v)}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium border transition ${
                   backgroundPhotoId
-                    ? "border-[#00704A] bg-[#EFE7DA] text-[#00704A]"
-                    : "border-[#C4895A] text-gray-500 hover:bg-[#EFE7DA]"
+                    ? "border-verde bg-creme-100 text-verde"
+                    : "border-ambar text-gray-500 hover:bg-creme-100"
                 }`}>
                 <ImageIcon size={13} />
                 {backgroundPhotoId ? "Foto do paciente ativa" : "Usar foto do paciente"}
               </button>
               {backgroundPhotoId && (
                 <button onClick={() => onBgChange?.(null)}
-                  className="px-2.5 py-1.5 rounded-lg text-xs border border-[#C4895A] text-gray-400 hover:text-red-400 transition">
+                  className="px-2.5 py-1.5 rounded-lg text-xs border border-ambar text-gray-400 hover:text-red-400 transition">
                   <X size={12} />
                 </button>
               )}
@@ -389,7 +389,7 @@ export default function FaceMap({
 
             {/* Photo picker */}
             {showPhotoPicker && (
-              <div className="mb-2 border border-[#E5D8C5] rounded-xl bg-white p-2">
+              <div className="mb-2 border border-creme-200 rounded-xl bg-white p-2">
                 {photos.length === 0 ? (
                   <p className="text-xs text-gray-400 text-center py-2">Nenhuma foto cadastrada para este paciente</p>
                 ) : (
@@ -397,7 +397,7 @@ export default function FaceMap({
                     {photos.map((p) => (
                       <button key={p.id}
                         onClick={() => { onBgChange?.(p.id); setShowPhotoPicker(false); }}
-                        className={`aspect-square rounded-lg overflow-hidden border-2 transition ${backgroundPhotoId === p.id ? "border-[#00704A]" : "border-transparent hover:border-[#C4895A]"}`}>
+                        className={`aspect-square rounded-lg overflow-hidden border-2 transition ${backgroundPhotoId === p.id ? "border-verde" : "border-transparent hover:border-ambar"}`}>
                         <img src={photoUrl(p.id)} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
@@ -755,7 +755,7 @@ export default function FaceMap({
             const anchor = m.type === "line" ? m.points[0] : m;
             const pct = svgToPercent(anchor.x, anchor.y);
             return (
-              <div className="absolute z-20 bg-[#00704A] text-white text-xs rounded-xl px-3 py-2 shadow-lg pointer-events-none"
+              <div className="absolute z-20 bg-verde text-white text-xs rounded-xl px-3 py-2 shadow-lg pointer-events-none"
                 style={{ ...pct, transform: "translate(-50%, -130%)", maxWidth: 160 }}>
                 {(m.procedure || m.label) && <p className="font-semibold">{m.procedure || m.label}</p>}
                 {m.dose  && <p className="opacity-80">Dose: {m.dose}</p>}
@@ -785,7 +785,7 @@ export default function FaceMap({
                 {totalEntries.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1.5">
                     {totalEntries.map(([unit, total]) => (
-                      <span key={unit} className="text-xs font-semibold bg-[#00704A] text-white px-2.5 py-1 rounded-full">
+                      <span key={unit} className="text-xs font-semibold bg-verde text-white px-2.5 py-1 rounded-full">
                         Total: {Number.isInteger(total) ? total : total.toFixed(1)} {unit}
                       </span>
                     ))}
@@ -794,14 +794,14 @@ export default function FaceMap({
               </div>
               <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
                 {markers.map((m, i) => (
-                  <div key={m.id} className="flex items-start justify-between bg-[#FAF7F2] border border-[#E5D8C5] rounded-xl px-3 py-2">
+                  <div key={m.id} className="flex items-start justify-between bg-creme-50 border border-creme-200 rounded-xl px-3 py-2">
                     <div className="flex items-start gap-2.5">
                       {m.type === "line"
                         ? <div className="w-5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: vividColor(m.color) }} />
                         : <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: vividColor(m.color) }} />
                       }
                       <div>
-                        <p className="text-sm font-medium text-[#00704A]">
+                        <p className="text-sm font-medium text-verde">
                           {m.procedure || m.muscleName || m.label || (m.type === "line" ? `Traço ${i + 1}` : `Ponto ${i + 1}`)}
                           {m.units > 0 && <span className="text-xs text-gray-500 ml-1.5">({m.units}{m.unit ?? "U"})</span>}
                         </p>
@@ -837,7 +837,7 @@ function ColorPicker({ color, onChange }) {
       <div className="flex gap-2">
         {MARKER_COLORS.map((c) => (
           <button key={c.value} type="button" title={c.label} onClick={() => onChange(c.value)}
-            className={`w-6 h-6 rounded-full border-2 transition ${color === c.value ? "border-[#00704A] scale-110" : "border-transparent"}`}
+            className={`w-6 h-6 rounded-full border-2 transition ${color === c.value ? "border-verde scale-110" : "border-transparent"}`}
             style={{ backgroundColor: c.value }} />
         ))}
       </div>

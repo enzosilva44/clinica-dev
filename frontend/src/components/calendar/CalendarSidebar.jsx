@@ -62,21 +62,21 @@ function MiniCalendar({ allEvents, gotoDate }) {
   const cells = buildCalendarGrid(viewYear, viewMonth);
 
   return (
-    <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-3.5">
+    <div className="bg-creme-50 border border-creme-200 rounded-2xl p-3.5">
       {/* Month header */}
       <div className="flex items-center justify-between mb-2.5">
         <button
           onClick={prevMonth}
-          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#EFE7DA] text-[#00704A] transition"
+          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-creme-100 text-verde transition"
         >
           <ChevronLeft size={13} />
         </button>
-        <span className="text-xs font-semibold text-[#00704A]">
+        <span className="text-xs font-semibold text-verde">
           {MONTHS_PT[viewMonth].slice(0, 3)} {viewYear}
         </span>
         <button
           onClick={nextMonth}
-          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#EFE7DA] text-[#00704A] transition"
+          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-creme-100 text-verde transition"
         >
           <ChevronRight size={13} />
         </button>
@@ -103,10 +103,10 @@ function MiniCalendar({ allEvents, gotoDate }) {
               onClick={() => gotoDate?.(new Date(cell.year, cell.month, cell.day))}
               className={`relative flex flex-col items-center justify-center h-7 rounded-lg transition ${
                 isToday
-                  ? "bg-[#00704A] text-white"
+                  ? "bg-verde text-white"
                   : cell.current
-                  ? "hover:bg-[#EFE7DA] text-[#00704A]"
-                  : "text-gray-300 hover:bg-[#EFE7DA]"
+                  ? "hover:bg-creme-100 text-verde"
+                  : "text-gray-300 hover:bg-creme-100"
               }`}
             >
               <span className="text-[0.62rem] font-medium leading-none">{cell.day}</span>
@@ -147,14 +147,14 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
 
       {/* Profissionais — só exibe no plano dev */}
       {showProfessionals && (
-        <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-4">
+        <div className="bg-creme-50 border border-creme-200 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Profissionais
             </p>
             <button
               onClick={toggleAll}
-              className="text-xs text-[#00704A] hover:opacity-70 transition font-medium"
+              className="text-xs text-verde hover:opacity-70 transition font-medium"
             >
               {allSelected ? "Limpar" : "Todos"}
             </button>
@@ -169,15 +169,15 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
                   onClick={() => toggleProfessional(p.name)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition text-left ${
                     active
-                      ? "bg-white border border-[#E5D8C5] shadow-sm"
-                      : "hover:bg-[#EFE7DA] opacity-45 hover:opacity-70"
+                      ? "bg-white border border-creme-200 shadow-sm"
+                      : "hover:bg-creme-100 opacity-45 hover:opacity-70"
                   }`}
                 >
                   <div
                     className="w-3 h-3 rounded-full shrink-0"
                     style={{ backgroundColor: p.color }}
                   />
-                  <span className="text-sm font-medium text-[#00704A] flex-1 truncate">
+                  <span className="text-sm font-medium text-verde flex-1 truncate">
                     {p.name}
                   </span>
                   {active && (
@@ -196,7 +196,7 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
       )}
 
       {/* Legenda de status */}
-      <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-4">
+      <div className="bg-creme-50 border border-creme-200 rounded-2xl p-4">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
           Status
         </p>

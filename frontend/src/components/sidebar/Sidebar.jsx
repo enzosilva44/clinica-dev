@@ -34,7 +34,7 @@ export default function Sidebar({ open = false, onClose }) {
   return (
     <aside
       className={[
-        "w-64 shrink-0 min-h-screen bg-[#00704A] text-white flex flex-col shadow-xl",
+        "w-64 shrink-0 min-h-screen bg-verde text-white flex flex-col shadow-xl",
         "fixed lg:static inset-y-0 left-0 z-50 lg:z-auto",
         "transition-transform duration-200 ease-in-out",
         open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
@@ -45,11 +45,11 @@ export default function Sidebar({ open = false, onClose }) {
         <div className="flex items-center gap-2.5">
           <LogoMark variant="rev" size={28} />
           <p className="text-xl font-bold tracking-wide">
-            <span className="text-white">Iaso</span><span className="text-[#C4895A]">Clin</span>
+            <span className="text-white">Iaso</span><span className="text-ambar">Clin</span>
           </p>
         </div>
         <button onClick={onClose}
-          className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#0A3326] transition">
+          className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-verde-900 transition">
           <X size={18} />
         </button>
       </div>
@@ -61,8 +61,8 @@ export default function Sidebar({ open = false, onClose }) {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-xl transition text-sm ${
                 isActive
-                  ? "bg-white/10 text-[#E5D8C5] font-semibold"
-                  : "text-white/70 hover:bg-white/5 hover:text-[#E5D8C5]"
+                  ? "bg-white/10 text-creme-200 font-semibold"
+                  : "text-white/70 hover:bg-white/5 hover:text-creme-200"
               }`}>
             <Icon size={18} />
             {label}
@@ -76,8 +76,8 @@ export default function Sidebar({ open = false, onClose }) {
           onClick={() => { navigate("/settings"); onClose?.(); }}
           className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/10 transition group text-left"
         >
-          <div className="w-9 h-9 rounded-xl bg-[#C4895A]/30 flex items-center justify-center shrink-0">
-            <span className="text-[#C4895A] text-xs font-bold">{initials}</span>
+          <div className="w-9 h-9 rounded-xl bg-ambar/30 flex items-center justify-center shrink-0">
+            <span className="text-ambar text-xs font-bold">{initials}</span>
           </div>
           <div className="min-w-0">
             <p className="text-white text-sm font-semibold leading-tight truncate">{displayName}</p>

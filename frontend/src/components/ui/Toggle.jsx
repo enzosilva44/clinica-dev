@@ -10,7 +10,7 @@ export default function Toggle({ checked = false, onChange, className = "", ...p
       aria-checked={checked}
       onClick={() => onChange && onChange(!checked)}
       className={`relative w-[46px] h-[26px] rounded-full cursor-pointer transition-colors border-0 ${className}`}
-      style={{ background: checked ? "#00704A" : "#D6C1A3" }}
+      style={{ background: checked ? "var(--verde)" : "var(--creme-300)" }}
       {...props}
     >
       <span

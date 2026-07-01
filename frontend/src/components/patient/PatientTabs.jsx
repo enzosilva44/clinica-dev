@@ -9,15 +9,15 @@ const tabs = [
 
 export default function PatientTabs({ activeTab, setActiveTab }) {
   return (
-    <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-2 mb-6 flex gap-2 flex-wrap">
+    <div className="bg-creme-50 border border-creme-200 rounded-2xl p-2 mb-6 flex gap-2 flex-wrap">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => setActiveTab(tab.key)}
           className={`px-4 py-2 rounded-xl text-sm transition ${
             activeTab === tab.key
-              ? "bg-[#00704A] text-white"
-              : "text-[#00704A] hover:bg-[#EFE7DA]"
+              ? "bg-verde text-white"
+              : "text-verde hover:bg-creme-100"
           }`}
         >
           {tab.label}

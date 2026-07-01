@@ -107,7 +107,7 @@ export default function FieldPlacementModal({ patientDoc, onClose, onSaved }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div>
-            <h2 className="text-sm font-bold text-[#00704A]">Configurar campos — {patientDoc.document.name}</h2>
+            <h2 className="text-sm font-bold text-verde">Configurar campos — {patientDoc.document.name}</h2>
             <p className="text-xs text-gray-400 mt-0.5">Clique em um tipo de campo e depois clique no PDF para posicioná-lo</p>
           </div>
           <div className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export default function FieldPlacementModal({ patientDoc, onClose, onSaved }) {
             <button
               onClick={handleSave}
               disabled={saving || !hasPatientSig}
-              className="flex items-center gap-1.5 bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-40 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
+              className="flex items-center gap-1.5 bg-verde hover:bg-verde-900 disabled:opacity-40 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
             >
               <Save size={13} /> {saving ? "Salvando…" : "Salvar configuração"}
             </button>
@@ -153,7 +153,7 @@ export default function FieldPlacementModal({ patientDoc, onClose, onSaved }) {
                 ))}
               </div>
               {placing && (
-                <p className="text-xs text-[#00704A] bg-[#E8F5F0] rounded-lg px-2 py-1.5 mt-2">
+                <p className="text-xs text-verde bg-[#E8F5F0] rounded-lg px-2 py-1.5 mt-2">
                   Clique no PDF para posicionar
                 </p>
               )}

@@ -19,12 +19,12 @@ export default function Input({ label, error, className = "", id, ...props }) {
         id={inputId}
         className="w-full box-border rounded-[11px] px-3.5 py-[11px] text-sm font-sans outline-none transition-colors"
         style={{
-          border: `1.5px solid ${error ? "#E2574C" : "#E5D8C5"}`,
-          background: error ? "#FCF3F2" : "#FAF7F2",
-          color: "#0A3326",
+          border: `1.5px solid ${error ? "var(--erro)" : "var(--creme-200)"}`,
+          background: error ? "#FCF3F2" : "var(--creme-50)",
+          color: "var(--verde-900)",
         }}
-        onFocus={(e) => { if (!error) { e.target.style.borderColor = "#00704A"; e.target.style.background = "#fff"; } }}
-        onBlur={(e) => { if (!error) { e.target.style.borderColor = "#E5D8C5"; e.target.style.background = "#FAF7F2"; } }}
+        onFocus={(e) => { if (!error) { e.target.style.borderColor = "var(--verde)"; e.target.style.background = "#fff"; } }}
+        onBlur={(e) => { if (!error) { e.target.style.borderColor = "var(--creme-200)"; e.target.style.background = "var(--creme-50)"; } }}
         {...props}
       />
       {error && (

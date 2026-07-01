@@ -86,9 +86,9 @@ export default function AnamnesisTab({ patientId }) {
   if (filling) {
     const qs = filling.template.questions || [];
     return (
-      <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6">
+      <div className="bg-creme-50 border border-creme-200 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-xl font-bold text-[#00704A]">Preencher Anamnese</h2>
+          <h2 className="text-xl font-bold text-verde">Preencher Anamnese</h2>
           <button onClick={() => setFilling(null)} className="text-gray-400 hover:text-gray-600 text-sm">✕ Fechar</button>
         </div>
         <p className="text-xs text-amber-600 mb-5">Rascunho salvo automaticamente</p>
@@ -105,14 +105,14 @@ export default function AnamnesisTab({ patientId }) {
                     value={filling.answers[q.id] ?? ""}
                     onChange={(e) => setAnswer(q.id, e.target.value)}
                     placeholder="Resposta…"
-                    className="w-full border border-[#E5D8C5] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                    className="w-full border border-creme-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                   />
                 )}
                 {q.type === "boolean" && (
                   <select
                     value={filling.answers[q.id] ?? ""}
                     onChange={(e) => setAnswer(q.id, e.target.value)}
-                    className="w-full border border-[#E5D8C5] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                    className="w-full border border-creme-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-verde/20"
                   >
                     <option value="">Selecione…</option>
                     <option value="sim">Sim</option>
@@ -123,7 +123,7 @@ export default function AnamnesisTab({ patientId }) {
                   <select
                     value={filling.answers[q.id] ?? ""}
                     onChange={(e) => setAnswer(q.id, e.target.value)}
-                    className="w-full border border-[#E5D8C5] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                    className="w-full border border-creme-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-verde/20"
                   >
                     <option value="">Selecione…</option>
                     {(q.options || []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -137,7 +137,7 @@ export default function AnamnesisTab({ patientId }) {
         <div className="flex justify-end gap-2 mt-6">
           <button onClick={() => setFilling(null)} className="text-sm text-gray-500 px-4 py-2 rounded-xl hover:bg-white transition">Cancelar</button>
           <button onClick={finalize} disabled={saving}
-            className="bg-[#00704A] hover:bg-[#0A3326] text-white text-sm font-semibold px-5 py-2 rounded-xl transition disabled:opacity-50">
+            className="bg-verde hover:bg-verde-900 text-white text-sm font-semibold px-5 py-2 rounded-xl transition disabled:opacity-50">
             {saving ? "Finalizando…" : "Finalizar e gerar PDF"}
           </button>
         </div>
@@ -147,13 +147,13 @@ export default function AnamnesisTab({ patientId }) {
 
   /* ─── LISTA ─── */
   return (
-    <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6">
+    <div className="bg-creme-50 border border-creme-200 rounded-2xl p-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-xl font-bold text-[#00704A]">Anamneses</h2>
+        <h2 className="text-xl font-bold text-verde">Anamneses</h2>
         <div className="flex gap-2">
           {templates.map((t) => (
             <button key={t.id} onClick={() => startFilling(t)}
-              className="bg-[#00704A] hover:bg-[#0A3326] text-white text-sm font-semibold px-4 py-2 rounded-xl transition">
+              className="bg-verde hover:bg-verde-900 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">
               + {t.name}
             </button>
           ))}
@@ -178,7 +178,7 @@ export default function AnamnesisTab({ patientId }) {
                 <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-green-100 text-green-700">PDF gerado</span>
               ) : (
                 <button onClick={() => startFilling(r.template ? { id: r.templateId, name: r.template.name, questions: r.template.questions } : null, r)}
-                  className="text-xs text-[#00704A] font-medium hover:underline">
+                  className="text-xs text-verde font-medium hover:underline">
                   Continuar
                 </button>
               )}

@@ -75,22 +75,22 @@ export default function Login() {
     document.body.appendChild(script);
   }, [loginWithGoogle]);
 
-  const INPUT = "w-full border border-[#E5D8C5] bg-[#FDFCFA] rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20 focus:border-[#00704A] transition";
+  const INPUT = "w-full border border-creme-200 bg-[#FDFCFA] rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-verde/20 focus:border-verde transition";
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-creme-50 flex flex-col lg:flex-row">
 
       {/* ── PAINEL ESQUERDO — Brand + Features ── */}
-      <div className="lg:w-[55%] bg-[#00704A] flex flex-col px-10 py-12 lg:px-16 lg:py-16">
+      <div className="lg:w-[55%] bg-verde flex flex-col px-10 py-12 lg:px-16 lg:py-16">
 
         {/* Logo */}
         <div className="flex items-center gap-4 mb-12">
           <IasoLogo />
           <div>
             <p className="text-2xl font-bold tracking-wide">
-              <span className="text-white">Iaso</span><span className="text-[#C4895A]">Clin</span>
+              <span className="text-white">Iaso</span><span className="text-ambar">Clin</span>
             </p>
-            <p className="text-[#E5D8C5]/70 text-xs mt-0.5">Sistema de Gestão Clínica</p>
+            <p className="text-creme-200/70 text-xs mt-0.5">Sistema de Gestão Clínica</p>
           </div>
         </div>
 
@@ -98,9 +98,9 @@ export default function Login() {
         <div className="mb-10">
           <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight mb-3">
             Gestão completa para<br />
-            <span className="text-[#C4895A]">clínicas de estética</span>
+            <span className="text-ambar">clínicas de estética</span>
           </h1>
-          <p className="text-[#E5D8C5]/80 text-sm leading-relaxed max-w-md">
+          <p className="text-creme-200/80 text-sm leading-relaxed max-w-md">
             Do agendamento à assinatura eletrônica, do mapa facial à análise financeira —
             tudo integrado com Inteligência Artificial.
           </p>
@@ -110,19 +110,19 @@ export default function Login() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {FEATURES.map(({ icon: Icon, label, desc }) => (
             <div key={label} className="flex items-start gap-3 bg-white/5 hover:bg-white/10 transition rounded-2xl px-4 py-3.5">
-              <div className="w-8 h-8 rounded-xl bg-[#C4895A]/20 flex items-center justify-center shrink-0 mt-0.5">
-                <Icon size={15} className="text-[#C4895A]" />
+              <div className="w-8 h-8 rounded-xl bg-ambar/20 flex items-center justify-center shrink-0 mt-0.5">
+                <Icon size={15} className="text-ambar" />
               </div>
               <div>
                 <p className="text-white text-xs font-semibold leading-tight">{label}</p>
-                <p className="text-[#E5D8C5]/60 text-[11px] mt-0.5 leading-relaxed">{desc}</p>
+                <p className="text-creme-200/60 text-[11px] mt-0.5 leading-relaxed">{desc}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Footer */}
-        <p className="text-[#E5D8C5]/30 text-[11px] mt-auto pt-10">
+        <p className="text-creme-200/30 text-[11px] mt-auto pt-10">
           © {new Date().getFullYear()} IasoClin · Todos os direitos reservados
         </p>
       </div>
@@ -135,11 +135,11 @@ export default function Login() {
           <div className="flex lg:hidden items-center gap-3 mb-10 justify-center">
             <IasoLogo size="sm" />
             <p className="text-xl font-bold">
-              <span className="text-[#00704A]">Iaso</span><span className="text-[#C4895A]">Clin</span>
+              <span className="text-verde">Iaso</span><span className="text-ambar">Clin</span>
             </p>
           </div>
 
-          <h2 className="text-2xl font-bold text-[#00704A] mb-1">Bem-vindo(a)!</h2>
+          <h2 className="text-2xl font-bold text-verde mb-1">Bem-vindo(a)!</h2>
           <p className="text-sm text-gray-400 mb-8">Acesse sua conta para continuar</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -180,7 +180,7 @@ export default function Login() {
             </div>
 
             <div className="flex justify-end">
-              <button type="button" className="text-xs text-gray-400 hover:text-[#00704A] transition">
+              <button type="button" className="text-xs text-gray-400 hover:text-verde transition">
                 Esqueci minha senha
               </button>
             </div>
@@ -188,7 +188,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-60 text-white py-3 rounded-xl font-semibold text-sm transition"
+              className="w-full bg-verde hover:bg-verde-900 disabled:opacity-60 text-white py-3 rounded-xl font-semibold text-sm transition"
             >
               {loading ? "Entrando…" : "Entrar"}
             </button>
@@ -197,16 +197,16 @@ export default function Login() {
           {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
             <>
               <div className="flex items-center gap-3 my-6">
-                <div className="h-px bg-[#E5D8C5] flex-1" />
+                <div className="h-px bg-creme-200 flex-1" />
                 <span className="text-xs text-gray-400">ou continue com</span>
-                <div className="h-px bg-[#E5D8C5] flex-1" />
+                <div className="h-px bg-creme-200 flex-1" />
               </div>
               <div className="flex justify-center gap-3">
                 <div ref={googleButtonRef} />
                 <button
                   type="button"
                   onClick={() => toast("Login com Apple em breve")}
-                  className="w-11 h-11 rounded-xl border border-[#E5D8C5] bg-white hover:bg-[#FAF7F2] flex items-center justify-center transition"
+                  className="w-11 h-11 rounded-xl border border-creme-200 bg-white hover:bg-creme-50 flex items-center justify-center transition"
                 >
                   <svg viewBox="0 0 24 24" className="w-5 h-5 fill-gray-700">
                     <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.42c1.39.07 2.35.74 3.15.8 1.19-.24 2.33-.93 3.62-.84 1.53.12 2.68.72 3.43 1.84-3.14 1.88-2.4 5.97.55 7.13-.65 1.59-1.47 3.14-2.75 3.93zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
@@ -218,7 +218,7 @@ export default function Login() {
 
           <p className="text-center text-sm text-gray-400 mt-6">
             Não tem conta?{" "}
-            <Link to="/register" className="text-[#00704A] font-semibold hover:underline">
+            <Link to="/register" className="text-verde font-semibold hover:underline">
               Criar conta
             </Link>
           </p>

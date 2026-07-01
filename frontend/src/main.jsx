@@ -22,9 +22,9 @@ ReactDOM.createRoot(
           toastOptions={{
             duration: 3500,
             style: {
-              background: "#FAF7F2",
-              color: "#00704A",
-              border: "1px solid #E5D8C5",
+              background: "var(--creme-50)",
+              color: "var(--verde)",
+              border: "1px solid var(--creme-200)",
               borderRadius: "12px",
               fontSize: "14px",
             },

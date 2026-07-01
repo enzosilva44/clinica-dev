@@ -102,7 +102,7 @@ export default function CreatePatient() {
   return (
     <MainLayout>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#00704A]">
+        <h1 className="text-3xl font-bold text-verde">
           Novo Paciente
         </h1>
 
@@ -113,12 +113,12 @@ export default function CreatePatient() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl shadow-sm p-8"
+        className="bg-creme-50 border border-creme-200 rounded-2xl shadow-sm p-8"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Nome */}
           <input
-            className="border border-[#C4895A] rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#00704A]"
+            className="border border-ambar rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-verde"
             placeholder="Nome"
             value={name}
             onChange={(e) =>
@@ -135,12 +135,12 @@ export default function CreatePatient() {
               setPhone(value)
             }
             placeholder="Telefone"
-            className="border border-[#C4895A] rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#00704A]"
+            className="border border-ambar rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-verde"
           />
 
           {/* Email */}
           <input
-            className="border border-[#C4895A] rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#00704A]"
+            className="border border-ambar rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-verde"
             placeholder="E-mail"
             value={email}
             onChange={(e) =>
@@ -151,7 +151,7 @@ export default function CreatePatient() {
           {/* Data nascimento */}
           <input
             type="date"
-            className="border border-[#C4895A] rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#00704A]"
+            className="border border-ambar rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-verde"
             value={birthDate}
             onChange={(e) =>
               setBirthDate(e.target.value)
@@ -166,7 +166,7 @@ export default function CreatePatient() {
               setCpf(value)
             }
             placeholder="CPF"
-            className="border border-[#C4895A] rounded-lg p-3 bg-white"
+            className="border border-ambar rounded-lg p-3 bg-white"
           />
 
           {/* RG */}
@@ -177,7 +177,7 @@ export default function CreatePatient() {
               setRg(value)
             }
             placeholder="RG"
-            className="border border-[#C4895A] rounded-lg p-3 bg-white"
+            className="border border-ambar rounded-lg p-3 bg-white"
           />
 
           {/* CEP */}
@@ -188,12 +188,12 @@ export default function CreatePatient() {
               handleZipCode(value)
             }
             placeholder="CEP"
-            className="border border-[#C4895A] rounded-lg p-3 bg-white"
+            className="border border-ambar rounded-lg p-3 bg-white"
           />
 
           {/* País */}
           <input
-            className="border border-[#C4895A] rounded-lg p-3 bg-white"
+            className="border border-ambar rounded-lg p-3 bg-white"
             placeholder="País"
             value={country}
             onChange={(e) =>
@@ -203,7 +203,7 @@ export default function CreatePatient() {
 
           {/* Rua */}
           <input
-            className="border border-[#C4895A] rounded-lg p-3 bg-white md:col-span-2"
+            className="border border-ambar rounded-lg p-3 bg-white md:col-span-2"
             placeholder="Logradouro"
             value={street}
             onChange={(e) =>
@@ -213,7 +213,7 @@ export default function CreatePatient() {
 
           {/* Cidade */}
           <input
-            className="border border-[#C4895A] rounded-lg p-3 bg-white"
+            className="border border-ambar rounded-lg p-3 bg-white"
             placeholder="Cidade"
             value={city}
             onChange={(e) =>
@@ -223,7 +223,7 @@ export default function CreatePatient() {
 
           {/* Estado */}
           <input
-            className="border border-[#C4895A] rounded-lg p-3 bg-white"
+            className="border border-ambar rounded-lg p-3 bg-white"
             placeholder="Estado"
             value={state}
             onChange={(e) =>
@@ -234,7 +234,7 @@ export default function CreatePatient() {
 
         {/* Observações */}
         <textarea
-          className="mt-4 w-full border border-[#C4895A] rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#00704A]"
+          className="mt-4 w-full border border-ambar rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-verde"
           placeholder="Observações"
           rows="4"
           value={observations}
@@ -246,8 +246,8 @@ export default function CreatePatient() {
         />
 
         {/* Upload */}
-        <div className="border-2 border-dashed border-[#C4895A] rounded-xl p-6 text-center mt-6 bg-white">
-          <p className="text-[#00704A] font-semibold">
+        <div className="border-2 border-dashed border-ambar rounded-xl p-6 text-center mt-6 bg-white">
+          <p className="text-verde font-semibold">
             Importar documentos
           </p>
 
@@ -268,7 +268,7 @@ export default function CreatePatient() {
         <div className="flex gap-3 mt-8">
           <button
             type="submit"
-            className="bg-[#00704A] hover:bg-[#0A3326] text-white px-5 py-3 rounded-lg transition"
+            className="bg-verde hover:bg-verde-900 text-white px-5 py-3 rounded-lg transition"
           >
             Salvar Paciente
           </button>
@@ -278,7 +278,7 @@ export default function CreatePatient() {
             onClick={() =>
               navigate("/patients")
             }
-            className="border border-[#C4895A] text-[#00704A] px-5 py-3 rounded-lg"
+            className="border border-ambar text-verde px-5 py-3 rounded-lg"
           >
             Cancelar
           </button>

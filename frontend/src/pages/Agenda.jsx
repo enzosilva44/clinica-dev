@@ -506,12 +506,12 @@ export default function Agenda() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-3xl font-bold text-[#00704A]">Agenda</h1>
-                <span className="bg-[#EFE7DA] text-[#00704A] border border-[#C4895A] text-xs font-semibold px-2.5 py-1 rounded-full">
+                <h1 className="text-3xl font-bold text-verde">Agenda</h1>
+                <span className="bg-creme-100 text-verde border border-ambar text-xs font-semibold px-2.5 py-1 rounded-full">
                   Agora {formatTime(now)}
                 </span>
                 {todayCount > 0 && (
-                  <span className="bg-[#00704A] text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                  <span className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded-full">
                     {todayCount} hoje
                   </span>
                 )}
@@ -520,7 +520,7 @@ export default function Agenda() {
             </div>
             <button
               onClick={() => openCreate()}
-              className="bg-[#00704A] hover:bg-[#0A3326] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
+              className="bg-verde hover:bg-verde-900 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
             >
               <Plus size={16} /> Novo agendamento
             </button>
@@ -535,7 +535,7 @@ export default function Agenda() {
                   key={c.key}
                   onClick={() => toggleCategory(c.key)}
                   className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition ${
-                    on ? "text-white border-transparent" : "text-gray-400 border-[#E5D8C5] bg-white"
+                    on ? "text-white border-transparent" : "text-gray-400 border-creme-200 bg-white"
                   }`}
                   style={on ? { backgroundColor: CATEGORY_COLORS[c.key] } : {}}
                 >
@@ -550,7 +550,7 @@ export default function Agenda() {
           </div>
 
           {/* CALENDÁRIO */}
-          <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-4 shadow-sm flex-1 overflow-hidden">
+          <div className="bg-creme-50 border border-creme-200 rounded-2xl p-4 shadow-sm flex-1 overflow-hidden">
             <FullCalendar
               ref={calendarRef}
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -639,7 +639,7 @@ export default function Agenda() {
       {returnSuggestion && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-[#00704A] mb-1">Agendar retorno?</h3>
+            <h3 className="text-lg font-bold text-verde mb-1">Agendar retorno?</h3>
             <p className="text-sm text-gray-500 mb-4">
               O procedimento <strong>{returnSuggestion.procedureName}</strong> requer retorno
               em <strong>{returnSuggestion.days} dias</strong>.
@@ -649,15 +649,15 @@ export default function Agenda() {
               type="datetime-local"
               defaultValue={formatForInput(returnSuggestion.date)}
               onChange={(e) => setReturnSuggestion((p) => ({ ...p, date: new Date(e.target.value).toISOString() }))}
-              className="w-full border border-[#E5D8C5] rounded-xl px-3 py-2 text-sm mt-1 mb-5 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+              className="w-full border border-creme-200 rounded-xl px-3 py-2 text-sm mt-1 mb-5 focus:outline-none focus:ring-2 focus:ring-verde/20"
             />
             <div className="flex flex-col gap-2">
               <button onClick={() => createReturn("retorno")}
-                className="bg-[#00704A] hover:bg-[#0A3326] text-white text-sm font-semibold py-2.5 rounded-xl transition">
+                className="bg-verde hover:bg-verde-900 text-white text-sm font-semibold py-2.5 rounded-xl transition">
                 Marcar retorno nesta data
               </button>
               <button onClick={() => createReturn("lembrete")}
-                className="border border-[#C4895A] text-[#7a5c1e] bg-[#C4895A]/10 text-sm font-medium py-2.5 rounded-xl transition hover:bg-[#C4895A]/20">
+                className="border border-ambar text-[#7a5c1e] bg-ambar/10 text-sm font-medium py-2.5 rounded-xl transition hover:bg-ambar/20">
                 Deixar como lembrete
               </button>
               <button onClick={() => setReturnSuggestion(null)}
@@ -675,10 +675,10 @@ export default function Agenda() {
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-[#EFE7DA] rounded-lg flex items-center justify-center">
-                  <Calendar size={15} className="text-[#00704A]" />
+                <div className="w-8 h-8 bg-creme-100 rounded-lg flex items-center justify-center">
+                  <Calendar size={15} className="text-verde" />
                 </div>
-                <h2 className="text-lg font-bold text-[#00704A]">
+                <h2 className="text-lg font-bold text-verde">
                   {editing ? "Editar agendamento" : "Novo agendamento"}
                 </h2>
               </div>
@@ -694,7 +694,7 @@ export default function Agenda() {
                   value={form.title}
                   onChange={f("title")}
                   placeholder="Ex: Toxina botulínica"
-                  className="w-full border border-[#C4895A] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                  className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                 />
               </div>
 
@@ -707,28 +707,28 @@ export default function Agenda() {
                     onFocus={() => patientSearch && setShowPatientDrop(true)}
                     onBlur={() => setTimeout(() => setShowPatientDrop(false), 150)}
                     placeholder="Buscar por nome ou telefone…"
-                    className="w-full border border-[#C4895A] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                    className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                   />
                   {form.patientId && (
                     <span className="absolute right-3 top-9 text-[10px] text-green-600 font-medium inline-flex items-center gap-1"><Check size={10} /> selecionado</span>
                   )}
                   {showPatientDrop && patientResults.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-[#C4895A] rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-ambar rounded-xl shadow-lg max-h-48 overflow-y-auto">
                       {patientResults.map((p) => (
                         <button
                           key={p.id}
                           type="button"
                           onMouseDown={() => selectPatient(p)}
-                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#EFE7DA] transition border-b border-[#F0E8DC] last:border-0"
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-creme-100 transition border-b border-[#F0E8DC] last:border-0"
                         >
-                          <p className="font-medium text-[#00704A]">{p.name}</p>
+                          <p className="font-medium text-verde">{p.name}</p>
                           {p.phone && <p className="text-xs text-gray-400">{p.phone}</p>}
                         </button>
                       ))}
                     </div>
                   )}
                   {showPatientDrop && patientResults.length === 0 && patientSearch.length > 1 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-[#C4895A] rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400">
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-ambar rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400">
                       Nenhum paciente encontrado
                     </div>
                   )}
@@ -737,7 +737,7 @@ export default function Agenda() {
               {editing && editing.extendedProps.patientName && (
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1.5">Paciente</label>
-                  <div className="w-full border border-[#E5D8C5] rounded-xl p-3 text-sm bg-[#FAF7F2] text-[#00704A] font-medium">
+                  <div className="w-full border border-creme-200 rounded-xl p-3 text-sm bg-creme-50 text-verde font-medium">
                     {editing.extendedProps.patientName}
                   </div>
                 </div>
@@ -749,7 +749,7 @@ export default function Agenda() {
                   type="datetime-local"
                   value={form.selectedDate}
                   onChange={f("selectedDate")}
-                  className="w-full border border-[#C4895A] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                  className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                 />
               </div>
 
@@ -764,8 +764,8 @@ export default function Agenda() {
                         onClick={() => setForm((prev) => ({ ...prev, professional: name }))}
                         className={`flex-1 py-2 rounded-xl text-xs font-medium transition border ${
                           form.professional === name
-                            ? "border-[#00704A] bg-[#00704A] text-white"
-                            : "border-[#C4895A] text-[#00704A] hover:bg-[#EFE7DA]"
+                            ? "border-verde bg-verde text-white"
+                            : "border-ambar text-verde hover:bg-creme-100"
                         }`}
                       >
                         {name}
@@ -780,7 +780,7 @@ export default function Agenda() {
                 <select
                   value={form.procedureType}
                   onChange={f("procedureType")}
-                  className="w-full border border-[#C4895A] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                  className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                 >
                   <option value="">Selecione o procedimento</option>
                   {procedures.map((p) => (
@@ -801,8 +801,8 @@ export default function Agenda() {
                       onClick={() => setForm((prev) => ({ ...prev, status: value }))}
                       className={`py-2 rounded-xl text-xs font-medium transition border ${
                         form.status === value
-                          ? "border-[#00704A] bg-[#00704A] text-white"
-                          : "border-[#C4895A] text-[#00704A] hover:bg-[#EFE7DA]"
+                          ? "border-verde bg-verde text-white"
+                          : "border-ambar text-verde hover:bg-creme-100"
                       }`}
                     >
                       {label}
@@ -818,13 +818,13 @@ export default function Agenda() {
                   onChange={f("notes")}
                   placeholder="Informações adicionais…"
                   rows={3}
-                  className="w-full border border-[#C4895A] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                  className="w-full border border-ambar rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-verde/20"
                 />
               </div>
 
               {/* INFORMAÇÕES FINANCEIRAS (só na criação) */}
               {!editing && (
-                <div className="border-t border-[#E5D8C5] pt-4 space-y-3">
+                <div className="border-t border-creme-200 pt-4 space-y-3">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
                     <DollarSign size={12} /> Financeiro
                   </p>
@@ -842,7 +842,7 @@ export default function Agenda() {
                         value={form.txAmount}
                         onChange={f("txAmount")}
                         placeholder="0,00"
-                        className="w-full border border-[#C4895A] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                        className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                       />
                     </div>
                     <div>
@@ -850,7 +850,7 @@ export default function Agenda() {
                       <select
                         value={form.txPaymentMethod}
                         onChange={f("txPaymentMethod")}
-                        className="w-full border border-[#C4895A] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                        className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                       >
                         <option value="">Selecione</option>
                         {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -865,7 +865,7 @@ export default function Agenda() {
                         type="number" min="1" max="60"
                         value={form.txInstallments}
                         onChange={f("txInstallments")}
-                        className="w-full border border-[#C4895A] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                        className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                       />
                     </div>
                     <div>
@@ -876,7 +876,7 @@ export default function Agenda() {
                         type="date"
                         value={form.txDueDate}
                         onChange={f("txDueDate")}
-                        className="w-full border border-[#C4895A] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                        className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                       />
                     </div>
                   </div>
@@ -895,7 +895,7 @@ export default function Agenda() {
                       value={form.txNotes}
                       onChange={f("txNotes")}
                       placeholder="Ex: sinal pago, parcelar no retorno…"
-                      className="w-full border border-[#C4895A] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                      className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                     />
                   </div>
                 </div>
@@ -911,18 +911,18 @@ export default function Agenda() {
                 };
                 const fmtVal = (v) => Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
                 return (
-                  <div className="border-t border-[#E5D8C5] pt-4">
+                  <div className="border-t border-creme-200 pt-4">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                       <DollarSign size={12} /> Situação financeira
                     </p>
                     {tx ? (
-                      <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-xl px-4 py-3 flex items-center justify-between">
+                      <div className="bg-creme-50 border border-creme-200 rounded-xl px-4 py-3 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {tx.type === "receita"
                             ? <TrendingUp size={14} className="text-emerald-600" />
                             : <TrendingDown size={14} className="text-red-500" />}
                           <div>
-                            <p className="text-sm font-semibold text-[#00704A]">{fmtVal(tx.amount)}</p>
+                            <p className="text-sm font-semibold text-verde">{fmtVal(tx.amount)}</p>
                             {tx.paymentMethod && <p className="text-xs text-gray-400">{tx.paymentMethod}</p>}
                           </div>
                         </div>
@@ -931,7 +931,7 @@ export default function Agenda() {
                         </span>
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-400 bg-[#FAF7F2] border border-[#E5D8C5] rounded-xl px-4 py-3">
+                      <p className="text-xs text-gray-400 bg-creme-50 border border-creme-200 rounded-xl px-4 py-3">
                         Nenhuma transação vinculada. Ao concluir o agendamento, uma transação pendente será criada automaticamente.
                       </p>
                     )}
@@ -941,7 +941,7 @@ export default function Agenda() {
 
               {/* WHATSAPP */}
               {features.whatsapp && (
-              <div className="border-t border-[#E5D8C5] pt-4">
+              <div className="border-t border-creme-200 pt-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -957,9 +957,9 @@ export default function Agenda() {
                   }}
                   className="flex items-center justify-between w-full"
                 >
-                  <div className="flex items-center gap-2 text-sm font-medium text-[#00704A]">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${sendWhatsApp ? "bg-green-100" : "bg-[#EFE7DA]"}`}>
-                      <MessageSquare size={15} className={sendWhatsApp ? "text-green-600" : "text-[#00704A]"} />
+                  <div className="flex items-center gap-2 text-sm font-medium text-verde">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${sendWhatsApp ? "bg-green-100" : "bg-creme-100"}`}>
+                      <MessageSquare size={15} className={sendWhatsApp ? "text-green-600" : "text-verde"} />
                     </div>
                     Enviar notificação via WhatsApp
                   </div>
@@ -981,7 +981,7 @@ export default function Agenda() {
                         onChange={(e) => setWhatsappMessage(e.target.value)}
                         rows={4}
                         placeholder="Mensagem personalizada…"
-                        className="w-full border border-[#C4895A] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500/20 bg-green-50/30"
+                        className="w-full border border-ambar rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500/20 bg-green-50/30"
                       />
                       <button
                         type="button"
@@ -992,13 +992,13 @@ export default function Agenda() {
                           const date = form.selectedDate || editing?.start;
                           setWhatsappMessage(buildWhatsAppMessage(confirmTemplate, patientName, date));
                         }}
-                        className="absolute bottom-2 right-2 text-[10px] text-gray-400 hover:text-[#00704A] transition"
+                        className="absolute bottom-2 right-2 text-[10px] text-gray-400 hover:text-verde transition"
                       >
                         ↺ regenerar
                       </button>
                     </div>
                     <p className="text-[10px] text-gray-400">
-                      {editing ? "Paciente:" : "Para:"} <span className="font-medium text-[#00704A]">
+                      {editing ? "Paciente:" : "Para:"} <span className="font-medium text-verde">
                         {editing
                           ? (editing.extendedProps.patientName || "—")
                           : (patients.find((p) => p.id === form.patientId)?.name || "—")}
@@ -1028,14 +1028,14 @@ export default function Agenda() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="border border-[#C4895A] px-4 py-2 rounded-xl text-sm hover:bg-[#EFE7DA] transition"
+                  className="border border-ambar px-4 py-2 rounded-xl text-sm hover:bg-creme-100 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={savingAppointment || sendingWhatsApp}
-                  className="bg-[#00704A] hover:bg-[#0A3326] text-white px-5 py-2 rounded-xl text-sm font-medium transition disabled:opacity-60"
+                  className="bg-verde hover:bg-verde-900 text-white px-5 py-2 rounded-xl text-sm font-medium transition disabled:opacity-60"
                 >
                   {sendingWhatsApp ? "Enviando…" : savingAppointment ? "Salvando…" : "Salvar"}
                 </button>

@@ -7,7 +7,7 @@ export default function MainLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#FAF7F2] text-[#1F2937]">
+    <div className="flex min-h-screen bg-creme-50 text-[#1F2937]">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -23,11 +23,11 @@ export default function MainLayout({ children }) {
         <div className="flex items-center gap-3 mb-4 lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#FAF7F2] border border-[#E5D8C5] shadow-sm"
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-creme-50 border border-creme-200 shadow-sm"
           >
-            <Menu size={18} className="text-[#00704A]" />
+            <Menu size={18} className="text-verde" />
           </button>
-          <span className="text-base font-bold text-[#00704A]">Iasoclin</span>
+          <span className="text-base font-bold text-verde">Iasoclin</span>
         </div>
         {children}
       </main>
