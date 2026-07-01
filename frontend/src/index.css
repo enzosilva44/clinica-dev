@@ -8,48 +8,48 @@
    Uso CSS/inline: var(--verde) etc.
    ============================================================ */
 @theme {
-  /* Verde — primária da marca (var(--verde)) */
-  --color-verde-950: var(--verde-950);
-  --color-verde-900: var(--verde-900);
-  --color-verde-800: var(--verde-800);
-  --color-verde-700: var(--verde);
-  --color-verde-600: var(--verde-600);
-  --color-verde-500: var(--verde-500);
-  --color-verde-400: var(--verde-400);
-  --color-verde-300: var(--verde-300);
-  --color-verde-200: var(--verde-200);
-  --color-verde-100: var(--verde-100);
-  --color-verde-50:  var(--verde-50);
-  --color-verde:     var(--verde); /* alias da primária */
+  /* Verde — primária da marca (#00704A) */
+  --color-verde-950: #06251B;
+  --color-verde-900: #0A3326;
+  --color-verde-800: #0E4733;
+  --color-verde-700: #00704A;
+  --color-verde-600: #0E8159;
+  --color-verde-500: #1F9468;
+  --color-verde-400: #46AE85;
+  --color-verde-300: #79C6A6;
+  --color-verde-200: #A9DEC8;
+  --color-verde-100: #D0EEE0;
+  --color-verde-50:  #E7F6EF;
+  --color-verde:     #00704A; /* alias da primária */
 
-  /* Creme — superfícies (var(--creme-50)) */
-  --color-creme-50:  var(--creme-50);
-  --color-creme-100: var(--creme-100);
-  --color-creme-200: var(--creme-200);
-  --color-creme-300: var(--creme-300);
-  --color-creme-400: var(--creme-400);
-  --color-creme-500: var(--creme-500);
-  --color-creme-600: var(--creme-600);
-  --color-creme:     var(--creme-50);
+  /* Creme — superfícies (#FAF7F2) */
+  --color-creme-50:  #FAF7F2;
+  --color-creme-100: #EFE7DA;
+  --color-creme-200: #E5D8C5;
+  --color-creme-300: #D6C1A3;
+  --color-creme-400: #C8A882;
+  --color-creme-500: #B8946B;
+  --color-creme-600: #9E7547;
+  --color-creme:     #FAF7F2;
 
-  /* Âmbar — acento da marca (var(--ambar)) */
-  --color-ambar-50:  var(--ambar-50);
-  --color-ambar-100: var(--ambar-100);
-  --color-ambar-200: var(--ambar-200);
-  --color-ambar-300: var(--ambar-300);
-  --color-ambar-400: var(--ambar-400);
-  --color-ambar-500: var(--ambar);
-  --color-ambar-600: var(--ambar-600);
-  --color-ambar-700: var(--ambar-700);
-  --color-ambar:     var(--ambar);
+  /* Âmbar — acento da marca (#C4895A) */
+  --color-ambar-50:  #FBF1E9;
+  --color-ambar-100: #F4DEC9;
+  --color-ambar-200: #E9BE9C;
+  --color-ambar-300: #DC9E70;
+  --color-ambar-400: #CE9162;
+  --color-ambar-500: #C4895A;
+  --color-ambar-600: #A86E43;
+  --color-ambar-700: #875534;
+  --color-ambar:     #C4895A;
 
   /* Cores funcionais (status) */
-  --color-sucesso:  var(--sucesso);
-  --color-info:     var(--info);
-  --color-atencao:  var(--ambar);
-  --color-erro:     var(--erro);
-  --color-ia:       var(--ia);
-  --color-premium:  var(--premium);
+  --color-sucesso:  #3A9B6F;
+  --color-info:     #4A8EC2;
+  --color-atencao:  #C4895A;
+  --color-erro:     #E2574C;
+  --color-ia:       #7C53C9;
+  --color-premium:  #D6618B;
 
   /* Tipografia */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -74,28 +74,28 @@
 /* Espelho em :root para uso em style inline / CSS puro
    (os style="" hardcoded de hoje podem migrar pra var(--...) sem Tailwind) */
 :root {
-  --verde-950: var(--verde-950); --verde-900: var(--verde-900); --verde-800: var(--verde-800);
-  --verde-700: var(--verde); --verde-600: var(--verde-600); --verde-500: var(--verde-500);
-  --verde-400: var(--verde-400); --verde-300: var(--verde-300); --verde-200: var(--verde-200);
-  --verde-100: var(--verde-100); --verde-50: var(--verde-50); --verde: var(--verde);
+  --verde-950: #06251B; --verde-900: #0A3326; --verde-800: #0E4733;
+  --verde-700: #00704A; --verde-600: #0E8159; --verde-500: #1F9468;
+  --verde-400: #46AE85; --verde-300: #79C6A6; --verde-200: #A9DEC8;
+  --verde-100: #D0EEE0; --verde-50: #E7F6EF; --verde: #00704A;
 
-  --creme-50: var(--creme-50); --creme-100: var(--creme-100); --creme-200: var(--creme-200);
-  --creme-300: var(--creme-300); --creme-400: var(--creme-400); --creme-500: var(--creme-500);
-  --creme-600: var(--creme-600); --creme: var(--creme-50);
+  --creme-50: #FAF7F2; --creme-100: #EFE7DA; --creme-200: #E5D8C5;
+  --creme-300: #D6C1A3; --creme-400: #C8A882; --creme-500: #B8946B;
+  --creme-600: #9E7547; --creme: #FAF7F2;
 
-  --ambar-50: var(--ambar-50); --ambar-100: var(--ambar-100); --ambar-200: var(--ambar-200);
-  --ambar-300: var(--ambar-300); --ambar-400: var(--ambar-400); --ambar-500: var(--ambar);
-  --ambar-600: var(--ambar-600); --ambar-700: var(--ambar-700); --ambar: var(--ambar);
+  --ambar-50: #FBF1E9; --ambar-100: #F4DEC9; --ambar-200: #E9BE9C;
+  --ambar-300: #DC9E70; --ambar-400: #CE9162; --ambar-500: #C4895A;
+  --ambar-600: #A86E43; --ambar-700: #875534; --ambar: #C4895A;
 
-  --sucesso: var(--sucesso); --info: var(--info); --atencao: var(--ambar);
-  --erro: var(--erro); --ia: var(--ia); --premium: var(--premium);
+  --sucesso: #3A9B6F; --info: #4A8EC2; --atencao: #C4895A;
+  --erro: #E2574C; --ia: #7C53C9; --premium: #D6618B;
 }
 
 /* Base */
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--creme-50);
+  background-color: #FAF7F2;
 }
 
 /* Print */
