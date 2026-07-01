@@ -39,6 +39,9 @@ export async function create(
         observations:
           data.observations,
 
+        alertLevel:
+          data.alertLevel || "none",
+
         user: {
           connect: {
             id: userId,
@@ -187,6 +190,7 @@ export async function update(patientId, data, userId) {
       country: data.country || null,
       zipCode: data.zipCode || null,
       observations: data.observations || null,
+      alertLevel: data.alertLevel || "none",
     },
   });
 }

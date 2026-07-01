@@ -89,6 +89,7 @@ model Patient {
   birthDate        DateTime?
   document         String?
   observations     String?
+  alertLevel       String?           @default("none")
   aiSummary        String?
   aiSummaryAt      DateTime?
   clinicId         String?

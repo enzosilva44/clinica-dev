@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
+import AlertLevelPicker from "../components/patient/AlertLevelPicker";
 
 function Field({ label, children }) {
   return (
@@ -29,7 +30,7 @@ export default function EditPatient() {
   const [form, setForm] = useState({
     name: "", phone: "", email: "", birthDate: "",
     cpf: "", rg: "", zipCode: "", street: "", city: "", state: "", country: "Brasil",
-    observations: "",
+    observations: "", alertLevel: "none",
   });
 
   function f(field) {
@@ -56,6 +57,7 @@ export default function EditPatient() {
           state: p.state || "",
           country: p.country || "Brasil",
           observations: p.observations || "",
+          alertLevel: p.alertLevel || "none",
         });
       })
       .catch(() => toast.error("Erro ao carregar paciente"))
@@ -219,6 +221,12 @@ export default function EditPatient() {
             onChange={f("observations")}
             placeholder="Alergias, condições especiais, histórico relevante…"
           />
+          <div className="mt-5">
+            <AlertLevelPicker
+              value={form.alertLevel}
+              onChange={fm("alertLevel")}
+            />
+          </div>
         </div>
 
         {/* BOTÕES SALVAR */}

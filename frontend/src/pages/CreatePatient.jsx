@@ -4,6 +4,7 @@ import { IMaskInput } from "react-imask";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
+import AlertLevelPicker from "../components/patient/AlertLevelPicker";
 
 export default function CreatePatient() {
   const navigate = useNavigate();
@@ -36,6 +37,9 @@ export default function CreatePatient() {
 
   const [observations, setObservations] =
     useState("");
+
+  const [alertLevel, setAlertLevel] =
+    useState("none");
 
   async function handleZipCode(value) {
     setZipCode(value);
@@ -89,6 +93,8 @@ export default function CreatePatient() {
 
         observations:
           observations || undefined,
+
+        alertLevel,
       });
 
       toast.success("Paciente cadastrado!");
@@ -244,6 +250,14 @@ export default function CreatePatient() {
             )
           }
         />
+
+        {/* Nível de alerta */}
+        <div className="mt-4">
+          <AlertLevelPicker
+            value={alertLevel}
+            onChange={setAlertLevel}
+          />
+        </div>
 
         {/* Upload */}
         <div className="border-2 border-dashed border-ambar rounded-xl p-6 text-center mt-6 bg-white">

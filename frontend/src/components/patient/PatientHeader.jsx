@@ -1,5 +1,24 @@
+import { AlertTriangle } from "lucide-react";
+import { getAlertLevel } from "./alertLevels";
+
 export default function PatientHeader({ patient, onBack }) {
+  const level = patient.alertLevel && patient.alertLevel !== "none"
+    ? getAlertLevel(patient.alertLevel)
+    : null;
+
   return (
+    <>
+    {level && (
+      <div className={`flex items-start gap-3 rounded-2xl border p-4 mb-4 ${level.banner}`}>
+        <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+        <div>
+          <p className="font-bold text-sm">{level.short}</p>
+          <p className="text-sm mt-0.5 whitespace-pre-line">
+            {patient.observations?.trim() || "Este paciente possui um alerta ativo. Revise as observações clínicas."}
+          </p>
+        </div>
+      </div>
+    )}
     <div className="bg-verde rounded-2xl p-6 mb-6 text-white shadow-sm">
       <button
         onClick={onBack}
@@ -41,5 +60,6 @@ export default function PatientHeader({ patient, onBack }) {
         </button>
       </div>
     </div>
+    </>
   );
 }
