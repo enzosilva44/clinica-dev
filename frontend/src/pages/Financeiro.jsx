@@ -9,6 +9,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
 import toast from "react-hot-toast";
+import { notify } from "../lib/tomDeVoz";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
@@ -695,7 +696,7 @@ export default function Financeiro() {
     try {
       const r = await api.get("/financial/summary", { params: { month } });
       setSummary(r.data);
-    } catch { toast.error("Erro ao carregar resumo"); }
+    } catch { notify.erro(null, "carregar o resumo"); }
     finally { setLoadingSum(false); }
   }, [month]);
 
@@ -708,7 +709,7 @@ export default function Financeiro() {
       ]);
       setAnalytics(ana.data);
       setUpcoming(upco.data);
-    } catch { toast.error("Erro ao carregar analytics"); }
+    } catch { notify.erro(null, "carregar os indicadores"); }
     finally { setLoadingAna(false); }
   }, [month]);
 
@@ -724,7 +725,7 @@ export default function Financeiro() {
         },
       });
       setLancamentos(r.data);
-    } catch { toast.error("Erro ao carregar lançamentos"); }
+    } catch { notify.erro(null, "carregar os lançamentos"); }
     finally { setLoadingLanc(false); }
   }, [lancMonth, lancType, lancStatus, lancCat]);
 
@@ -748,7 +749,7 @@ export default function Financeiro() {
         return { ...t, balance };
       });
       setExtrato(withBalance.reverse());
-    } catch { toast.error("Erro ao carregar extrato"); }
+    } catch { notify.erro(null, "carregar o extrato"); }
     finally { setLoadingExt(false); }
   }, [extStart, extEnd, extType, extMethod]);
 
@@ -757,7 +758,7 @@ export default function Financeiro() {
     try {
       const r = await api.get("/ai/financial-health");
       setGuardian(r.data);
-    } catch { toast.error("Erro ao analisar saúde financeira"); }
+    } catch { notify.erro(null, "analisar a saúde financeira"); }
     finally { setLoadingGuardian(false); }
   }, []);
 
@@ -773,17 +774,17 @@ export default function Financeiro() {
     try {
       if (editId) {
         await api.put(`/financial/${editId}`, form);
-        toast.success("Lançamento atualizado!");
+        notify.ok("Lançamento atualizado");
       } else {
         await api.post("/financial", form);
-        toast.success("Lançamento criado!");
+        notify.ok("Lançamento criado");
       }
       setModalData(null);
       loadSummary();
       if (tab === "lancamentos") loadLancamentos();
       if (tab === "extrato") loadExtrato();
       if (tab === "resumo") loadAnalytics();
-    } catch { toast.error("Erro ao salvar lançamento"); }
+    } catch { notify.erro(null, "salvar o lançamento"); }
   }
 
   // ── aprovar pendente ────────────────────────────────────────────────────────
