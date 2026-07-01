@@ -123,6 +123,7 @@ const CALENDAR_COLORS = {
   retorno:     "#2E6FA8",
   lembrete:    "#CBA258",
   compromisso: "#6F7F73",
+  bloqueio:    "#8A8A8A",
   receivable:  "#1E9E5A",
   payable:     "#D9534F",
 };
@@ -139,7 +140,7 @@ export async function getCalendar(user, { from, to, types } = {}) {
   const events = [];
 
   // ── Agendamentos ──
-  const apptCategories = ["consulta", "retorno", "lembrete", "compromisso"].filter(include);
+  const apptCategories = ["consulta", "retorno", "lembrete", "compromisso", "bloqueio"].filter(include);
   if (apptCategories.length > 0) {
     const appointments = await prisma.appointment.findMany({
       where: {
@@ -260,6 +261,7 @@ export async function update(
       procedureType: data.procedureType,
       notes: data.notes,
       status: data.status,
+      category: data.category,
     },
     include: { patient: true },
   });

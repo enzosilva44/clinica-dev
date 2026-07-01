@@ -32,14 +32,24 @@ const CATEGORY_COLORS = {
   retorno:     "#2E6FA8",
   lembrete:    "#C4895A",
   compromisso: "#6F7F73",
+  bloqueio:    "#8A8A8A",
   receivable:  "#1E9E5A",
   payable:     "#D9534F",
 };
+// Tipos escolhidos no início da criação de um evento
+const APPOINTMENT_TYPES = [
+  { key: "consulta",    label: "Consulta" },
+  { key: "retorno",     label: "Retorno" },
+  { key: "lembrete",    label: "Lembrete" },
+  { key: "compromisso", label: "Compromisso" },
+  { key: "bloqueio",    label: "Bloqueio" },
+];
 const CATEGORY_FILTERS = [
   { key: "consulta",    label: "Consultas" },
   { key: "retorno",     label: "Retornos" },
   { key: "lembrete",    label: "Lembretes" },
   { key: "compromisso", label: "Compromissos" },
+  { key: "bloqueio",    label: "Bloqueios" },
   { key: "receivable",  label: "A receber" },
   { key: "payable",     label: "A pagar" },
 ];
@@ -56,12 +66,14 @@ const PAYMENT_METHODS = ["Dinheiro", "PIX", "Cartão de crédito", "Cartão de d
 function emptyForm() {
   return {
     title: "",
+    category: "consulta",
     patientId: "",
     professional: "Dra Ana",
     procedureType: "",
     notes: "",
     status: "SCHEDULED",
     selectedDate: "",
+    endDate: "",
     txAmount: "",
     txPaymentMethod: "",
     txInstallments: "1",
@@ -325,13 +337,16 @@ export default function Agenda() {
     }
     setEditing(event);
     setForm({
+      ...emptyForm(),
       title: event.title,
+      category: event.extendedProps.category || "consulta",
       patientId: event.extendedProps.patientId || "",
       professional: event.extendedProps.professional || "",
       procedureType: event.extendedProps.procedureType || "",
       notes: event.extendedProps.notes || "",
       status: event.extendedProps.status || "SCHEDULED",
       selectedDate: formatForInput(event.start),
+      endDate: formatForInput(event.end),
     });
     const msg = buildWhatsAppMessage(confirmTemplate, event.extendedProps.patientName, event.start);
     setSendWhatsApp(false);
@@ -343,40 +358,52 @@ export default function Agenda() {
     if (savingAppointment) return;
     setSavingAppointment(true);
     try {
+      const isBloqueio = form.category === "bloqueio";
+      // Bloqueio usa data/hora fim explícita; demais tipos = 1h por padrão.
+      const bloqueioEnd = form.endDate ? new Date(form.endDate) : null;
+
       if (editing) {
+        const editStart = new Date(form.selectedDate);
         await api.put(`/appointments/${editing.id}`, {
           title: form.title,
           startsAt: form.selectedDate,
-          endsAt: form.selectedDate,
+          endsAt: isBloqueio && bloqueioEnd
+            ? bloqueioEnd
+            : new Date(editStart.getTime() + 60 * 60 * 1000),
           professional: form.professional,
           procedureType: form.procedureType,
           notes: form.notes,
           status: form.status,
+          category: form.category,
         });
-        toast.success("Agendamento atualizado");
+        toast.success(isBloqueio ? "Bloqueio atualizado" : "Agendamento atualizado");
       } else {
+        const title = isBloqueio && !form.title.trim() ? "Horário bloqueado" : form.title;
         const start = new Date(form.selectedDate);
-        const end = new Date(start.getTime() + 60 * 60 * 1000);
+        const end = isBloqueio && bloqueioEnd
+          ? bloqueioEnd
+          : new Date(start.getTime() + 60 * 60 * 1000);
         const res = await api.post("/appointments", {
-          title: form.title,
+          title,
           startsAt: start,
           endsAt: end,
-          patientId: form.patientId,
+          patientId: isBloqueio ? undefined : form.patientId,
           professional: form.professional,
-          color: PROFESSIONAL_COLORS[form.professional],
+          color: isBloqueio ? CATEGORY_COLORS.bloqueio : PROFESSIONAL_COLORS[form.professional],
           notes: form.notes,
-          procedureType: form.procedureType,
+          procedureType: isBloqueio ? undefined : form.procedureType,
           status: form.status,
+          category: form.category,
           idempotencyKey: idempotencyKeyRef.current,
-          txAmount: form.txAmount || undefined,
-          txPaymentMethod: form.txPaymentMethod || undefined,
-          txInstallments: Number(form.txInstallments) > 1 ? Number(form.txInstallments) : undefined,
-          txDueDate: form.txDueDate || undefined,
-          txNotes: form.txNotes || undefined,
+          txAmount: isBloqueio ? undefined : (form.txAmount || undefined),
+          txPaymentMethod: isBloqueio ? undefined : (form.txPaymentMethod || undefined),
+          txInstallments: !isBloqueio && Number(form.txInstallments) > 1 ? Number(form.txInstallments) : undefined,
+          txDueDate: isBloqueio ? undefined : (form.txDueDate || undefined),
+          txNotes: isBloqueio ? undefined : (form.txNotes || undefined),
         });
         // Renova a chave para o próximo agendamento
         idempotencyKeyRef.current = crypto.randomUUID();
-        toast.success("Agendamento criado");
+        toast.success(isBloqueio ? "Bloqueio criado" : "Agendamento criado");
 
         // Procedimento exige retorno → guarda sugestão pra abrir o modal depois
         if (res.data?.suggestedReturn) {
@@ -689,17 +716,44 @@ export default function Agenda() {
             </div>
 
             <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+              {/* TIPO — escolhido antes de preencher o resto */}
               <div>
-                <label className="text-xs font-medium text-gray-500 block mb-1.5">Título</label>
+                <label className="text-xs font-medium text-gray-500 block mb-1.5">Tipo</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {APPOINTMENT_TYPES.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, category: key }))}
+                      className={`px-3 py-2 rounded-xl text-xs font-medium transition border flex items-center gap-1.5 ${
+                        form.category === key
+                          ? "border-verde bg-verde text-white"
+                          : "border-ambar text-verde hover:bg-creme-100"
+                      }`}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: CATEGORY_COLORS[key] }}
+                      />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                  {form.category === "bloqueio" ? "Motivo" : "Título"}
+                </label>
                 <input
                   value={form.title}
                   onChange={f("title")}
-                  placeholder="Ex: Toxina botulínica"
+                  placeholder={form.category === "bloqueio" ? "Ex: Almoço, folga, congresso…" : "Ex: Toxina botulínica"}
                   className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                 />
               </div>
 
-              {!editing && (
+              {!editing && form.category !== "bloqueio" && (
                 <div className="relative">
                   <label className="text-xs font-medium text-gray-500 block mb-1.5">Paciente</label>
                   <input
@@ -745,7 +799,9 @@ export default function Agenda() {
               )}
 
               <div>
-                <label className="text-xs font-medium text-gray-500 block mb-1.5">Data e hora</label>
+                <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                  {form.category === "bloqueio" ? "Início" : "Data e hora"}
+                </label>
                 <input
                   type="datetime-local"
                   value={form.selectedDate}
@@ -753,6 +809,21 @@ export default function Agenda() {
                   className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                 />
               </div>
+
+              {form.category === "bloqueio" && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1.5">Fim</label>
+                  <input
+                    type="datetime-local"
+                    value={form.endDate}
+                    onChange={f("endDate")}
+                    className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1.5">
+                    O período fica marcado como indisponível na agenda.
+                  </p>
+                </div>
+              )}
 
               {features.multiProfessional && (
                 <div>
@@ -776,6 +847,7 @@ export default function Agenda() {
                 </div>
               )}
 
+              {form.category !== "bloqueio" && (
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">Procedimento</label>
                 <select
@@ -791,7 +863,9 @@ export default function Agenda() {
                   ))}
                 </select>
               </div>
+              )}
 
+              {form.category !== "bloqueio" && (
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">Status</label>
                 <div className="grid grid-cols-3 gap-1.5">
@@ -811,6 +885,7 @@ export default function Agenda() {
                   ))}
                 </div>
               </div>
+              )}
 
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">Observações</label>
@@ -824,7 +899,7 @@ export default function Agenda() {
               </div>
 
               {/* INFORMAÇÕES FINANCEIRAS (só na criação) */}
-              {!editing && (
+              {!editing && form.category !== "bloqueio" && (
                 <div className="border-t border-creme-200 pt-4 space-y-3">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
                     <DollarSign size={12} /> Financeiro
@@ -941,7 +1016,7 @@ export default function Agenda() {
               })()}
 
               {/* WHATSAPP */}
-              {features.whatsapp && (
+              {features.whatsapp && form.category !== "bloqueio" && (
               <div className="border-t border-creme-200 pt-4">
                 <button
                   type="button"
