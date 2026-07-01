@@ -16,7 +16,7 @@ function Field({ label, children }) {
   );
 }
 
-const INPUT = "w-full border border-[#CBA258] rounded-xl p-3 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20";
+const INPUT = "w-full border border-[#C4895A] rounded-xl p-3 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20";
 
 export default function EditPatient() {
   const { id } = useParams();
@@ -115,7 +115,7 @@ export default function EditPatient() {
       <div className="flex items-center gap-3 mb-8">
         <button
           onClick={() => navigate(`/patients/${id}`)}
-          className="w-9 h-9 flex items-center justify-center rounded-xl border border-[#CBA258] hover:bg-[#E6E2D8] transition"
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-[#C4895A] hover:bg-[#EFE7DA] transition"
         >
           <ArrowLeft size={16} className="text-[#00704A]" />
         </button>
@@ -128,7 +128,7 @@ export default function EditPatient() {
       <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
 
         {/* DADOS PESSOAIS */}
-        <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6">
+        <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6">
           <h2 className="text-sm font-bold text-[#00704A] uppercase tracking-wide mb-5">Dados pessoais</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Nome completo">
@@ -176,7 +176,7 @@ export default function EditPatient() {
         </div>
 
         {/* ENDEREÇO */}
-        <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6">
+        <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6">
           <h2 className="text-sm font-bold text-[#00704A] uppercase tracking-wide mb-5">Endereço</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="CEP">
@@ -210,7 +210,7 @@ export default function EditPatient() {
         </div>
 
         {/* OBSERVAÇÕES */}
-        <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6">
+        <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6">
           <h2 className="text-sm font-bold text-[#00704A] uppercase tracking-wide mb-5">Observações clínicas</h2>
           <textarea
             className={`${INPUT} resize-none`}
@@ -226,14 +226,14 @@ export default function EditPatient() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 bg-[#00704A] hover:bg-[#1E3932] text-white px-6 py-3 rounded-xl text-sm font-medium transition disabled:opacity-50"
+            className="flex items-center gap-2 bg-[#00704A] hover:bg-[#0A3326] text-white px-6 py-3 rounded-xl text-sm font-medium transition disabled:opacity-50"
           >
             <Save size={15} />{saving ? "Salvando…" : "Salvar alterações"}
           </button>
           <button
             type="button"
             onClick={() => navigate(`/patients/${id}`)}
-            className="border border-[#CBA258] text-[#00704A] px-5 py-3 rounded-xl text-sm hover:bg-[#E6E2D8] transition"
+            className="border border-[#C4895A] text-[#00704A] px-5 py-3 rounded-xl text-sm hover:bg-[#EFE7DA] transition"
           >
             Cancelar
           </button>

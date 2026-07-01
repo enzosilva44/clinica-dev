@@ -11,7 +11,7 @@ import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
 
 const TYPE_META = {
-  birthday:     { label: "Feliz aniversário",        icon: Cake,          color: "#CBA258", desc: "Enviada no dia do aniversário do paciente (todos os dias às 09h)." },
+  birthday:     { label: "Feliz aniversário",        icon: Cake,          color: "#C4895A", desc: "Enviada no dia do aniversário do paciente (todos os dias às 09h)." },
   welcome:      { label: "Boas-vindas",               icon: UserPlus,      color: "#00704A", desc: "Enviada automaticamente ao cadastrar um novo paciente." },
   confirmation: { label: "Confirmação de agendamento", icon: CalendarCheck, color: "#6F7F73", desc: "Enviada ao criar um novo agendamento." },
   reminder:     { label: "Lembrete de consulta",      icon: Bell,          color: "#8B6B4E", desc: "Enviada X horas antes da consulta (configurável)." },
@@ -71,7 +71,7 @@ function TemplateCard({ tpl, onSave }) {
   }
 
   return (
-    <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
+    <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: meta.color + "22" }}>
@@ -97,7 +97,7 @@ function TemplateCard({ tpl, onSave }) {
                 <button
                   key={v}
                   onClick={() => setBody((b) => b + v)}
-                  className="text-[10px] px-2 py-0.5 rounded-full bg-[#E6E2D8] text-[#00704A] font-mono hover:bg-[#CBA258] transition"
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-[#EFE7DA] text-[#00704A] font-mono hover:bg-[#C4895A] transition"
                 >
                   {v}
                 </button>
@@ -107,7 +107,7 @@ function TemplateCard({ tpl, onSave }) {
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={4}
-              className="w-full border border-[#CBA258] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20 resize-none"
+              className="w-full border border-[#C4895A] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20 resize-none"
             />
           </div>
 
@@ -118,7 +118,7 @@ function TemplateCard({ tpl, onSave }) {
                 type="number" min={1} max={72}
                 value={reminderHours}
                 onChange={(e) => setReminderHours(+e.target.value)}
-                className="w-16 border border-[#CBA258] rounded-lg px-2 py-1 text-sm text-center focus:outline-none"
+                className="w-16 border border-[#C4895A] rounded-lg px-2 py-1 text-sm text-center focus:outline-none"
               />
               <label className="text-xs text-gray-500">horas antes da consulta</label>
             </div>
@@ -128,13 +128,13 @@ function TemplateCard({ tpl, onSave }) {
             <button
               onClick={save}
               disabled={saving}
-              className="flex items-center gap-1.5 bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2 rounded-xl text-xs font-medium transition disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-[#00704A] hover:bg-[#0A3326] text-white px-4 py-2 rounded-xl text-xs font-medium transition disabled:opacity-50"
             >
               <Save size={13} />{saving ? "Salvando…" : "Salvar"}
             </button>
             <button
               onClick={() => { setBody(tpl.body); setEditing(false); }}
-              className="flex items-center gap-1.5 border border-[#CBA258] hover:bg-[#E6E2D8] text-[#00704A] px-3 py-2 rounded-xl text-xs font-medium transition"
+              className="flex items-center gap-1.5 border border-[#C4895A] hover:bg-[#EFE7DA] text-[#00704A] px-3 py-2 rounded-xl text-xs font-medium transition"
             >
               <X size={13} />Cancelar
             </button>
@@ -142,7 +142,7 @@ function TemplateCard({ tpl, onSave }) {
         </div>
       ) : (
         <div className="mt-3">
-          <p className="text-xs text-gray-500 bg-[#F2F0EB] border border-[#DDD8CC] rounded-xl px-3 py-2.5 leading-relaxed">
+          <p className="text-xs text-gray-500 bg-[#FAF7F2] border border-[#E5D8C5] rounded-xl px-3 py-2.5 leading-relaxed">
             {tpl.body}
           </p>
           {tpl.type === "reminder" && (
@@ -299,13 +299,13 @@ export default function Automacoes() {
       )}
 
       {/* TABS */}
-      <div className="flex gap-1 bg-[#F2F0EB] border border-[#DDD8CC] rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-[#FAF7F2] border border-[#E5D8C5] rounded-xl p-1 mb-6 w-fit">
         {[["templates", MessageSquare, "Templates"], ["historico", History, "Histórico"], ["conexao", Wifi, "Conexão"], ["resumo", BarChart2, "Resumo"]].map(([v, Icon, l]) => (
           <button
             key={v}
             onClick={() => setTab(v)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
-              tab === v ? "bg-[#00704A] text-white" : "text-[#00704A] hover:bg-[#E6E2D8]"
+              tab === v ? "bg-[#00704A] text-white" : "text-[#00704A] hover:bg-[#EFE7DA]"
             }`}
           >
             <Icon size={14} />{l}
@@ -326,7 +326,7 @@ export default function Automacoes() {
             </div>
           )}
 
-          <div className="mt-6 bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
+          <div className="mt-6 bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-5">
             <p className="text-sm font-semibold text-[#00704A] mb-3">Testar disparo manual</p>
             <div className="flex flex-wrap gap-2">
               {[["birthday", "Aniversários de hoje"], ["reminder", "Lembretes pendentes"]].map(([type, label]) => (
@@ -334,7 +334,7 @@ export default function Automacoes() {
                   key={type}
                   onClick={() => triggerManual(type)}
                   disabled={!!triggering}
-                  className="flex items-center gap-2 border border-[#CBA258] hover:bg-[#E6E2D8] text-[#00704A] px-4 py-2 rounded-xl text-sm font-medium transition disabled:opacity-50"
+                  className="flex items-center gap-2 border border-[#C4895A] hover:bg-[#EFE7DA] text-[#00704A] px-4 py-2 rounded-xl text-sm font-medium transition disabled:opacity-50"
                 >
                   <RefreshCw size={13} className={triggering === type ? "animate-spin" : ""} />
                   {triggering === type ? "Executando…" : label}
@@ -364,7 +364,7 @@ export default function Automacoes() {
           </div>
 
           {/* Formulário de credenciais */}
-          <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5 space-y-4">
+          <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5 space-y-4">
             <p className="font-semibold text-sm text-[#00704A]">Credenciais Meta Cloud API</p>
 
             <div>
@@ -373,7 +373,7 @@ export default function Automacoes() {
                 value={wpPhoneNumberId}
                 onChange={(e) => setWpPhoneNumberId(e.target.value)}
                 placeholder="Ex: 4578512252473592"
-                className="w-full border border-[#CBA258] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                className="w-full border border-[#C4895A] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
               />
             </div>
 
@@ -387,7 +387,7 @@ export default function Automacoes() {
                   value={wpAccessToken}
                   onChange={(e) => setWpAccessToken(e.target.value)}
                   placeholder={wpConfig.hasToken ? "••••••••••••••••" : "Cole o Access Token aqui"}
-                  className="w-full border border-[#CBA258] rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                  className="w-full border border-[#C4895A] rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                 />
                 <button
                   type="button"
@@ -402,7 +402,7 @@ export default function Automacoes() {
             <button
               onClick={saveWpConfig}
               disabled={savingWp || !wpPhoneNumberId}
-              className="flex items-center gap-2 bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
+              className="flex items-center gap-2 bg-[#00704A] hover:bg-[#0A3326] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
             >
               <Save size={14} />{savingWp ? "Salvando…" : "Salvar configuração"}
             </button>
@@ -410,7 +410,7 @@ export default function Automacoes() {
 
           {/* Teste de envio */}
           {wpConfig.configured && (
-            <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5 space-y-3">
+            <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5 space-y-3">
               <p className="font-semibold text-sm text-[#00704A]">Testar envio</p>
               <p className="text-xs text-gray-500">Envia uma mensagem de teste para confirmar que a integração está funcionando.</p>
               <div className="flex gap-2">
@@ -418,12 +418,12 @@ export default function Automacoes() {
                   value={testPhone}
                   onChange={(e) => setTestPhone(e.target.value)}
                   placeholder="55119999999999"
-                  className="flex-1 border border-[#CBA258] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                  className="flex-1 border border-[#C4895A] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                 />
                 <button
                   onClick={sendTestMessage}
                   disabled={testingWp || !testPhone}
-                  className="flex items-center gap-2 bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
+                  className="flex items-center gap-2 bg-[#00704A] hover:bg-[#0A3326] text-white px-4 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
                 >
                   <Send size={14} />{testingWp ? "Enviando…" : "Testar"}
                 </button>
@@ -446,7 +446,7 @@ export default function Automacoes() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition border ${
                   filterType === v
                     ? "bg-[#00704A] text-white border-[#00704A]"
-                    : "border-[#CBA258] text-[#00704A] hover:bg-[#E6E2D8]"
+                    : "border-[#C4895A] text-[#00704A] hover:bg-[#EFE7DA]"
                 }`}
               >
                 {l}
@@ -461,15 +461,15 @@ export default function Automacoes() {
               Nenhum envio registrado ainda.
             </div>
           ) : (
-            <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl overflow-hidden">
-              <div className="px-5 py-3 border-b border-[#DDD8CC] bg-[#E6E2D8] flex items-center justify-between">
+            <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-[#E5D8C5] bg-[#EFE7DA] flex items-center justify-between">
                 <span className="text-sm font-semibold text-[#00704A]">Histórico de envios</span>
                 <span className="text-xs text-gray-500">{logTotal} registro{logTotal !== 1 ? "s" : ""}</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[#DDD8CC]">
+                    <tr className="border-b border-[#E5D8C5]">
                       <th className="text-left px-5 py-3 text-[#00704A] text-xs font-semibold uppercase tracking-wide">Paciente</th>
                       <th className="text-left px-5 py-3 text-[#00704A] text-xs font-semibold uppercase tracking-wide hidden sm:table-cell">Tipo</th>
                       <th className="text-left px-5 py-3 text-[#00704A] text-xs font-semibold uppercase tracking-wide hidden md:table-cell">Mensagem</th>
@@ -482,7 +482,7 @@ export default function Automacoes() {
                       const meta = TYPE_META[log.type];
                       const Icon = meta?.icon ?? MessageSquare;
                       return (
-                        <tr key={log.id} className="border-t border-[#DDD8CC] hover:bg-[#F3EEE5] transition">
+                        <tr key={log.id} className="border-t border-[#E5D8C5] hover:bg-[#F3EEE5] transition">
                           <td className="px-5 py-3.5">
                             <p className="text-sm font-medium text-[#00704A]">{log.patientName}</p>
                             <p className="text-xs text-gray-400">{log.phone}</p>
@@ -516,7 +516,7 @@ export default function Automacoes() {
               <button
                 disabled={logPage === 1}
                 onClick={() => setLogPage((p) => p - 1)}
-                className="border border-[#CBA258] px-4 py-2 rounded-xl text-sm disabled:opacity-40 hover:bg-[#E6E2D8] transition"
+                className="border border-[#C4895A] px-4 py-2 rounded-xl text-sm disabled:opacity-40 hover:bg-[#EFE7DA] transition"
               >
                 ← Anterior
               </button>
@@ -524,7 +524,7 @@ export default function Automacoes() {
               <button
                 disabled={logPage === logTotalPages}
                 onClick={() => setLogPage((p) => p + 1)}
-                className="border border-[#CBA258] px-4 py-2 rounded-xl text-sm disabled:opacity-40 hover:bg-[#E6E2D8] transition"
+                className="border border-[#C4895A] px-4 py-2 rounded-xl text-sm disabled:opacity-40 hover:bg-[#EFE7DA] transition"
               >
                 Próxima →
               </button>
@@ -543,7 +543,7 @@ export default function Automacoes() {
           <div className="space-y-6 max-w-2xl">
 
             {/* Tier selector */}
-            <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
+            <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
               <p className="text-sm font-semibold text-[#00704A] mb-3">Seu tier Meta WhatsApp</p>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(TIERS).map(([key, t]) => (
@@ -553,7 +553,7 @@ export default function Automacoes() {
                     className={`px-4 py-2 rounded-xl text-xs font-medium transition border ${
                       tier === key
                         ? "bg-[#00704A] text-white border-[#00704A]"
-                        : "border-[#CBA258] text-[#00704A] hover:bg-[#E6E2D8]"
+                        : "border-[#C4895A] text-[#00704A] hover:bg-[#EFE7DA]"
                     }`}
                   >
                     {t.label} — {t.limit.toLocaleString("pt-BR")}/dia
@@ -566,7 +566,7 @@ export default function Automacoes() {
             </div>
 
             {/* Uso hoje */}
-            <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
+            <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-semibold text-[#00704A]">Conversas hoje</p>
                 {pct >= 80 && (
@@ -579,7 +579,7 @@ export default function Automacoes() {
                 <span className="text-3xl font-bold text-[#00704A]">{todayConv}</span>
                 <span className="text-gray-400 text-sm mb-1">/ {dailyLimit.toLocaleString("pt-BR")} conversas</span>
               </div>
-              <div className="w-full bg-[#E6E2D8] rounded-full h-2.5">
+              <div className="w-full bg-[#EFE7DA] rounded-full h-2.5">
                 <div className={`h-2.5 rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
               </div>
               <p className="text-xs text-gray-400 mt-1.5">{pct}% do limite diário utilizado</p>
@@ -602,7 +602,7 @@ export default function Automacoes() {
                     ? `R$ ${stats.thisMonth.estimatedCost.toFixed(2).replace(".", ",")}`
                     : "R$ 0,00",
                   sub: "valores aproximados Meta BR",
-                  color: "#CBA258",
+                  color: "#C4895A",
                 },
                 {
                   icon: TrendingUp,
@@ -612,7 +612,7 @@ export default function Automacoes() {
                   color: "#6F7F73",
                 },
               ].map(({ icon: Icon, label, value, sub, color }) => (
-                <div key={label} className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
+                <div key={label} className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: color + "22" }}>
                       <Icon size={15} style={{ color }} />
@@ -626,11 +626,11 @@ export default function Automacoes() {
             </div>
 
             {/* Breakdown por tipo */}
-            <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5">
+            <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5">
               <p className="text-sm font-semibold text-[#00704A] mb-4">Detalhamento do mês</p>
               <div className="space-y-3">
                 {[
-                  { type: "birthday",     label: "Aniversários",    icon: Cake,          cost: 0.50, color: "#CBA258" },
+                  { type: "birthday",     label: "Aniversários",    icon: Cake,          cost: 0.50, color: "#C4895A" },
                   { type: "welcome",      label: "Boas-vindas",     icon: UserPlus,      cost: 0.50, color: "#00704A" },
                   { type: "confirmation", label: "Confirmações",    icon: CalendarCheck, cost: 0.20, color: "#6F7F73" },
                   { type: "reminder",     label: "Lembretes",       icon: Bell,          cost: 0.20, color: "#8B6B4E" },
@@ -661,7 +661,7 @@ export default function Automacoes() {
             </div>
 
             {/* Projeção próximo mês */}
-            <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
+            <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-5">
               <p className="text-sm font-semibold text-[#00704A] mb-3">Projeção — próximos 30 dias</p>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -678,7 +678,7 @@ export default function Automacoes() {
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">Custo estimado</p>
-                  <p className="font-bold text-[#CBA258] text-lg">
+                  <p className="font-bold text-[#C4895A] text-lg">
                     R$ {(stats?.projections?.estimatedCost ?? 0).toFixed(2).replace(".", ",")}
                   </p>
                 </div>

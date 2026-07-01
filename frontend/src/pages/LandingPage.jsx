@@ -1,8 +1,7 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CalendarCheck, CreditCard, FileSignature, MessageSquare, Sparkles,
-  BarChart2, Check, ChevronRight, ChevronLeft, Star, Quote,
+  BarChart2, Check, ChevronRight, Star, Quote,
   Target, Compass, Heart,
 } from "lucide-react";
 import { LogoMark } from "../components/ui/Logo.jsx";
@@ -16,7 +15,7 @@ function Logo({ light = false }) {
       <LogoMark variant={light ? "rev" : "color"} size={26} />
       <span className="text-lg font-bold">
         <span className={light ? "text-white" : "text-[#00704A]"}>Iaso</span>
-        <span className="text-[#CBA258]">clin</span>
+        <span className="text-[#C4895A]">clin</span>
       </span>
     </div>
   );
@@ -57,13 +56,12 @@ const DEPOIMENTOS = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [depoAtivo, setDepoAtivo] = useState(0);
 
   return (
     <div className="min-h-screen bg-white font-sans text-[#1F2D2A]">
 
       {/* ── NAVBAR ── */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-[#E6E2D8]">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-[#EFE7DA]">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Logo />
           <div className="hidden md:flex items-center gap-7 text-sm text-gray-500">
@@ -74,7 +72,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <a href={ADMIN_URL} className="hidden sm:block text-sm text-gray-400 font-medium hover:text-[#00704A] transition">Área Admin</a>
             <button onClick={() => navigate("/login")} className="text-sm text-[#00704A] font-medium hover:opacity-70 transition">Entrar</button>
-            <button onClick={() => navigate("/cadastro")} className="bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
+            <button onClick={() => navigate("/cadastro")} className="bg-[#00704A] hover:bg-[#0A3326] text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
               Começar grátis
             </button>
           </div>
@@ -82,7 +80,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="bg-[#F2F0EB] border-b border-[#E6E2D8]">
+      <section className="bg-[#FAF7F2] border-b border-[#EFE7DA]">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 grid md:grid-cols-2 gap-12 items-center">
           <div>
             <span className="inline-flex items-center gap-2 bg-[#00704A]/8 text-[#00704A] text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
@@ -93,36 +91,36 @@ export default function LandingPage() {
               <span className="italic font-serif text-[#00704A]">jeito certo.</span>
             </h1>
             <p className="text-gray-500 text-base leading-relaxed mb-8 max-w-md">
-              Agenda, cobranças, anamnese e WhatsApp em um só lugar. Feito para clínicas de estética que querem crescer sem complicar.
+              Agenda, cobranças, anamnese e WhatsApp em um só lugar. A gente cuida da rotina com você — pra sua clínica crescer com previsibilidade, no controle.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button onClick={() => navigate("/cadastro")}
-                className="bg-[#00704A] hover:bg-[#1E3932] text-white px-6 py-3.5 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-[#00704A]/15">
+                className="bg-[#00704A] hover:bg-[#0A3326] text-white px-6 py-3.5 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-[#00704A]/15">
                 Teste grátis por 14 dias <ChevronRight size={16} />
               </button>
               <button onClick={() => navigate("/login")}
-                className="border border-[#DDD8CC] text-[#00704A] px-6 py-3.5 rounded-xl font-medium text-sm hover:bg-white transition">
+                className="border border-[#E5D8C5] text-[#00704A] px-6 py-3.5 rounded-xl font-medium text-sm hover:bg-white transition">
                 Ver demonstração →
               </button>
             </div>
             <div className="flex items-center gap-3 mt-8">
               <div className="flex -space-x-2">
-                {["#00704A", "#CBA258", "#6F7F73", "#2E6FA8"].map((c) => (
-                  <div key={c} className="w-7 h-7 rounded-full border-2 border-[#F2F0EB]" style={{ backgroundColor: c }} />
+                {["#00704A", "#C4895A", "#6F7F73", "#2E6FA8"].map((c) => (
+                  <div key={c} className="w-7 h-7 rounded-full border-2 border-[#FAF7F2]" style={{ backgroundColor: c }} />
                 ))}
               </div>
               <div>
-                <div className="flex items-center gap-0.5 text-[#CBA258]">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={11} fill="#CBA258" />)}
+                <div className="flex items-center gap-0.5 text-[#C4895A]">
+                  {[...Array(5)].map((_, i) => <Star key={i} size={11} fill="#C4895A" />)}
                 </div>
-                <p className="text-[11px] text-gray-400">+200 clínicas já usam o iasoclin · sem fidelidade</p>
+                <p className="text-[11px] text-gray-400">+200 clínicas com a gente por perto · sem fidelidade</p>
               </div>
             </div>
           </div>
 
           {/* Mockup do dashboard */}
           <div className="relative">
-            <div className="bg-white rounded-2xl shadow-2xl border border-[#E6E2D8] overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-2xl border border-[#EFE7DA] overflow-hidden">
               <div className="bg-[#00704A] px-4 py-2.5 flex items-center gap-2">
                 <div className="flex gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
@@ -136,10 +134,10 @@ export default function LandingPage() {
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   {[
                     { v: "8",      l: "hoje",     c: "#00704A" },
-                    { v: "R$ 9,2k",l: "+28% mês", c: "#CBA258" },
+                    { v: "R$ 9,2k",l: "+28% mês", c: "#C4895A" },
                     { v: "14",     l: "retornos", c: "#2E6FA8" },
                   ].map((k) => (
-                    <div key={k.l} className="bg-[#F2F0EB] rounded-xl p-2.5">
+                    <div key={k.l} className="bg-[#FAF7F2] rounded-xl p-2.5">
                       <p className="text-lg font-black" style={{ color: k.c }}>{k.v}</p>
                       <p className="text-[9px] text-gray-400">{k.l}</p>
                     </div>
@@ -168,13 +166,13 @@ export default function LandingPage() {
 
       {/* ── FUNCIONALIDADES ── */}
       <section id="features" className="max-w-6xl mx-auto px-6 py-20">
-        <p className="text-xs font-semibold text-[#CBA258] uppercase tracking-widest mb-3">Funcionalidades</p>
+        <p className="text-xs font-semibold text-[#C4895A] uppercase tracking-widest mb-3">Funcionalidades</p>
         <h2 className="text-3xl md:text-4xl font-black text-[#141414] leading-tight mb-3">
           Tudo que sua clínica precisa,<br />
           <span className="italic font-serif">sem o que não precisa.</span>
         </h2>
         <p className="text-gray-500 mb-12 max-w-lg">
-          Oito módulos integrados. Um sistema. Sem planilha, sem papel, sem achismo.
+          Oito módulos integrados num só sistema — pra você tocar a clínica no controle, sem planilha e sem achismo.
         </p>
         <div className="grid md:grid-cols-3 gap-x-8 gap-y-10">
           {FEATURES.map(({ icon: Icon, title, desc }) => (
@@ -190,15 +188,15 @@ export default function LandingPage() {
       </section>
 
       {/* ── POR DENTRO DO SISTEMA ── */}
-      <section className="bg-[#F2F0EB] border-y border-[#E6E2D8]">
+      <section className="bg-[#FAF7F2] border-y border-[#EFE7DA]">
         <div className="max-w-6xl mx-auto px-6 py-20">
-          <p className="text-xs font-semibold text-[#CBA258] uppercase tracking-widest mb-3">Por dentro do sistema</p>
+          <p className="text-xs font-semibold text-[#C4895A] uppercase tracking-widest mb-3">Por dentro do sistema</p>
           <h2 className="text-3xl md:text-4xl font-black text-[#141414] leading-tight mb-12">
             Números que<br /><span className="italic font-serif">falam por si.</span>
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
             {/* Gráfico faturamento */}
-            <div className="bg-white border border-[#E6E2D8] rounded-2xl p-6">
+            <div className="bg-white border border-[#EFE7DA] rounded-2xl p-6">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Faturamento mensal</p>
               <p className="font-bold text-[#141414] mb-1">Acompanhe o crescimento da clínica em tempo real.</p>
               <p className="text-xs text-gray-400 mb-6">Cada procedimento registrado vira dado. Cada dado vira decisão.</p>
@@ -215,10 +213,10 @@ export default function LandingPage() {
                 <p className="text-5xl font-black mb-2">87%</p>
                 <p className="text-sm text-white/70">dos agendamentos confirmados automaticamente via WhatsApp.</p>
               </div>
-              <div className="bg-white border border-[#E6E2D8] rounded-2xl p-6">
+              <div className="bg-white border border-[#EFE7DA] rounded-2xl p-6">
                 <div className="flex items-center gap-1.5 mb-2">
-                  <Sparkles size={13} className="text-[#CBA258]" />
-                  <span className="text-[10px] font-semibold text-[#CBA258] uppercase tracking-wide">IA iasoclin</span>
+                  <Sparkles size={13} className="text-[#C4895A]" />
+                  <span className="text-[10px] font-semibold text-[#C4895A] uppercase tracking-wide">IA iasoclin</span>
                 </div>
                 <p className="font-bold text-[#141414] mb-1">Pacientes que somem, a IA encontra.</p>
                 <p className="text-sm text-gray-500">Detecção automática de pacientes sem retorno com sugestão de mensagem personalizada.</p>
@@ -231,14 +229,14 @@ export default function LandingPage() {
       {/* ── PLANOS ── */}
       <section id="planos" className="max-w-6xl mx-auto px-6 py-20">
         <div className="text-center mb-12">
-          <p className="text-xs font-semibold text-[#CBA258] uppercase tracking-widest mb-3">Planos</p>
+          <p className="text-xs font-semibold text-[#C4895A] uppercase tracking-widest mb-3">Planos</p>
           <h2 className="text-3xl md:text-4xl font-black text-[#141414] mb-2">Simples assim.</h2>
-          <p className="text-gray-500">Todos os recursos em todos os planos. O que diferencia é o volume.</p>
+          <p className="text-gray-500">Todos os recursos em todos os planos. Você escolhe pelo tamanho da sua clínica — a gente cresce junto.</p>
         </div>
         <div className="grid md:grid-cols-3 gap-5 items-start">
           {PLANS.map((plan) => (
             <div key={plan.name}
-              className={`rounded-2xl border p-6 relative ${plan.highlight ? "border-[#00704A] shadow-xl shadow-[#00704A]/10 bg-white" : "border-[#E6E2D8] bg-white"}`}>
+              className={`rounded-2xl border p-6 relative ${plan.highlight ? "border-[#00704A] shadow-xl shadow-[#00704A]/10 bg-white" : "border-[#EFE7DA] bg-white"}`}>
               {plan.highlight && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#00704A] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                   Mais escolhido
@@ -259,7 +257,7 @@ export default function LandingPage() {
               </ul>
               <button onClick={() => navigate("/cadastro")}
                 className={`w-full py-3 rounded-xl text-sm font-semibold transition ${
-                  plan.highlight ? "bg-[#00704A] hover:bg-[#1E3932] text-white" : "border border-[#DDD8CC] text-[#00704A] hover:bg-[#F2F0EB]"
+                  plan.highlight ? "bg-[#00704A] hover:bg-[#0A3326] text-white" : "border border-[#E5D8C5] text-[#00704A] hover:bg-[#FAF7F2]"
                 }`}>
                 Começar grátis
               </button>
@@ -269,7 +267,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── COMO SURGIU ── */}
-      <section className="bg-[#F2F0EB] border-y border-[#E6E2D8]">
+      <section className="bg-[#FAF7F2] border-y border-[#EFE7DA]">
         <div className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-black text-[#141414] leading-tight mb-5">
@@ -283,8 +281,8 @@ export default function LandingPage() {
             </p>
             <p className="text-xs text-gray-400 mt-4">França, SP · 2025</p>
           </div>
-          <div className="bg-white border border-[#E6E2D8] rounded-2xl p-6">
-            <Quote size={24} className="text-[#CBA258] mb-3" />
+          <div className="bg-white border border-[#EFE7DA] rounded-2xl p-6">
+            <Quote size={24} className="text-[#C4895A] mb-3" />
             <p className="text-[#141414] leading-relaxed mb-4 italic font-serif">
               "Minha cunhada biomédica não conseguia ter controle de nada na clínica dela. Sem agenda, sem cobrança, sem histórico. Aquilo me incomodava — e não saía mais da minha cabeça."
             </p>
@@ -301,21 +299,21 @@ export default function LandingPage() {
 
       {/* ── TIME FUNDADOR ── */}
       <section className="max-w-6xl mx-auto px-6 py-20">
-        <p className="text-xs font-semibold text-[#CBA258] uppercase tracking-widest mb-3">Time fundador</p>
+        <p className="text-xs font-semibold text-[#C4895A] uppercase tracking-widest mb-3">Time fundador</p>
         <h2 className="text-3xl md:text-4xl font-black text-[#141414] mb-10">Quem está por trás.</h2>
-        <div className="bg-white border border-[#E6E2D8] rounded-2xl p-6 flex flex-col md:flex-row gap-6 mb-12">
+        <div className="bg-white border border-[#EFE7DA] rounded-2xl p-6 flex flex-col md:flex-row gap-6 mb-12">
           <div className="w-full md:w-44 h-36 bg-[#00704A] rounded-2xl flex items-center justify-center shrink-0">
             <span className="text-3xl font-black text-white/90">EO</span>
           </div>
           <div className="flex-1">
             <p className="font-bold text-[#141414] text-lg">Enzo Oliveira</p>
-            <p className="text-[10px] font-semibold text-[#CBA258] uppercase tracking-wide mb-3">Tecnologia & Produto</p>
+            <p className="text-[10px] font-semibold text-[#C4895A] uppercase tracking-wide mb-3">Tecnologia & Produto</p>
             <p className="text-sm text-gray-500 leading-relaxed mb-3">
               Engenheiro de software e AWS Partner com experiência em infraestrutura cloud, FinOps e produtos SaaS. No iasoclin, cuida de toda a arquitetura técnica, produto e estratégia de plataforma.
             </p>
             <div className="flex flex-wrap gap-1.5">
               {["AWS", "Backend", "FinOps", "Produto"].map((t) => (
-                <span key={t} className="text-[10px] font-medium bg-[#F2F0EB] text-gray-500 px-2 py-1 rounded-full">{t}</span>
+                <span key={t} className="text-[10px] font-medium bg-[#FAF7F2] text-gray-500 px-2 py-1 rounded-full">{t}</span>
               ))}
             </div>
           </div>
@@ -324,7 +322,7 @@ export default function LandingPage() {
           {[
             { icon: Compass, t: "Visão",   d: "Ser a plataforma de gestão mais usada por clínicas de estética no Brasil." },
             { icon: Target,  t: "Missão",  d: "Dar governança real a clínicas que merecem crescer sem depender de planilha ou caderno." },
-            { icon: Heart,   t: "Valores", d: "Simplicidade antes de sofisticação. Transparência com o cliente. Tecnologia a serviço de quem cuida de pessoas." },
+            { icon: Heart,   t: "Valores", d: "Simplicidade antes de sofisticação. Transparência com o parceiro. Tecnologia que cuida de quem cuida." },
           ].map(({ icon: Icon, t, d }) => (
             <div key={t}>
               <Icon size={18} className="text-[#00704A] mb-2" />
@@ -336,14 +334,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── DEPOIMENTOS ── */}
-      <section id="depoimentos" className="bg-[#F2F0EB] border-y border-[#E6E2D8]">
+      <section id="depoimentos" className="bg-[#FAF7F2] border-y border-[#EFE7DA]">
         <div className="max-w-6xl mx-auto px-6 py-20">
           <h2 className="text-3xl md:text-4xl font-black text-[#141414] mb-10">Quem usa, recomenda.</h2>
           <div className="grid md:grid-cols-3 gap-5">
             {DEPOIMENTOS.map((d) => (
-              <div key={d.nome} className="bg-white border border-[#E6E2D8] rounded-2xl p-6">
-                <div className="flex items-center gap-0.5 text-[#CBA258] mb-3">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={13} fill="#CBA258" />)}
+              <div key={d.nome} className="bg-white border border-[#EFE7DA] rounded-2xl p-6">
+                <div className="flex items-center gap-0.5 text-[#C4895A] mb-3">
+                  {[...Array(5)].map((_, i) => <Star key={i} size={13} fill="#C4895A" />)}
                 </div>
                 <p className="text-sm text-gray-600 leading-relaxed mb-5">"{d.texto}"</p>
                 <div className="flex items-center gap-3">
@@ -366,17 +364,17 @@ export default function LandingPage() {
         <div className="bg-[#00704A] rounded-3xl px-8 py-12 md:px-14 md:py-14 relative overflow-hidden">
           <div className="relative z-10 grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <p className="text-[10px] font-semibold text-[#CBA258] uppercase tracking-widest mb-3">Comece hoje</p>
+              <p className="text-[10px] font-semibold text-[#C4895A] uppercase tracking-widest mb-3">Comece hoje</p>
               <h2 className="text-3xl md:text-4xl font-black text-white leading-tight mb-3">
-                Sua clínica organizada<br /><span className="italic font-serif text-[#CBA258]">em menos de uma tarde.</span>
+                Sua clínica organizada<br /><span className="italic font-serif text-[#C4895A]">em menos de uma tarde.</span>
               </h2>
               <p className="text-white/60 text-sm max-w-sm">
-                14 dias grátis, sem cartão de crédito. Configure em minutos e receba seu primeiro agendamento ainda hoje.
+                14 dias grátis, sem cartão de crédito. Em poucos minutos, e com a gente junto, você recebe o primeiro agendamento ainda hoje.
               </p>
             </div>
             <div className="flex flex-col sm:items-end gap-3">
               <button onClick={() => navigate("/cadastro")}
-                className="bg-white text-[#00704A] px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-[#F2F0EB] transition">
+                className="bg-white text-[#00704A] px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-[#FAF7F2] transition">
                 Criar conta grátis
               </button>
               <button onClick={() => navigate("/login")}
@@ -390,9 +388,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="border-t border-[#E6E2D8]">
+      <footer className="border-t border-[#EFE7DA]">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo />
+          <div className="flex flex-col items-center md:items-start gap-1">
+            <Logo />
+            <p className="text-xs text-gray-400">Tecnologia que cuida de quem cuida.</p>
+          </div>
           <div className="flex items-center gap-6 text-xs text-gray-400">
             <a href="#features" className="hover:text-[#00704A] transition">Funcionalidades</a>
             <a href="#planos" className="hover:text-[#00704A] transition">Planos</a>

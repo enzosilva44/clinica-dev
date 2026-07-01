@@ -4,7 +4,7 @@ import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 const PROFESSIONALS = [
   { name: "Dra Ana",    color: "#00704A" },
   { name: "Dra Julia",  color: "#6F7F73" },
-  { name: "Dra Camila", color: "#CBA258" },
+  { name: "Dra Camila", color: "#C4895A" },
 ];
 
 const DAYS_PT = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -62,12 +62,12 @@ function MiniCalendar({ allEvents, gotoDate }) {
   const cells = buildCalendarGrid(viewYear, viewMonth);
 
   return (
-    <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-3.5">
+    <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-3.5">
       {/* Month header */}
       <div className="flex items-center justify-between mb-2.5">
         <button
           onClick={prevMonth}
-          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#E6E2D8] text-[#00704A] transition"
+          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#EFE7DA] text-[#00704A] transition"
         >
           <ChevronLeft size={13} />
         </button>
@@ -76,7 +76,7 @@ function MiniCalendar({ allEvents, gotoDate }) {
         </span>
         <button
           onClick={nextMonth}
-          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#E6E2D8] text-[#00704A] transition"
+          className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#EFE7DA] text-[#00704A] transition"
         >
           <ChevronRight size={13} />
         </button>
@@ -105,8 +105,8 @@ function MiniCalendar({ allEvents, gotoDate }) {
                 isToday
                   ? "bg-[#00704A] text-white"
                   : cell.current
-                  ? "hover:bg-[#E6E2D8] text-[#00704A]"
-                  : "text-gray-300 hover:bg-[#E6E2D8]"
+                  ? "hover:bg-[#EFE7DA] text-[#00704A]"
+                  : "text-gray-300 hover:bg-[#EFE7DA]"
               }`}
             >
               <span className="text-[0.62rem] font-medium leading-none">{cell.day}</span>
@@ -147,7 +147,7 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
 
       {/* Profissionais — só exibe no plano dev */}
       {showProfessionals && (
-        <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-4">
+        <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Profissionais
@@ -169,8 +169,8 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
                   onClick={() => toggleProfessional(p.name)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition text-left ${
                     active
-                      ? "bg-white border border-[#DDD8CC] shadow-sm"
-                      : "hover:bg-[#E6E2D8] opacity-45 hover:opacity-70"
+                      ? "bg-white border border-[#E5D8C5] shadow-sm"
+                      : "hover:bg-[#EFE7DA] opacity-45 hover:opacity-70"
                   }`}
                 >
                   <div
@@ -196,13 +196,13 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
       )}
 
       {/* Legenda de status */}
-      <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-4">
+      <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-4">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
           Status
         </p>
         <div className="space-y-2">
           {[
-            { label: "Agendado",       color: "#CBA258" },
+            { label: "Agendado",       color: "#C4895A" },
             { label: "Confirmado",     color: "#4A8EC2" },
             { label: "Em atendimento", color: "#D4A017" },
             { label: "Concluído",      color: "#3A9B6F" },

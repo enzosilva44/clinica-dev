@@ -19,7 +19,7 @@ function maskCard(v)   { return v.replace(/\D/g,"").slice(0,16).replace(/(\d{4})
 function maskExpiry(v) { return v.replace(/\D/g,"").slice(0,4).replace(/(\d{2})(\d{0,2})/,"$1/$2").replace(/\/$/,""); }
 function maskCvv(v)    { return v.replace(/\D/g,"").slice(0,4); }
 
-const INPUT = "w-full border border-[#DDD8CC] bg-white rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20 focus:border-[#00704A] transition";
+const INPUT = "w-full border border-[#E5D8C5] bg-white rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20 focus:border-[#00704A] transition";
 const LABEL = "text-xs font-semibold text-gray-500 mb-1.5 block";
 
 // ── planos ────────────────────────────────────────────────────────────────────
@@ -61,13 +61,13 @@ function StepIndicator({ current }) {
         <div key={s.id} className="flex items-center">
           <div className={`flex flex-col items-center gap-1 ${current === s.id ? "opacity-100" : current > s.id ? "opacity-70" : "opacity-30"}`}>
             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition
-              ${current > s.id ? "bg-[#00704A] text-white" : current === s.id ? "bg-[#00704A] text-white ring-4 ring-[#00704A]/20" : "bg-[#E6E2D8] text-gray-500"}`}>
+              ${current > s.id ? "bg-[#00704A] text-white" : current === s.id ? "bg-[#00704A] text-white ring-4 ring-[#00704A]/20" : "bg-[#EFE7DA] text-gray-500"}`}>
               {current > s.id ? <Check size={14} /> : s.id}
             </div>
             <p className="text-[10px] text-gray-500 hidden sm:block">{s.label}</p>
           </div>
           {i < STEPS.length - 1 && (
-            <div className={`w-8 sm:w-12 h-0.5 mx-1 transition ${current > s.id ? "bg-[#00704A]" : "bg-[#E6E2D8]"}`} />
+            <div className={`w-8 sm:w-12 h-0.5 mx-1 transition ${current > s.id ? "bg-[#00704A]" : "bg-[#EFE7DA]"}`} />
           )}
         </div>
       ))}
@@ -89,8 +89,8 @@ function CardPreview({ number, name, expiry, flipped }) {
           <div className="flex justify-between items-start">
             <p className="text-white/70 text-xs font-semibold tracking-widest uppercase">IasoClin Pay</p>
             <div className="flex gap-1">
-              <div className="w-8 h-8 rounded-full bg-[#CBA258] opacity-80" />
-              <div className="w-8 h-8 rounded-full bg-[#CBA258] opacity-50 -ml-4" />
+              <div className="w-8 h-8 rounded-full bg-[#C4895A] opacity-80" />
+              <div className="w-8 h-8 rounded-full bg-[#C4895A] opacity-50 -ml-4" />
             </div>
           </div>
           <div>
@@ -108,7 +108,7 @@ function CardPreview({ number, name, expiry, flipped }) {
           </div>
         </div>
         {/* Back */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#1E3932] to-[#00704A] flex flex-col justify-center shadow-xl"
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#0A3326] to-[#00704A] flex flex-col justify-center shadow-xl"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
           <div className="bg-black/30 h-10 w-full mb-6" />
           <div className="px-6">
@@ -278,11 +278,11 @@ export default function Signup() {
   const selectedPlan = PLANS.find((p) => p.id === plan);
 
   return (
-    <div className="min-h-screen bg-[#F2F0EB] flex flex-col items-center justify-start px-4 py-10">
+    <div className="min-h-screen bg-[#FAF7F2] flex flex-col items-center justify-start px-4 py-10">
       {/* Logo */}
       <Link to="/" className="mb-8">
         <p className="text-2xl font-bold tracking-wide">
-          <span className="text-[#00704A]">Iaso</span><span className="text-[#CBA258]">Clin</span>
+          <span className="text-[#00704A]">Iaso</span><span className="text-[#C4895A]">Clin</span>
         </p>
       </Link>
 
@@ -303,16 +303,16 @@ export default function Signup() {
                   className={`relative text-left rounded-3xl p-6 border-2 transition ${
                     plan === p.id
                       ? "border-[#00704A] bg-[#00704A] text-white shadow-xl scale-[1.02]"
-                      : "border-[#DDD8CC] bg-white hover:border-[#00704A]/40"
+                      : "border-[#E5D8C5] bg-white hover:border-[#00704A]/40"
                   }`}
                 >
                   {p.highlight && (
-                    <span className={`absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold px-3 py-1 rounded-full ${plan === p.id ? "bg-[#CBA258] text-white" : "bg-[#00704A] text-white"}`}>
+                    <span className={`absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold px-3 py-1 rounded-full ${plan === p.id ? "bg-[#C4895A] text-white" : "bg-[#00704A] text-white"}`}>
                       MAIS POPULAR
                     </span>
                   )}
                   {plan === p.id && (
-                    <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-[#CBA258] flex items-center justify-center">
+                    <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-[#C4895A] flex items-center justify-center">
                       <Check size={12} className="text-white" />
                     </div>
                   )}
@@ -323,7 +323,7 @@ export default function Signup() {
                   <ul className="space-y-2">
                     {p.features.map((f) => (
                       <li key={f} className={`flex items-start gap-2 text-xs ${plan === p.id ? "text-white/80" : "text-gray-500"}`}>
-                        <Check size={12} className={`mt-0.5 shrink-0 ${plan === p.id ? "text-[#CBA258]" : "text-[#00704A]"}`} />
+                        <Check size={12} className={`mt-0.5 shrink-0 ${plan === p.id ? "text-[#C4895A]" : "text-[#00704A]"}`} />
                         {f}
                       </li>
                     ))}
@@ -333,7 +333,7 @@ export default function Signup() {
             </div>
 
             <button onClick={next}
-              className="w-full bg-[#00704A] hover:bg-[#1E3932] text-white py-4 rounded-2xl font-bold text-sm transition flex items-center justify-center gap-2">
+              className="w-full bg-[#00704A] hover:bg-[#0A3326] text-white py-4 rounded-2xl font-bold text-sm transition flex items-center justify-center gap-2">
               Continuar com plano {selectedPlan?.name} <ChevronRight size={16} />
             </button>
           </div>
@@ -341,7 +341,7 @@ export default function Signup() {
 
         {/* ── STEP 2: DADOS PESSOAIS ─────────────────────────────────────────── */}
         {step === 2 && (
-          <div className="bg-white rounded-3xl border border-[#E6E2D8] p-8 shadow-sm">
+          <div className="bg-white rounded-3xl border border-[#EFE7DA] p-8 shadow-sm">
             <h2 className="text-xl font-bold text-[#00704A] mb-1">Dados pessoais e da clínica</h2>
             <p className="text-xs text-gray-400 mb-6">Informações do responsável e da clínica.</p>
 
@@ -354,7 +354,7 @@ export default function Signup() {
                   {[{ value: "pf", label: "Pessoa Física", sub: "CPF" }, { value: "pj", label: "Pessoa Jurídica", sub: "CNPJ" }].map((opt) => (
                     <button key={opt.value} type="button" onClick={() => setPersonType(opt.value)}
                       className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition ${
-                        personType === opt.value ? "border-[#00704A] bg-[#00704A] text-white" : "border-[#DDD8CC] text-gray-600 hover:border-[#00704A]/40"}`}>
+                        personType === opt.value ? "border-[#00704A] bg-[#00704A] text-white" : "border-[#E5D8C5] text-gray-600 hover:border-[#00704A]/40"}`}>
                       {opt.label}
                       <span className={`block text-xs font-normal mt-0.5 ${personType === opt.value ? "text-white/60" : "text-gray-400"}`}>{opt.sub}</span>
                     </button>
@@ -369,7 +369,7 @@ export default function Signup() {
                   {[{ value: "F", label: "Dra.", desc: "Feminino" }, { value: "M", label: "Dr.", desc: "Masculino" }].map((opt) => (
                     <button key={opt.value} type="button" onClick={() => setGender(opt.value)}
                       className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-semibold transition ${
-                        gender === opt.value ? "border-[#00704A] bg-[#00704A] text-white" : "border-[#DDD8CC] text-gray-600 hover:border-[#00704A]/40"}`}>
+                        gender === opt.value ? "border-[#00704A] bg-[#00704A] text-white" : "border-[#E5D8C5] text-gray-600 hover:border-[#00704A]/40"}`}>
                       {gender === opt.value && <Check size={14} />}
                       {opt.label} <span className={`text-xs font-normal ${gender === opt.value ? "text-white/70" : "text-gray-400"}`}>({opt.desc})</span>
                     </button>
@@ -461,11 +461,11 @@ export default function Signup() {
 
             <div className="flex gap-3 mt-8">
               <button onClick={back}
-                className="flex-1 border border-[#DDD8CC] py-3 rounded-xl text-sm hover:bg-[#F2F0EB] transition flex items-center justify-center gap-2">
+                className="flex-1 border border-[#E5D8C5] py-3 rounded-xl text-sm hover:bg-[#FAF7F2] transition flex items-center justify-center gap-2">
                 <ChevronLeft size={16} /> Voltar
               </button>
               <button onClick={next}
-                className="flex-1 bg-[#00704A] hover:bg-[#1E3932] text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
+                className="flex-1 bg-[#00704A] hover:bg-[#0A3326] text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
                 Continuar <ChevronRight size={16} />
               </button>
             </div>
@@ -474,7 +474,7 @@ export default function Signup() {
 
         {/* ── STEP 3: ENDEREÇO ──────────────────────────────────────────────── */}
         {step === 3 && (
-          <div className="bg-white rounded-3xl border border-[#E6E2D8] p-8 shadow-sm">
+          <div className="bg-white rounded-3xl border border-[#EFE7DA] p-8 shadow-sm">
             <h2 className="text-xl font-bold text-[#00704A] mb-1">Endereço</h2>
             <p className="text-xs text-gray-400 mb-6">Endereço da clínica ou responsável.</p>
 
@@ -533,11 +533,11 @@ export default function Signup() {
 
             <div className="flex gap-3 mt-8">
               <button onClick={back}
-                className="flex-1 border border-[#DDD8CC] py-3 rounded-xl text-sm hover:bg-[#F2F0EB] transition flex items-center justify-center gap-2">
+                className="flex-1 border border-[#E5D8C5] py-3 rounded-xl text-sm hover:bg-[#FAF7F2] transition flex items-center justify-center gap-2">
                 <ChevronLeft size={16} /> Voltar
               </button>
               <button onClick={next}
-                className="flex-1 bg-[#00704A] hover:bg-[#1E3932] text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
+                className="flex-1 bg-[#00704A] hover:bg-[#0A3326] text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
                 Continuar <ChevronRight size={16} />
               </button>
             </div>
@@ -546,7 +546,7 @@ export default function Signup() {
 
         {/* ── STEP 4: PAGAMENTO ─────────────────────────────────────────────── */}
         {step === 4 && (
-          <div className="bg-white rounded-3xl border border-[#E6E2D8] p-8 shadow-sm">
+          <div className="bg-white rounded-3xl border border-[#EFE7DA] p-8 shadow-sm">
             <h2 className="text-xl font-bold text-[#00704A] mb-1">Dados de pagamento</h2>
             <p className="text-xs text-gray-400 mb-6">
               Plano <strong>{selectedPlan?.name}</strong> — {selectedPlan?.price}{selectedPlan?.period}.
@@ -594,11 +594,11 @@ export default function Signup() {
 
             <div className="flex gap-3 mt-6">
               <button onClick={back}
-                className="flex-1 border border-[#DDD8CC] py-3 rounded-xl text-sm hover:bg-[#F2F0EB] transition flex items-center justify-center gap-2">
+                className="flex-1 border border-[#E5D8C5] py-3 rounded-xl text-sm hover:bg-[#FAF7F2] transition flex items-center justify-center gap-2">
                 <ChevronLeft size={16} /> Voltar
               </button>
               <button onClick={next}
-                className="flex-1 bg-[#00704A] hover:bg-[#1E3932] text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
+                className="flex-1 bg-[#00704A] hover:bg-[#0A3326] text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
                 Continuar <ChevronRight size={16} />
               </button>
             </div>
@@ -607,7 +607,7 @@ export default function Signup() {
 
         {/* ── STEP 5: ACESSO ────────────────────────────────────────────────── */}
         {step === 5 && (
-          <div className="bg-white rounded-3xl border border-[#E6E2D8] p-8 shadow-sm">
+          <div className="bg-white rounded-3xl border border-[#EFE7DA] p-8 shadow-sm">
             <h2 className="text-xl font-bold text-[#00704A] mb-1">Criar acesso</h2>
             <p className="text-xs text-gray-400 mb-6">Configure seu e-mail e senha para entrar no sistema.</p>
 
@@ -639,9 +639,9 @@ export default function Signup() {
               {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
                 <>
                   <div className="flex items-center gap-3 my-2">
-                    <div className="h-px bg-[#E6E2D8] flex-1" />
+                    <div className="h-px bg-[#EFE7DA] flex-1" />
                     <span className="text-xs text-gray-400">ou cadastre com</span>
-                    <div className="h-px bg-[#E6E2D8] flex-1" />
+                    <div className="h-px bg-[#EFE7DA] flex-1" />
                   </div>
                   <div className="flex justify-center">
                     <div ref={googleRef} />
@@ -651,11 +651,11 @@ export default function Signup() {
 
               <div className="flex gap-3 mt-2">
                 <button type="button" onClick={back}
-                  className="flex-1 border border-[#DDD8CC] py-3 rounded-xl text-sm hover:bg-[#F2F0EB] transition flex items-center justify-center gap-2">
+                  className="flex-1 border border-[#E5D8C5] py-3 rounded-xl text-sm hover:bg-[#FAF7F2] transition flex items-center justify-center gap-2">
                   <ChevronLeft size={16} /> Voltar
                 </button>
                 <button type="submit" disabled={loading}
-                  className="flex-1 bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-60 text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
+                  className="flex-1 bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-60 text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
                   {loading ? "Criando conta…" : <><Check size={15} /> Criar conta</>}
                 </button>
               </div>

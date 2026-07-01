@@ -35,7 +35,7 @@ function fmtDateShort(d) {
   return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-const INPUT = "w-full border border-[#CBA258] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20";
+const INPUT = "w-full border border-[#C4895A] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20";
 
 // ─── tabs ────────────────────────────────────────────────────────────────────
 
@@ -256,14 +256,14 @@ export default function Products() {
         </div>
         <button
           onClick={openCreate}
-          className="bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm transition"
+          className="bg-[#00704A] hover:bg-[#0A3326] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm transition"
         >
           <Plus size={16} /> Novo produto
         </button>
       </div>
 
       {/* TABS */}
-      <div className="flex gap-1 bg-[#F2F0EB] border border-[#DDD8CC] rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-[#FAF7F2] border border-[#E5D8C5] rounded-xl p-1 mb-6 w-fit">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -290,12 +290,12 @@ export default function Products() {
           {/* summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {[
-              { label: "Total",   value: stats.total, color: "text-[#00704A]",   bg: "bg-[#F2F0EB]" },
+              { label: "Total",   value: stats.total, color: "text-[#00704A]",   bg: "bg-[#FAF7F2]" },
               { label: "OK",      value: stats.ok,    color: "text-emerald-600",  bg: "bg-emerald-50" },
               { label: "Baixo",   value: stats.low,   color: "text-amber-600",    bg: "bg-amber-50" },
               { label: "Zerado",  value: stats.zero,  color: "text-red-500",      bg: "bg-red-50" },
             ].map((s) => (
-              <div key={s.label} className={`${s.bg} border border-[#DDD8CC] rounded-2xl p-4`}>
+              <div key={s.label} className={`${s.bg} border border-[#E5D8C5] rounded-2xl p-4`}>
                 <p className="text-xs text-gray-500 mb-1">{s.label}</p>
                 <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
               </div>
@@ -306,10 +306,10 @@ export default function Products() {
             <Spinner />
           ) : products.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <Package size={48} className="text-[#CBA258] mb-4" />
+              <Package size={48} className="text-[#C4895A] mb-4" />
               <h2 className="text-xl font-semibold text-[#00704A] mb-2">Nenhum produto cadastrado</h2>
               <p className="text-gray-500 mb-6">Cadastre produtos e insumos utilizados nos procedimentos.</p>
-              <button onClick={openCreate} className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-3 rounded-xl flex items-center gap-2 transition">
+              <button onClick={openCreate} className="bg-[#00704A] hover:bg-[#0A3326] text-white px-5 py-3 rounded-xl flex items-center gap-2 transition">
                 <Plus size={18} /> Novo produto
               </button>
             </div>
@@ -324,7 +324,7 @@ export default function Products() {
                   : stockVal > 0 ? 100 : 0;
 
                 return (
-                  <div key={product.id} className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5 flex flex-col gap-4">
+                  <div key={product.id} className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-5 flex flex-col gap-4">
                     {/* top */}
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
@@ -350,7 +350,7 @@ export default function Products() {
                     </div>
 
                     {/* bar */}
-                    <div className="h-1.5 bg-[#E6E2D8] rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-[#EFE7DA] rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${styles.bar}`}
                         style={{ width: `${Math.max(barPct, stockVal > 0 ? 4 : 0)}%` }}
@@ -361,7 +361,7 @@ export default function Products() {
                     <div className="flex items-center justify-between pt-1">
                       <button
                         onClick={() => openRequest(product)}
-                        className="flex items-center gap-1.5 text-xs font-medium text-white bg-[#00704A] hover:bg-[#1E3932] px-3 py-2 rounded-lg transition"
+                        className="flex items-center gap-1.5 text-xs font-medium text-white bg-[#00704A] hover:bg-[#0A3326] px-3 py-2 rounded-lg transition"
                       >
                         <Plus size={13} /> Solicitar movimentação
                       </button>
@@ -402,7 +402,7 @@ export default function Products() {
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
                   reqFilter === f.value
                     ? "bg-[#00704A] text-white"
-                    : "bg-[#F2F0EB] border border-[#DDD8CC] text-gray-500 hover:text-[#00704A]"
+                    : "bg-[#FAF7F2] border border-[#E5D8C5] text-gray-500 hover:text-[#00704A]"
                 }`}
               >
                 {f.label}
@@ -422,7 +422,7 @@ export default function Products() {
               {requests.map((req) => (
                 <div
                   key={req.id}
-                  className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4"
+                  className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4"
                 >
                   {/* tipo badge */}
                   <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center ${
@@ -493,7 +493,7 @@ export default function Products() {
               <select
                 value={movProductFilter}
                 onChange={(e) => setMovProductFilter(e.target.value)}
-                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm bg-white min-w-[180px]"
+                className="border border-[#C4895A] rounded-xl px-3 py-2 text-sm bg-white min-w-[180px]"
               >
                 <option value="">Todos os produtos</option>
                 {products.map((p) => (
@@ -507,7 +507,7 @@ export default function Products() {
                 type="date"
                 value={movStart}
                 onChange={(e) => setMovStart(e.target.value)}
-                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm"
+                className="border border-[#C4895A] rounded-xl px-3 py-2 text-sm"
               />
             </div>
             <div>
@@ -516,12 +516,12 @@ export default function Products() {
                 type="date"
                 value={movEnd}
                 onChange={(e) => setMovEnd(e.target.value)}
-                className="border border-[#CBA258] rounded-xl px-3 py-2 text-sm"
+                className="border border-[#C4895A] rounded-xl px-3 py-2 text-sm"
               />
             </div>
             <button
               onClick={loadMovements}
-              className="flex items-center gap-1.5 bg-[#00704A] hover:bg-[#1E3932] text-white text-sm px-4 py-2 rounded-xl transition"
+              className="flex items-center gap-1.5 bg-[#00704A] hover:bg-[#0A3326] text-white text-sm px-4 py-2 rounded-xl transition"
             >
               <Filter size={14} /> Filtrar
             </button>
@@ -543,9 +543,9 @@ export default function Products() {
               <p className="text-sm">Nenhuma movimentação encontrada</p>
             </div>
           ) : (
-            <div className="bg-white border border-[#DDD8CC] rounded-2xl overflow-hidden">
+            <div className="bg-white border border-[#E5D8C5] rounded-2xl overflow-hidden">
               {/* header */}
-              <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-4 px-5 py-3 bg-[#F2F0EB] border-b border-[#DDD8CC] text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-4 px-5 py-3 bg-[#FAF7F2] border-b border-[#E5D8C5] text-xs font-semibold text-gray-400 uppercase tracking-wide">
                 <span>Produto / Motivo</span>
                 <span>Tipo</span>
                 <span>Quantidade</span>
@@ -553,7 +553,7 @@ export default function Products() {
               </div>
 
               {/* rows */}
-              <div className="divide-y divide-[#F2F0EB]">
+              <div className="divide-y divide-[#FAF7F2]">
                 {movements.map((mov, i) => (
                   <div
                     key={mov.id}
@@ -591,7 +591,7 @@ export default function Products() {
               </div>
 
               {/* footer */}
-              <div className="px-5 py-3 bg-[#F2F0EB] border-t border-[#DDD8CC] text-xs text-gray-400">
+              <div className="px-5 py-3 bg-[#FAF7F2] border-t border-[#E5D8C5] text-xs text-gray-400">
                 {movements.length} movimentaç{movements.length !== 1 ? "ões" : "ão"}
               </div>
             </div>
@@ -616,7 +616,7 @@ export default function Products() {
 
             <form onSubmit={handleRequest} className="space-y-4">
               {/* tipo toggle */}
-              <div className="flex rounded-xl border border-[#CBA258] overflow-hidden">
+              <div className="flex rounded-xl border border-[#C4895A] overflow-hidden">
                 {[
                   { value: "entrada", label: "Entrada", icon: ArrowDownCircle, active: "bg-emerald-500" },
                   { value: "saida",   label: "Saída",   icon: ArrowUpCircle,   active: "bg-red-500" },
@@ -626,7 +626,7 @@ export default function Products() {
                     type="button"
                     onClick={() => setReqType(value)}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition ${
-                      reqType === value ? `${active} text-white` : "bg-white text-gray-500 hover:bg-[#F2F0EB]"
+                      reqType === value ? `${active} text-white` : "bg-white text-gray-500 hover:bg-[#FAF7F2]"
                     }`}
                   >
                     <Icon size={16} /> {label}
@@ -667,14 +667,14 @@ export default function Products() {
                 <button
                   type="button"
                   onClick={() => setShowRequestModal(false)}
-                  className="flex-1 border border-[#CBA258] text-[#00704A] py-2.5 rounded-xl text-sm hover:bg-[#E6E2D8] transition"
+                  className="flex-1 border border-[#C4895A] text-[#00704A] py-2.5 rounded-xl text-sm hover:bg-[#EFE7DA] transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={savingReq}
-                  className="flex-1 bg-[#00704A] hover:bg-[#1E3932] text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
+                  className="flex-1 bg-[#00704A] hover:bg-[#0A3326] text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
                 >
                   {savingReq ? "Enviando..." : "Enviar solicitação"}
                 </button>
@@ -750,13 +750,13 @@ export default function Products() {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="border border-[#CBA258] px-4 py-2.5 rounded-xl text-sm"
+                  className="border border-[#C4895A] px-4 py-2.5 rounded-xl text-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={saveProduct}
-                  className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition"
+                  className="bg-[#00704A] hover:bg-[#0A3326] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition"
                 >
                   {editingProduct ? "Salvar" : "Criar produto"}
                 </button>
@@ -777,7 +777,7 @@ export default function Products() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => { setShowDeleteModal(false); setProductToDelete(null); }}
-                className="border border-[#CBA258] px-4 py-2 rounded-xl text-sm"
+                className="border border-[#C4895A] px-4 py-2 rounded-xl text-sm"
               >
                 Cancelar
               </button>

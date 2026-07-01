@@ -30,12 +30,12 @@ function StepIndicator({ current }) {
           <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all ${
             i < idx ? "bg-[#00704A] text-white" :
             i === idx ? "bg-[#00704A] text-white ring-4 ring-[#00704A]/20" :
-            "bg-[#E6E2D8] text-gray-400"
+            "bg-[#EFE7DA] text-gray-400"
           }`}>
             {i < idx ? <CheckCircle size={14} /> : i + 1}
           </div>
           {i < STEPS.length - 1 && (
-            <div className={`h-0.5 w-8 transition-all ${i < idx ? "bg-[#00704A]" : "bg-[#E6E2D8]"}`} />
+            <div className={`h-0.5 w-8 transition-all ${i < idx ? "bg-[#00704A]" : "bg-[#EFE7DA]"}`} />
           )}
         </div>
       ))}
@@ -295,7 +295,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                       value={value}
                       onChange={(e) => onChange(e.target.value)}
                       placeholder={placeholder}
-                      className="w-full border border-[#CBA258] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+                      className="w-full border border-[#C4895A] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
                     />
                   </div>
                 ))}
@@ -303,7 +303,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
               <button
                 onClick={() => setStep("preview")}
                 disabled={!canGoToPreview}
-                className="w-full bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-40 text-white py-3 rounded-xl text-sm font-semibold transition mt-2"
+                className="w-full bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-40 text-white py-3 rounded-xl text-sm font-semibold transition mt-2"
               >
                 Prosseguir para leitura do documento →
               </button>
@@ -317,16 +317,16 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                 <h3 className="text-base font-bold text-[#00704A] mb-1">Leia o Documento</h3>
                 <p className="text-xs text-gray-400">Role até o fim antes de prosseguir.</p>
               </div>
-              <div className="border border-[#DDD8CC] rounded-2xl overflow-hidden h-105">
+              <div className="border border-[#E5D8C5] rounded-2xl overflow-hidden h-105">
                 <PdfViewer docId={patientDoc.document.id} />
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setStep("signer")}
-                  className="flex-1 border border-[#CBA258] py-2.5 rounded-xl text-sm hover:bg-[#E6E2D8] transition">
+                  className="flex-1 border border-[#C4895A] py-2.5 rounded-xl text-sm hover:bg-[#EFE7DA] transition">
                   ← Voltar
                 </button>
                 <button onClick={() => setStep("accept")}
-                  className="flex-1 bg-[#00704A] hover:bg-[#1E3932] text-white py-2.5 rounded-xl text-sm font-semibold transition">
+                  className="flex-1 bg-[#00704A] hover:bg-[#0A3326] text-white py-2.5 rounded-xl text-sm font-semibold transition">
                   Li o documento →
                 </button>
               </div>
@@ -342,7 +342,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
               </div>
 
               <label className="flex items-start gap-3 cursor-pointer p-4 rounded-2xl border-2 transition"
-                style={{ borderColor: accepted ? "#00704A" : "#DDD8CC", backgroundColor: accepted ? "#F0F7F5" : "#FAFAF8" }}>
+                style={{ borderColor: accepted ? "#00704A" : "#E5D8C5", backgroundColor: accepted ? "#F0F7F5" : "#FAFAF8" }}>
                 <input
                   type="checkbox"
                   checked={accepted}
@@ -358,17 +358,17 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
               </label>
 
               {/* Geolocalização */}
-              <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-4">
+              <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-4">
                 <p className="text-xs font-semibold text-[#00704A] mb-2">Geolocalização (opcional)</p>
                 <p className="text-xs text-gray-500 mb-3">Registrar sua localização aumenta a validade jurídica do documento. Você pode recusar.</p>
                 {geoStatus === "idle" && (
                   <div className="flex gap-2">
                     <button onClick={() => { setGeoConsent(true); requestGeo(); }}
-                      className="flex-1 bg-[#00704A] text-white text-xs py-2 rounded-lg transition hover:bg-[#1E3932]">
+                      className="flex-1 bg-[#00704A] text-white text-xs py-2 rounded-lg transition hover:bg-[#0A3326]">
                       Permitir localização
                     </button>
                     <button onClick={() => { setGeoConsent(false); setGeoStatus("denied"); }}
-                      className="flex-1 border border-[#CBA258] text-xs py-2 rounded-lg transition hover:bg-[#E6E2D8]">
+                      className="flex-1 border border-[#C4895A] text-xs py-2 rounded-lg transition hover:bg-[#EFE7DA]">
                       Recusar
                     </button>
                   </div>
@@ -380,13 +380,13 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
 
               <div className="flex gap-3">
                 <button onClick={() => setStep("preview")}
-                  className="flex-1 border border-[#CBA258] py-2.5 rounded-xl text-sm hover:bg-[#E6E2D8] transition">
+                  className="flex-1 border border-[#C4895A] py-2.5 rounded-xl text-sm hover:bg-[#EFE7DA] transition">
                   ← Voltar
                 </button>
                 <button
                   onClick={() => setStep("otp-send")}
                   disabled={!accepted || geoStatus === "requesting"}
-                  className="flex-1 bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold transition"
+                  className="flex-1 bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold transition"
                 >
                   Prosseguir para validação →
                 </button>
@@ -418,11 +418,11 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                       otpMethod === method && available
                         ? "border-[#00704A] bg-[#F0F7F5]"
                         : available
-                        ? "border-[#DDD8CC] hover:border-[#00704A]/40"
-                        : "border-[#DDD8CC] opacity-40 cursor-not-allowed"
+                        ? "border-[#E5D8C5] hover:border-[#00704A]/40"
+                        : "border-[#E5D8C5] opacity-40 cursor-not-allowed"
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-[#E6E2D8] flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-[#EFE7DA] flex items-center justify-center shrink-0">
                       <Icon size={16} className="text-[#00704A]" />
                     </div>
                     <div className="flex-1">
@@ -436,13 +436,13 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
 
               <div className="flex gap-3">
                 <button onClick={() => setStep("accept")}
-                  className="flex-1 border border-[#CBA258] py-2.5 rounded-xl text-sm hover:bg-[#E6E2D8] transition">
+                  className="flex-1 border border-[#C4895A] py-2.5 rounded-xl text-sm hover:bg-[#EFE7DA] transition">
                   ← Voltar
                 </button>
                 <button
                   onClick={handleSendOtp}
                   disabled={otpSending}
-                  className="flex-1 bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2"
+                  className="flex-1 bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2"
                 >
                   {otpSending ? <><Loader2 size={14} className="animate-spin" /> Enviando…</> : "Enviar código →"}
                 </button>
@@ -480,7 +480,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   placeholder="000000"
-                  className="text-4xl font-bold tracking-[12px] text-center border-2 border-[#CBA258] rounded-2xl px-6 py-4 w-56 focus:outline-none focus:border-[#00704A]"
+                  className="text-4xl font-bold tracking-[12px] text-center border-2 border-[#C4895A] rounded-2xl px-6 py-4 w-56 focus:outline-none focus:border-[#00704A]"
                   autoFocus
                 />
               </div>
@@ -500,13 +500,13 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
 
               <div className="flex gap-3">
                 <button onClick={() => setStep("otp-send")}
-                  className="flex-1 border border-[#CBA258] py-2.5 rounded-xl text-sm hover:bg-[#E6E2D8] transition">
+                  className="flex-1 border border-[#C4895A] py-2.5 rounded-xl text-sm hover:bg-[#EFE7DA] transition">
                   ← Voltar
                 </button>
                 <button
                   onClick={handleValidateOtp}
                   disabled={otpCode.length !== 6 || otpValidating}
-                  className="flex-1 bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2"
+                  className="flex-1 bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2"
                 >
                   {otpValidating ? <><Loader2 size={14} className="animate-spin" /> Validando…</> : "Validar código →"}
                 </button>
@@ -532,7 +532,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                   </button>
                 </div>
                 <div className="border-2 rounded-2xl overflow-hidden bg-gray-50"
-                  style={{ borderColor: patSigEmpty ? "#DDD8CC" : "#00704A" }}>
+                  style={{ borderColor: patSigEmpty ? "#E5D8C5" : "#00704A" }}>
                   <SignatureCanvas
                     ref={patSigRef}
                     penColor="#00704A"
@@ -558,7 +558,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                     </button>
                   </div>
                   <div className="border-2 rounded-2xl overflow-hidden bg-gray-50"
-                    style={{ borderColor: proSigEmpty ? "#DDD8CC" : "#6F7F73" }}>
+                    style={{ borderColor: proSigEmpty ? "#E5D8C5" : "#6F7F73" }}>
                     <SignatureCanvas
                       ref={proSigRef}
                       penColor="#6F7F73"
@@ -576,12 +576,12 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
 
               <div className="flex gap-3">
                 <button onClick={() => setStep("otp-code")}
-                  className="flex-1 border border-[#CBA258] py-2.5 rounded-xl text-sm hover:bg-[#E6E2D8] transition">
+                  className="flex-1 border border-[#C4895A] py-2.5 rounded-xl text-sm hover:bg-[#EFE7DA] transition">
                   ← Voltar
                 </button>
                 <button
                   disabled={patSigEmpty || (needsProSig && proSigEmpty)}
-                  className="flex-1 bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold transition"
+                  className="flex-1 bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold transition"
                   onClick={() => {
                     setPatSigDataUrl(patSigRef.current?.toDataURL());
                     if (needsProSig) setProSigDataUrl(proSigRef.current?.toDataURL());
@@ -602,7 +602,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                 <p className="text-xs text-gray-400">Identidade verificada. Clique para assinar e gerar o PDF com certificado de evidências.</p>
               </div>
 
-              <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-4 space-y-2 text-sm">
+              <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-gray-500 text-xs">Documento</span><span className="font-medium text-[#00704A] text-xs">{patientDoc.document.name}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500 text-xs">Assinante</span><span className="font-medium text-[#00704A] text-xs">{signerName}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500 text-xs">CPF</span><span className="font-medium text-[#00704A] text-xs">{signerCpf}</span></div>
@@ -617,7 +617,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
               <button
                 onClick={handleSign}
                 disabled={saving}
-                className="w-full bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-50 text-white py-3.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2"
+                className="w-full bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-50 text-white py-3.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2"
               >
                 {saving
                   ? <><Loader2 size={16} className="animate-spin" /> Gerando PDF e certificado…</>
@@ -639,17 +639,17 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                   O PDF com o certificado de evidências foi gerado e armazenado com segurança.
                 </p>
               </div>
-              <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-4 w-full text-left space-y-1.5">
+              <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-4 w-full text-left space-y-1.5">
                 <p className="text-xs text-gray-500">Hash SHA-256: <span className="font-mono text-[10px] text-[#00704A] break-all">{signedDoc.signedHash}</span></p>
                 <p className="text-xs text-gray-500">Assinado em: <span className="font-medium text-[#00704A]">{new Date(signedDoc.signedAt).toLocaleString("pt-BR")}</span></p>
               </div>
               <div className="flex gap-3 w-full">
                 <button onClick={downloadSigned}
-                  className="flex-1 flex items-center justify-center gap-2 bg-[#00704A] hover:bg-[#1E3932] text-white py-3 rounded-xl text-sm font-semibold transition">
+                  className="flex-1 flex items-center justify-center gap-2 bg-[#00704A] hover:bg-[#0A3326] text-white py-3 rounded-xl text-sm font-semibold transition">
                   <Download size={15} /> Baixar PDF Assinado
                 </button>
                 <button onClick={onClose}
-                  className="flex-1 border border-[#CBA258] py-3 rounded-xl text-sm hover:bg-[#E6E2D8] transition">
+                  className="flex-1 border border-[#C4895A] py-3 rounded-xl text-sm hover:bg-[#EFE7DA] transition">
                   Fechar
                 </button>
               </div>

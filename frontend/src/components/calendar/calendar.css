@@ -1,14 +1,14 @@
 /* ── FullCalendar — tema Iasoclin ── */
 .fc {
-  --fc-border-color: #DDD8CC;
+  --fc-border-color: #E5D8C5;
   --fc-button-bg-color: #00704A;
   --fc-button-border-color: #00704A;
-  --fc-button-hover-bg-color: #1E3932;
-  --fc-button-hover-border-color: #1E3932;
+  --fc-button-hover-bg-color: #0A3326;
+  --fc-button-hover-border-color: #0A3326;
   --fc-button-active-bg-color: #253D2F;
   --fc-button-active-border-color: #253D2F;
   --fc-today-bg-color: rgba(49, 77, 62, 0.055);
-  --fc-neutral-bg-color: #F2F0EB;
+  --fc-neutral-bg-color: #FAF7F2;
   --fc-page-bg-color: transparent;
   --fc-highlight-color: rgba(49, 77, 62, 0.10);
   --fc-now-indicator-color: #00704A;
@@ -58,7 +58,7 @@
 /* Day column headers */
 .fc .fc-col-header-cell {
   background-color: #F0EAE0;
-  border-color: #DDD8CC !important;
+  border-color: #E5D8C5 !important;
   padding: 0 !important;
 }
 
@@ -132,18 +132,18 @@
 /* Scrollbar */
 .fc-scroller::-webkit-scrollbar { width: 4px; }
 .fc-scroller::-webkit-scrollbar-track { background: transparent; }
-.fc-scroller::-webkit-scrollbar-thumb { background: #CBA258; border-radius: 2px; }
+.fc-scroller::-webkit-scrollbar-thumb { background: #C4895A; border-radius: 2px; }
 
 /* Remove all-day row border noise */
 .fc .fc-scrollgrid {
-  border-color: #DDD8CC !important;
+  border-color: #E5D8C5 !important;
   border-radius: 12px;
   overflow: hidden;
 }
 
 .fc .fc-scrollgrid td,
 .fc .fc-scrollgrid th {
-  border-color: #DDD8CC !important;
+  border-color: #E5D8C5 !important;
 }
 
 /* Month view day cells */

@@ -183,7 +183,7 @@ export default function Procedures() {
         </div>
         <button
           onClick={() => { resetForm(); setShowModal(true); }}
-          className="bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-3 rounded-xl flex items-center gap-2 transition"
+          className="bg-[#00704A] hover:bg-[#0A3326] text-white px-4 py-3 rounded-xl flex items-center gap-2 transition"
         >
           <Plus size={18} />
           Novo procedimento
@@ -195,12 +195,12 @@ export default function Procedures() {
         <Spinner />
       ) : procedures.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Stethoscope size={48} className="text-[#CBA258] mb-4" />
+          <Stethoscope size={48} className="text-[#C4895A] mb-4" />
           <h2 className="text-xl font-semibold text-[#00704A] mb-2">Nenhum procedimento cadastrado</h2>
           <p className="text-gray-500 mb-6">Cadastre os procedimentos realizados na clínica.</p>
           <button
             onClick={() => { resetForm(); setShowModal(true); }}
-            className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-3 rounded-xl flex items-center gap-2 transition"
+            className="bg-[#00704A] hover:bg-[#0A3326] text-white px-5 py-3 rounded-xl flex items-center gap-2 transition"
           >
             <Plus size={18} />
             Novo procedimento
@@ -209,7 +209,7 @@ export default function Procedures() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {procedures.map((procedure) => (
-            <div key={procedure.id} className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-5">
+            <div key={procedure.id} className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-5">
               {/* TOP */}
               <div className="flex items-start justify-between">
                 <div>
@@ -217,7 +217,7 @@ export default function Procedures() {
                   <p className="text-sm text-gray-500 mt-1">{procedure.category}</p>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => handleEdit(procedure)} className="text-[#00704A] hover:text-[#1E3932]">
+                  <button onClick={() => handleEdit(procedure)} className="text-[#00704A] hover:text-[#0A3326]">
                     <Pencil size={16} />
                   </button>
                   <button onClick={() => handleDuplicate(procedure)} className="text-gray-400 hover:text-[#00704A]">
@@ -259,7 +259,7 @@ export default function Procedures() {
                     <p className="text-sm text-gray-400">Nenhum produto vinculado</p>
                   )}
                   {procedure.products?.map((item) => (
-                    <div key={item.id} className="bg-white border border-[#DDD8CC] rounded-lg p-3 text-sm">
+                    <div key={item.id} className="bg-white border border-[#E5D8C5] rounded-lg p-3 text-sm">
                       <div className="flex justify-between">
                         <span>{item.product?.name || item.customName || "Produto"}</span>
                         <span className="text-gray-500">{item.quantity}</span>
@@ -294,20 +294,20 @@ export default function Procedures() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Nome do procedimento"
-                className="w-full border border-[#CBA258] rounded-xl p-3"
+                className="w-full border border-[#C4895A] rounded-xl p-3"
               />
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descrição do procedimento (será usada como template na evolução do paciente)"
                 rows={4}
-                className="w-full border border-[#CBA258] rounded-xl p-3"
+                className="w-full border border-[#C4895A] rounded-xl p-3"
               />
               <div className="grid grid-cols-2 gap-4">
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="border border-[#CBA258] rounded-xl p-3"
+                  className="border border-[#C4895A] rounded-xl p-3"
                 >
                   <option>Facial</option>
                   <option>Corporal</option>
@@ -321,7 +321,7 @@ export default function Procedures() {
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                   placeholder="Duração (min)"
-                  className="border border-[#CBA258] rounded-xl p-3"
+                  className="border border-[#C4895A] rounded-xl p-3"
                 />
               </div>
 
@@ -329,7 +329,7 @@ export default function Procedures() {
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="Preço"
-                className="w-full border border-[#CBA258] rounded-xl p-3"
+                className="w-full border border-[#C4895A] rounded-xl p-3"
               />
 
               <div className="space-y-4">
@@ -356,7 +356,7 @@ export default function Procedures() {
                   value={returnDays}
                   onChange={(e) => setReturnDays(e.target.value)}
                   placeholder="Dias para retorno"
-                  className="w-full border border-[#CBA258] rounded-xl p-3"
+                  className="w-full border border-[#C4895A] rounded-xl p-3"
                 />
               )}
 
@@ -380,7 +380,7 @@ export default function Procedures() {
                         <select
                           value={item.productId}
                           onChange={(e) => updateProduct(index, "productId", e.target.value)}
-                          className="w-full border border-[#CBA258] rounded-xl p-3"
+                          className="w-full border border-[#C4895A] rounded-xl p-3"
                         >
                           <option value="">Produto do estoque</option>
                           {products.map((product) => (
@@ -393,14 +393,14 @@ export default function Procedures() {
                           value={item.customName}
                           onChange={(e) => updateProduct(index, "customName", e.target.value)}
                           placeholder="Ou produto genérico"
-                          className="w-full border border-[#CBA258] rounded-xl p-3"
+                          className="w-full border border-[#C4895A] rounded-xl p-3"
                         />
                       </div>
                       <input
                         value={item.quantity}
                         onChange={(e) => updateProduct(index, "quantity", e.target.value)}
                         placeholder="Qtd"
-                        className="col-span-2 border border-[#CBA258] rounded-xl p-3"
+                        className="col-span-2 border border-[#C4895A] rounded-xl p-3"
                       />
                       <label className="col-span-2 flex items-center gap-2 text-sm">
                         <input
@@ -425,13 +425,13 @@ export default function Procedures() {
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="border border-[#CBA258] px-4 py-2 rounded-xl"
+                  className="border border-[#C4895A] px-4 py-2 rounded-xl"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={saveProcedure}
-                  className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-2 rounded-xl"
+                  className="bg-[#00704A] hover:bg-[#0A3326] text-white px-5 py-2 rounded-xl"
                 >
                   {editingProcedure ? "Salvar alterações" : "Criar procedimento"}
                 </button>
@@ -456,7 +456,7 @@ export default function Procedures() {
             <div className="flex justify-end gap-3 mt-8">
               <button
                 onClick={() => { setShowDeleteModal(false); setProcedureToDelete(null); }}
-                className="border border-[#CBA258] px-4 py-2 rounded-xl"
+                className="border border-[#C4895A] px-4 py-2 rounded-xl"
               >
                 Cancelar
               </button>

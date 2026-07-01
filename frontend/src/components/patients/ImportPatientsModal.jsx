@@ -207,7 +207,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#E6E2D8] rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#EFE7DA] rounded-lg flex items-center justify-center">
               <FileSpreadsheet size={15} className="text-[#00704A]" />
             </div>
             <h2 className="text-base font-bold text-[#00704A]">Importar Pacientes</h2>
@@ -247,7 +247,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                 className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition ${
                   rawRows.length ? "cursor-default border-[#00704A]/30 bg-[#F0F7F5]"
                   : dragOver ? "cursor-pointer border-[#00704A] bg-[#F0F7F5]"
-                  : "cursor-pointer border-[#DDD8CC] hover:border-[#00704A] hover:bg-[#F2F0EB]"
+                  : "cursor-pointer border-[#E5D8C5] hover:border-[#00704A] hover:bg-[#FAF7F2]"
                 }`}
               >
                 <input
@@ -272,7 +272,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                   </>
                 ) : (
                   <>
-                    <div className="w-12 h-12 bg-[#E6E2D8] rounded-2xl flex items-center justify-center mb-3">
+                    <div className="w-12 h-12 bg-[#EFE7DA] rounded-2xl flex items-center justify-center mb-3">
                       <Upload size={20} className="text-[#00704A]" />
                     </div>
                     <p className="text-sm font-semibold text-[#00704A] mb-1">Arraste ou clique para selecionar</p>
@@ -290,10 +290,10 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
 
               {/* Mapping panel */}
               {rawRows.length > 0 && (
-                <div className="border border-[#DDD8CC] rounded-xl overflow-hidden">
+                <div className="border border-[#E5D8C5] rounded-xl overflow-hidden">
                   <button
                     onClick={() => setShowMapping((v) => !v)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-[#F2F0EB] hover:bg-[#E6E2D8] transition text-left"
+                    className="w-full flex items-center justify-between px-4 py-3 bg-[#FAF7F2] hover:bg-[#EFE7DA] transition text-left"
                   >
                     <span className="text-sm font-semibold text-[#00704A]">Mapeamento de colunas</span>
                     <ChevronDown size={14} className={`text-gray-400 transition-transform ${showMapping ? "rotate-180" : ""}`} />
@@ -306,7 +306,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                           <select
                             value={mapping[field] || "__none__"}
                             onChange={(e) => setMapping((m) => ({ ...m, [field]: e.target.value }))}
-                            className="border border-[#DDD8CC] rounded-lg px-2.5 py-1.5 text-xs text-[#00704A] bg-white focus:outline-none"
+                            className="border border-[#E5D8C5] rounded-lg px-2.5 py-1.5 text-xs text-[#00704A] bg-white focus:outline-none"
                           >
                             <option value="__none__">— Ignorar —</option>
                             {headers.map((h) => <option key={h} value={h}>{h}</option>)}
@@ -469,7 +469,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
             {step === "done" ? (
               <button
                 onClick={() => { onSuccess?.(); onClose(); }}
-                className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-2 rounded-xl text-sm font-medium transition"
+                className="bg-[#00704A] hover:bg-[#0A3326] text-white px-5 py-2 rounded-xl text-sm font-medium transition"
               >
                 Concluir
               </button>
@@ -481,7 +481,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                 <button
                   onClick={doImport}
                   disabled={selected.size === 0}
-                  className="bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-40 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
+                  className="bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-40 text-white px-5 py-2 rounded-xl text-sm font-medium transition"
                 >
                   Importar {selected.size > 0 ? `${selected.size} paciente${selected.size !== 1 ? "s" : ""}` : ""}
                 </button>
@@ -494,7 +494,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
                 {rawRows.length > 0 && step !== "checking" && (
                   <button
                     onClick={runCheck}
-                    className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2"
+                    className="bg-[#00704A] hover:bg-[#0A3326] text-white px-5 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2"
                   >
                     <Users size={14} />
                     Verificar {parsedPatients.length} registro{parsedPatients.length !== 1 ? "s" : ""}

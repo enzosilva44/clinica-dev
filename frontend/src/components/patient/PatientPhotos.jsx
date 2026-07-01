@@ -75,7 +75,7 @@ export default function PatientPhotos({ patientId }) {
   const groups = groupByDate(photos);
 
   return (
-    <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl overflow-hidden">
+    <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl overflow-hidden">
 
       {/* Upload zone */}
       <div
@@ -85,8 +85,8 @@ export default function PatientPhotos({ patientId }) {
         onClick={() => fileRef.current?.click()}
         className={`border-2 border-dashed rounded-xl mx-5 mt-5 p-8 text-center cursor-pointer transition-all ${
           dragging
-            ? "border-[#00704A] bg-[#E6E2D8]"
-            : "border-[#CBA258] hover:border-[#00704A]/40 hover:bg-white"
+            ? "border-[#00704A] bg-[#EFE7DA]"
+            : "border-[#C4895A] hover:border-[#00704A]/40 hover:bg-white"
         }`}
       >
         <input
@@ -104,7 +104,7 @@ export default function PatientPhotos({ patientId }) {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-[#E6E2D8] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-[#EFE7DA] flex items-center justify-center">
               <Upload size={18} className="text-[#00704A]" />
             </div>
             <p className="text-sm font-medium text-[#00704A]">
@@ -119,12 +119,12 @@ export default function PatientPhotos({ patientId }) {
       <div className="p-5">
         {loading ? (
           <div className="space-y-3">
-            {[1, 2].map((i) => <div key={i} className="h-32 bg-[#E6E2D8] rounded-xl animate-pulse" />)}
+            {[1, 2].map((i) => <div key={i} className="h-32 bg-[#EFE7DA] rounded-xl animate-pulse" />)}
           </div>
         ) : photos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-[#E6E2D8] flex items-center justify-center">
-              <ImageOff size={22} className="text-[#CBA258]" />
+            <div className="w-14 h-14 rounded-2xl bg-[#EFE7DA] flex items-center justify-center">
+              <ImageOff size={22} className="text-[#C4895A]" />
             </div>
             <p className="text-sm text-gray-400">Nenhuma foto ainda. Faça o upload acima.</p>
           </div>
@@ -137,7 +137,7 @@ export default function PatientPhotos({ patientId }) {
                   <span className="text-xs font-bold text-[#00704A] uppercase tracking-wide whitespace-nowrap">
                     {date}
                   </span>
-                  <div className="flex-1 h-px bg-[#DDD8CC]" />
+                  <div className="flex-1 h-px bg-[#E5D8C5]" />
                   <span className="text-xs text-gray-400 shrink-0">
                     {items.length} foto{items.length > 1 ? "s" : ""}
                   </span>
@@ -146,7 +146,7 @@ export default function PatientPhotos({ patientId }) {
                 {/* Photos grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {items.map((photo) => (
-                    <div key={photo.id} className="group relative aspect-square rounded-xl overflow-hidden bg-[#E6E2D8]">
+                    <div key={photo.id} className="group relative aspect-square rounded-xl overflow-hidden bg-[#EFE7DA]">
                       <img
                         src={photoUrl(photo.id)}
                         alt={photo.fileName}

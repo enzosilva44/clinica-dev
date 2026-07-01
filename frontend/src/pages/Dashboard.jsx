@@ -34,7 +34,7 @@ function getDailyQuote() {
 const PROFESSIONAL_COLORS = {
   "Dra Ana":    "#00704A",
   "Dra Julia":  "#6F7F73",
-  "Dra Camila": "#CBA258",
+  "Dra Camila": "#C4895A",
 };
 
 function getGreeting() {
@@ -116,10 +116,10 @@ export default function Dashboard() {
           <button
             key={to}
             onClick={() => navigate(to)}
-            className="group bg-[#F2F0EB] border border-[#DDD8CC] hover:border-[#00704A]/30 hover:bg-white rounded-2xl p-4 flex items-center justify-between transition-all shadow-sm text-left"
+            className="group bg-[#FAF7F2] border border-[#E5D8C5] hover:border-[#00704A]/30 hover:bg-white rounded-2xl p-4 flex items-center justify-between transition-all shadow-sm text-left"
           >
             <div>
-              <div className="w-9 h-9 bg-[#E6E2D8] group-hover:bg-[#00704A] rounded-xl flex items-center justify-center mb-3 transition-colors">
+              <div className="w-9 h-9 bg-[#EFE7DA] group-hover:bg-[#00704A] rounded-xl flex items-center justify-center mb-3 transition-colors">
                 <Icon size={17} className="text-[#00704A] group-hover:text-white transition-colors" />
               </div>
               <p className="font-semibold text-sm text-[#00704A]">{label}</p>
@@ -131,10 +131,10 @@ export default function Dashboard() {
       </div>
 
       {/* ANIVERSARIANTES DO MÊS */}
-      <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6 mb-6">
+      <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6 mb-6">
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 bg-[#E6E2D8] rounded-lg flex items-center justify-center">
-              <Cake size={15} className="text-[#CBA258]" />
+            <div className="w-8 h-8 bg-[#EFE7DA] rounded-lg flex items-center justify-center">
+              <Cake size={15} className="text-[#C4895A]" />
             </div>
             <div>
               <h2 className="text-base font-bold text-[#00704A] leading-none">Aniversariantes</h2>
@@ -145,7 +145,7 @@ export default function Dashboard() {
           {loading ? (
             <div className="flex gap-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 w-28 bg-[#E6E2D8] rounded-xl animate-pulse shrink-0" />
+                <div key={i} className="h-16 w-28 bg-[#EFE7DA] rounded-xl animate-pulse shrink-0" />
               ))}
             </div>
           ) : (
@@ -156,12 +156,12 @@ export default function Dashboard() {
                   onClick={() => navigate(`/patients/${p.id}`)}
                   className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border transition text-left ${
                     p.isToday
-                      ? "bg-[#CBA258] border-[#CBA258] shadow-sm"
-                      : "bg-white border-[#DDD8CC] hover:border-[#CBA258]/40 hover:bg-[#FDF6EE]"
+                      ? "bg-[#C4895A] border-[#C4895A] shadow-sm"
+                      : "bg-white border-[#E5D8C5] hover:border-[#C4895A]/40 hover:bg-[#FBF1E9]"
                   }`}
                 >
                   <div className={`leading-none ${p.isToday ? "animate-bounce" : ""}`}>
-                    <Cake size={18} className={p.isToday ? "text-white" : "text-[#CBA258]"} />
+                    <Cake size={18} className={p.isToday ? "text-white" : "text-[#C4895A]"} />
                   </div>
                   <div>
                     <p className={`text-xs font-semibold leading-tight truncate max-w-27.5 ${p.isToday ? "text-white" : "text-[#00704A]"}`}>
@@ -184,7 +184,7 @@ export default function Dashboard() {
         </div>
 
       {/* AGENDA DE HOJE */}
-      <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl p-6">
+      <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-[#00704A] rounded-lg flex items-center justify-center">
@@ -210,19 +210,19 @@ export default function Dashboard() {
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-[#E6E2D8] rounded-xl animate-pulse" />
+              <div key={i} className="h-16 bg-[#EFE7DA] rounded-xl animate-pulse" />
             ))}
           </div>
         ) : !hasSchedule ? (
           <div className="text-center py-10">
-            <div className="w-12 h-12 bg-[#E6E2D8] rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <Calendar size={22} className="text-[#CBA258]" />
+            <div className="w-12 h-12 bg-[#EFE7DA] rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Calendar size={22} className="text-[#C4895A]" />
             </div>
             <p className="text-gray-500 text-sm font-medium">Nenhuma consulta hoje</p>
             <p className="text-gray-400 text-xs mt-1">Aproveite para organizar a semana</p>
             <button
               onClick={() => navigate("/agenda")}
-              className="mt-4 bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2 rounded-xl text-xs font-medium transition"
+              className="mt-4 bg-[#00704A] hover:bg-[#0A3326] text-white px-4 py-2 rounded-xl text-xs font-medium transition"
             >
               Abrir agenda
             </button>
@@ -248,7 +248,7 @@ export default function Dashboard() {
                 <div
                   key={appt.id}
                   className={`flex items-center gap-4 bg-white border rounded-xl px-4 py-3.5 transition ${
-                    isPast ? "opacity-45" : "border-[#DDD8CC]"
+                    isPast ? "opacity-45" : "border-[#E5D8C5]"
                   } ${isNow ? "border-l-4 shadow-sm" : ""}`}
                   style={isNow ? { borderLeftColor: color } : {}}
                 >
@@ -267,7 +267,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Divider */}
-                  <div className="w-px h-8 bg-[#DDD8CC] shrink-0" />
+                  <div className="w-px h-8 bg-[#E5D8C5] shrink-0" />
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">

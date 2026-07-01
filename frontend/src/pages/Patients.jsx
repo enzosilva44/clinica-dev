@@ -92,7 +92,7 @@ export default function Patients() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowImport(true)}
-            className="flex items-center gap-2 border border-[#DDD8CC] hover:bg-[#E6E2D8] text-[#00704A] px-4 py-2.5 rounded-xl transition text-sm font-medium"
+            className="flex items-center gap-2 border border-[#E5D8C5] hover:bg-[#EFE7DA] text-[#00704A] px-4 py-2.5 rounded-xl transition text-sm font-medium"
           >
             <Upload size={15} />
             Importar
@@ -100,14 +100,14 @@ export default function Patients() {
           <button
             onClick={loadReturnSuggestions}
             disabled={loadingSuggestions}
-            className="flex items-center gap-2 border border-[#CBA258] hover:bg-[#E6E2D8] disabled:opacity-50 text-[#00704A] px-4 py-2.5 rounded-xl transition text-sm font-medium"
+            className="flex items-center gap-2 border border-[#C4895A] hover:bg-[#EFE7DA] disabled:opacity-50 text-[#00704A] px-4 py-2.5 rounded-xl transition text-sm font-medium"
           >
             <Sparkles size={15} className={loadingSuggestions ? "animate-pulse" : ""} />
             {loadingSuggestions ? "Analisando…" : "Sugestões de retorno"}
           </button>
           <button
             onClick={() => navigate("/patients/create")}
-            className="bg-[#00704A] hover:bg-[#1E3932] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
+            className="bg-[#00704A] hover:bg-[#0A3326] text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
           >
             <Plus size={16} /> Novo paciente
           </button>
@@ -116,13 +116,13 @@ export default function Patients() {
 
       {/* SUGESTÕES DE RETORNO IA */}
       {showSuggestions && (
-        <div className="bg-white border border-[#DDD8CC] rounded-2xl p-5 mb-6">
+        <div className="bg-white border border-[#E5D8C5] rounded-2xl p-5 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Sparkles size={15} className="text-[#00704A]" />
               <span className="text-sm font-bold text-[#00704A]">Pacientes para reativar</span>
               {suggestions.length > 0 && (
-                <span className="text-xs bg-[#E6E2D8] text-[#00704A] px-2 py-0.5 rounded-full font-medium">
+                <span className="text-xs bg-[#EFE7DA] text-[#00704A] px-2 py-0.5 rounded-full font-medium">
                   {suggestions.length} sugestão{suggestions.length !== 1 ? "s" : ""}
                 </span>
               )}
@@ -135,7 +135,7 @@ export default function Patients() {
           {loadingSuggestions ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 bg-[#F2F0EB] rounded-xl animate-pulse" />
+                <div key={i} className="h-12 bg-[#FAF7F2] rounded-xl animate-pulse" />
               ))}
             </div>
           ) : suggestions.length === 0 ? (
@@ -145,7 +145,7 @@ export default function Patients() {
           ) : (
             <div className="space-y-2">
               {suggestions.map((s, i) => (
-                <div key={i} className="flex items-center justify-between bg-[#F2F0EB] border border-[#DDD8CC] rounded-xl px-4 py-3">
+                <div key={i} className="flex items-center justify-between bg-[#FAF7F2] border border-[#E5D8C5] rounded-xl px-4 py-3">
                   <div>
                     <p className="text-sm font-semibold text-[#00704A]">{s.name}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{s.suggestion}</p>
@@ -174,16 +174,16 @@ export default function Patients() {
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Buscar por nome, telefone ou CPF…"
-            className="w-full pl-10 pr-4 py-2.5 border border-[#CBA258] rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+            className="w-full pl-10 pr-4 py-2.5 border border-[#C4895A] rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
           />
         </div>
-        <div className="flex gap-1 bg-[#F2F0EB] border border-[#DDD8CC] rounded-xl p-1">
+        <div className="flex gap-1 bg-[#FAF7F2] border border-[#E5D8C5] rounded-xl p-1">
           {[["active", "Ativos"], ["removed", "Inativos"]].map(([v, l]) => (
             <button
               key={v}
               onClick={() => { setStatus(v); setPage(1); }}
               className={`px-4 py-1.5 rounded-lg text-sm transition font-medium ${
-                status === v ? "bg-[#00704A] text-white" : "text-[#00704A] hover:bg-[#E6E2D8]"
+                status === v ? "bg-[#00704A] text-white" : "text-[#00704A] hover:bg-[#EFE7DA]"
               }`}
             >
               {l}
@@ -196,23 +196,23 @@ export default function Patients() {
         <Spinner />
       ) : patients.length === 0 && !search ? (
         <div className="flex flex-col items-center justify-center py-28 text-center">
-          <div className="w-16 h-16 bg-[#E6E2D8] rounded-2xl flex items-center justify-center mb-4">
-            <Users size={28} className="text-[#CBA258]" />
+          <div className="w-16 h-16 bg-[#EFE7DA] rounded-2xl flex items-center justify-center mb-4">
+            <Users size={28} className="text-[#C4895A]" />
           </div>
           <h2 className="text-xl font-semibold text-[#00704A] mb-2">Nenhum paciente cadastrado</h2>
           <p className="text-gray-500 mb-6 max-w-xs">Comece cadastrando o primeiro paciente da clínica.</p>
           <button
             onClick={() => navigate("/patients/create")}
-            className="bg-[#00704A] hover:bg-[#1E3932] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
+            className="bg-[#00704A] hover:bg-[#0A3326] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
           >
             <Plus size={16} /> Novo paciente
           </button>
         </div>
       ) : (
         <>
-          <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl overflow-hidden shadow-sm">
             {/* Cabeçalho da tabela */}
-            <div className="px-5 py-3.5 border-b border-[#DDD8CC] bg-[#E6E2D8] flex items-center justify-between">
+            <div className="px-5 py-3.5 border-b border-[#E5D8C5] bg-[#EFE7DA] flex items-center justify-between">
               <span className="text-sm font-semibold text-[#00704A]">
                 {search ? `Resultados para "${search}"` : status === "active" ? "Pacientes ativos" : "Pacientes inativos"}
               </span>
@@ -222,7 +222,7 @@ export default function Patients() {
             <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#DDD8CC]">
+                <tr className="border-b border-[#E5D8C5]">
                   <th className="text-left px-5 py-3 text-[#00704A] text-xs font-semibold uppercase tracking-wide">Paciente</th>
                   <th className="text-left px-5 py-3 text-[#00704A] text-xs font-semibold uppercase tracking-wide">Telefone</th>
                   <th className="text-left px-5 py-3 text-[#00704A] text-xs font-semibold uppercase tracking-wide hidden md:table-cell">Idade</th>
@@ -235,7 +235,7 @@ export default function Patients() {
                   <tr
                     key={patient.id}
                     onClick={() => navigate(`/patients/${patient.id}`)}
-                    className="border-t border-[#DDD8CC] cursor-pointer hover:bg-[#F3EEE5] transition group"
+                    className="border-t border-[#E5D8C5] cursor-pointer hover:bg-[#F3EEE5] transition group"
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
@@ -284,7 +284,7 @@ export default function Patients() {
               <button
                 disabled={page === 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="border border-[#CBA258] px-4 py-2 rounded-xl text-sm disabled:opacity-40 hover:bg-[#E6E2D8] transition"
+                className="border border-[#C4895A] px-4 py-2 rounded-xl text-sm disabled:opacity-40 hover:bg-[#EFE7DA] transition"
               >
                 ← Anterior
               </button>
@@ -294,7 +294,7 @@ export default function Patients() {
                     key={p}
                     onClick={() => setPage(p)}
                     className={`w-9 h-9 rounded-xl text-sm transition font-medium ${
-                      p === page ? "bg-[#00704A] text-white" : "border border-[#CBA258] hover:bg-[#E6E2D8] text-[#00704A]"
+                      p === page ? "bg-[#00704A] text-white" : "border border-[#C4895A] hover:bg-[#EFE7DA] text-[#00704A]"
                     }`}
                   >
                     {p}
@@ -304,7 +304,7 @@ export default function Patients() {
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="border border-[#CBA258] px-4 py-2 rounded-xl text-sm disabled:opacity-40 hover:bg-[#E6E2D8] transition"
+                className="border border-[#C4895A] px-4 py-2 rounded-xl text-sm disabled:opacity-40 hover:bg-[#EFE7DA] transition"
               >
                 Próxima →
               </button>

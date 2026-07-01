@@ -41,7 +41,7 @@ const TABS = [
   { id: "senha",     icon: Lock,       label: "Senha"          },
 ];
 
-const INPUT  = "w-full border border-[#DDD8CC] bg-white rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20 focus:border-[#00704A] transition";
+const INPUT  = "w-full border border-[#E5D8C5] bg-white rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20 focus:border-[#00704A] transition";
 const LABEL  = "text-xs font-semibold text-gray-500 mb-1.5 block";
 const SELECT = INPUT;
 
@@ -214,7 +214,7 @@ export default function Settings() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-white border border-[#E6E2D8] rounded-2xl p-1 mb-6 overflow-x-auto">
+        <div className="flex gap-1 bg-white border border-[#EFE7DA] rounded-2xl p-1 mb-6 overflow-x-auto">
           {TABS.map(({ id, icon: Icon, label }) => (
             <button key={id} onClick={() => setTab(id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap ${
@@ -225,7 +225,7 @@ export default function Settings() {
           ))}
         </div>
 
-        <div className="bg-white rounded-3xl border border-[#E6E2D8] p-8 shadow-sm">
+        <div className="bg-white rounded-3xl border border-[#EFE7DA] p-8 shadow-sm">
 
           {/* ── DADOS PESSOAIS ── */}
           {tab === "pessoal" && (
@@ -236,7 +236,7 @@ export default function Settings() {
                   {[{value:"F",label:"Dra."},{value:"M",label:"Dr."}].map((o) => (
                     <button key={o.value} type="button" onClick={() => setGender(o.value)}
                       className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition ${
-                        gender===o.value?"border-[#00704A] bg-[#00704A] text-white":"border-[#DDD8CC] text-gray-600 hover:border-[#00704A]/40"}`}>
+                        gender===o.value?"border-[#00704A] bg-[#00704A] text-white":"border-[#E5D8C5] text-gray-600 hover:border-[#00704A]/40"}`}>
                       {gender===o.value && <Check size={13} className="inline mr-1"/>}{o.label}
                     </button>
                   ))}
@@ -282,7 +282,7 @@ export default function Settings() {
                   {[{value:"pf",label:"Pessoa Física"},{value:"pj",label:"Pessoa Jurídica"}].map((o) => (
                     <button key={o.value} type="button" onClick={() => setPersonType(o.value)}
                       className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition ${
-                        personType===o.value?"border-[#00704A] bg-[#00704A] text-white":"border-[#DDD8CC] text-gray-600"}`}>
+                        personType===o.value?"border-[#00704A] bg-[#00704A] text-white":"border-[#E5D8C5] text-gray-600"}`}>
                       {o.label}
                     </button>
                   ))}
@@ -391,9 +391,9 @@ export default function Settings() {
                     <button key={p.id} type="button" onClick={() => setSelectedPlan(p.id)}
                       className={`relative text-left rounded-2xl p-5 border-2 transition ${
                         isSelected ? "border-[#00704A] bg-[#00704A] text-white shadow-lg scale-[1.02]"
-                          : "border-[#DDD8CC] bg-white hover:border-[#00704A]/40"}`}>
+                          : "border-[#E5D8C5] bg-white hover:border-[#00704A]/40"}`}>
                       {isCurrent && (
-                        <span className="absolute -top-2.5 left-4 text-[10px] font-bold bg-[#CBA258] text-white px-2.5 py-0.5 rounded-full">
+                        <span className="absolute -top-2.5 left-4 text-[10px] font-bold bg-[#C4895A] text-white px-2.5 py-0.5 rounded-full">
                           ATUAL
                         </span>
                       )}
@@ -404,7 +404,7 @@ export default function Settings() {
                       <ul className="space-y-1.5">
                         {p.features.map((f) => (
                           <li key={f} className={`flex items-start gap-1.5 text-[11px] ${isSelected?"text-white/80":"text-gray-500"}`}>
-                            <Check size={11} className={`mt-0.5 shrink-0 ${isSelected?"text-[#CBA258]":"text-[#00704A]"}`}/>
+                            <Check size={11} className={`mt-0.5 shrink-0 ${isSelected?"text-[#C4895A]":"text-[#00704A]"}`}/>
                             {f}
                           </li>
                         ))}
@@ -420,7 +420,7 @@ export default function Settings() {
                     Solicitação de alteração para <strong>{PLAN_OPTIONS.find(p=>p.id===selectedPlan)?.label}</strong>
                   </p>
                   <button onClick={requestPlanChange} disabled={planSaving}
-                    className="bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-50 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">
+                    className="bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-50 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">
                     {planSaving ? "Enviando…" : "Confirmar"}
                   </button>
                 </div>
@@ -528,11 +528,11 @@ export default function Settings() {
 
           {/* Botão salvar — oculto na aba de plano (tem botão próprio) */}
           {tab !== "plano" && (
-            <div className="mt-8 pt-6 border-t border-[#E6E2D8] flex justify-end">
+            <div className="mt-8 pt-6 border-t border-[#EFE7DA] flex justify-end">
               <button
                 onClick={tab === "senha" ? changePassword : tab === "pagamento" ? saveCard : saveProfile}
                 disabled={saving || (profile?.authProvider === "google" && tab === "senha")}
-                className="flex items-center gap-2 bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-50 text-white px-8 py-3 rounded-xl font-semibold text-sm transition">
+                className="flex items-center gap-2 bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-50 text-white px-8 py-3 rounded-xl font-semibold text-sm transition">
                 <Save size={15} />
                 {saving ? "Salvando…"
                   : tab === "senha"     ? "Alterar senha"

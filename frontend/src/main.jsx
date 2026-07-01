@@ -22,13 +22,13 @@ ReactDOM.createRoot(
           toastOptions={{
             duration: 3500,
             style: {
-              background: "#F2F0EB",
+              background: "#FAF7F2",
               color: "#00704A",
-              border: "1px solid #DDD8CC",
+              border: "1px solid #E5D8C5",
               borderRadius: "12px",
               fontSize: "14px",
             },
-            success: { iconTheme: { primary: "#00704A", secondary: "#F2F0EB" } },
+            success: { iconTheme: { primary: "#00704A", secondary: "#FAF7F2" } },
             error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
           }}
         />

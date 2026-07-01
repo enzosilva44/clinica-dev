@@ -44,7 +44,7 @@ export default function HelpChat() {
     <>
       {/* Painel */}
       {open && (
-        <div className="fixed bottom-20 right-5 w-80 bg-white border border-[#DDD8CC] rounded-2xl shadow-xl flex flex-col z-50 overflow-hidden"
+        <div className="fixed bottom-20 right-5 w-80 bg-white border border-[#E5D8C5] rounded-2xl shadow-xl flex flex-col z-50 overflow-hidden"
           style={{ height: 420 }}>
           {/* Header */}
           <div className="bg-[#00704A] px-4 py-3 flex items-center justify-between shrink-0">
@@ -65,7 +65,7 @@ export default function HelpChat() {
                   className={`max-w-[85%] text-sm px-3 py-2 rounded-2xl leading-relaxed ${
                     m.role === "user"
                       ? "bg-[#00704A] text-white rounded-br-sm"
-                      : "bg-[#F2F0EB] border border-[#DDD8CC] text-[#00704A] rounded-bl-sm"
+                      : "bg-[#FAF7F2] border border-[#E5D8C5] text-[#00704A] rounded-bl-sm"
                   }`}
                 >
                   {m.content}
@@ -74,7 +74,7 @@ export default function HelpChat() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-[#F2F0EB] border border-[#DDD8CC] rounded-2xl rounded-bl-sm px-4 py-2.5">
+                <div className="bg-[#FAF7F2] border border-[#E5D8C5] rounded-2xl rounded-bl-sm px-4 py-2.5">
                   <span className="flex gap-1">
                     <span className="w-1.5 h-1.5 bg-[#00704A] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                     <span className="w-1.5 h-1.5 bg-[#00704A] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -87,18 +87,18 @@ export default function HelpChat() {
           </div>
 
           {/* Input */}
-          <div className="px-3 py-3 border-t border-[#DDD8CC] flex gap-2 shrink-0">
+          <div className="px-3 py-3 border-t border-[#E5D8C5] flex gap-2 shrink-0">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
               placeholder="Como faço para…"
-              className="flex-1 text-sm border border-[#CBA258] rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
+              className="flex-1 text-sm border border-[#C4895A] rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00704A]/20"
             />
             <button
               onClick={sendMessage}
               disabled={!input.trim() || loading}
-              className="bg-[#00704A] hover:bg-[#1E3932] disabled:opacity-40 text-white p-2 rounded-xl transition"
+              className="bg-[#00704A] hover:bg-[#0A3326] disabled:opacity-40 text-white p-2 rounded-xl transition"
             >
               <Send size={15} />
             </button>
@@ -109,7 +109,7 @@ export default function HelpChat() {
       {/* Botão flutuante */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-5 right-5 w-12 h-12 bg-[#00704A] hover:bg-[#1E3932] text-white rounded-full shadow-lg flex items-center justify-center transition z-50"
+        className="fixed bottom-5 right-5 w-12 h-12 bg-[#00704A] hover:bg-[#0A3326] text-white rounded-full shadow-lg flex items-center justify-center transition z-50"
       >
         {open ? <X size={20} /> : <MessageCircle size={20} />}
       </button>
