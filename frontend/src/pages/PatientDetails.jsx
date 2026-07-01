@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Sparkles, Cake, CalendarDays, ClipboardList, TrendingUp, TrendingDown, Users, FileText, Download, Trash2, Eye, Send, Plus, PartyPopper, Check } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
+import { Card } from "../components/ui";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
 import ProcedureMapTab from "../components/procedure-map/ProcedureMapTab";
@@ -511,12 +512,12 @@ export default function PatientDetails() {
 
       {/* DASHBOARD */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card
+        <StatCard
           title="Total consultas"
           value={evolutions.length}
         />
 
-        <Card
+        <StatCard
           title="Última consulta"
           value={
             evolutions[0]
@@ -529,7 +530,7 @@ export default function PatientDetails() {
           }
         />
 
-        <Card
+        <StatCard
           title="Total gasto"
           value={
             patientStats
@@ -538,7 +539,7 @@ export default function PatientDetails() {
           }
         />
 
-        <Card
+        <StatCard
           title="Procedimento mais feito"
           value={patientStats?.topProcedures?.[0]?.name ?? "—"}
         />
@@ -657,7 +658,7 @@ export default function PatientDetails() {
             </div>
 
             {/* Cliente há */}
-            <div className="bg-creme-50 border border-creme-200 rounded-2xl p-5">
+            <Card className="bg-creme-50! p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Users size={15} className="text-[#6F7F73]" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Cliente há</span>
@@ -670,10 +671,10 @@ export default function PatientDetails() {
                   desde {new Date(patientStats.clientSince.date).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}
                 </p>
               )}
-            </div>
+            </Card>
 
             {/* Total agendamentos */}
-            <div className="bg-creme-50 border border-creme-200 rounded-2xl p-5">
+            <Card className="bg-creme-50! p-5">
               <div className="flex items-center gap-2 mb-3">
                 <CalendarDays size={15} className="text-info" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Agendamentos</span>
@@ -682,10 +683,10 @@ export default function PatientDetails() {
                 {patientStats?.totalAppointments ?? "—"}
               </p>
               <p className="text-xs text-gray-400 mt-1.5">sessões realizadas</p>
-            </div>
+            </Card>
 
             {/* Ticket médio */}
-            <div className="bg-creme-50 border border-creme-200 rounded-2xl p-5">
+            <Card className="bg-creme-50! p-5">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp size={15} className="text-sucesso" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Ticket médio</span>
@@ -700,7 +701,7 @@ export default function PatientDetails() {
                   total {patientStats.totalSpent.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </p>
               )}
-            </div>
+            </Card>
           </div>
 
           {/* ROW 2 — dias da semana + procedimentos */}
@@ -1609,12 +1610,12 @@ export default function PatientDetails() {
     </MainLayout>
   );
 }
-function Card({
+function StatCard({
   title,
   value,
 }) {
   return (
-    <div className="bg-creme-50 border border-creme-200 rounded-2xl p-5">
+    <Card className="bg-creme-50! p-5">
       <p className="text-sm text-gray-500">
         {title}
       </p>
@@ -1622,7 +1623,7 @@ function Card({
       <h2 className="text-lg font-semibold text-verde mt-1">
         {value || "-"}
       </h2>
-    </div>
+    </Card>
   );
 }
 
