@@ -206,14 +206,21 @@ ${lista}`,
 export async function analyzeFinancialHealth(userId) {
   const now = new Date();
 
-  // 1. Transações pendentes com vínculos
+  // 1. Transações pendentes com vínculos.
+  // Ignora transações que vieram de ORÇAMENTO e ainda estão pendentes: um
+  // orçamento é só uma proposta (o paciente pode nunca aceitar), então não
+  // deve afetar o score financeiro. Orçamentos que viraram receita (status
+  // "pago") continuam contando normalmente pois não entram nesta query.
   const pending = await prisma.transaction.findMany({
-    where: { userId, status: "pendente" },
+    where: { userId, status: "pendente", budgetId: null },
     include: { patient: { select: { id: true, name: true } } },
     orderBy: { dueDate: "asc" },
   });
 
-  // 2. Duplicidade potencial: mesmo paciente tem TX de agendamento E TX de orçamento pendentes
+  // 2. Duplicidade potencial: mesmo paciente com TX de agendamento E TX de orçamento
+  // pendentes. Como transações de orçamento pendentes agora são excluídas da query
+  // acima (budgetId: null), este caso deixa de disparar — mantido para o dia em que
+  // orçamentos confirmados passarem a gerar transação própria.
   const byPatient = {};
   for (const tx of pending) {
     if (!tx.patientId) continue;
