@@ -41,6 +41,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
   const [markers, setMarkers] = useState([]);
+  const [history, setHistory] = useState([]); // pilha de estados anteriores de markers (p/ desfazer)
   const [backgroundPhotoId, setBackgroundPhotoId] = useState(null);
   const [baseImage, setBaseImage] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -73,6 +74,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     skipAutoSave.current = true; // evita auto-save disparar ao carregar
     setSelectedId(map.id);
     setMarkers(map.markers ?? []);
+    setHistory([]); // novo mapa: zera histórico de desfazer
     setBackgroundPhotoId(map.backgroundPhotoId ?? null);
     setBaseImage(map.baseImage ?? null);
     setChoosingImage(!map.baseImage && !map.backgroundPhotoId);
@@ -187,6 +189,28 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     }, 800);
     return () => clearTimeout(t);
   }, [markers, selectedId]);
+
+  // Atualiza markers registrando o estado anterior na pilha de histórico,
+  // permitindo desfazer a última alteração. Aceita valor ou função (updater).
+  function updateMarkers(next) {
+    setMarkers((prev) => {
+      setHistory((h) => [...h, prev].slice(-50)); // guarda até 50 passos
+      return typeof next === "function" ? next(prev) : next;
+    });
+  }
+
+  function undoMarkers() {
+    setHistory((h) => {
+      if (h.length === 0) return h;
+      const previous = h[h.length - 1];
+      setMarkers(previous);
+      return h.slice(0, -1);
+    });
+  }
+
+  function clearMarkers() {
+    updateMarkers([]);
+  }
 
   async function handleBgChange(photoId) {
     setBackgroundPhotoId(photoId);
@@ -361,9 +385,13 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-ambar text-gray-600 hover:bg-creme-100 transition">
                 <ImageIcon size={13} /> Imagem
               </button>
-              <button onClick={() => { setMarkers([]); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-ambar text-gray-600 hover:bg-creme-100 transition">
-                <RotateCcw size={13} /> Limpar
+              <button onClick={undoMarkers} disabled={history.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-ambar text-gray-600 hover:bg-creme-100 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                <RotateCcw size={13} /> Desfazer
+              </button>
+              <button onClick={clearMarkers} disabled={markers.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-erro/40 text-erro hover:bg-erro/10 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                <Trash2 size={13} /> Limpar
               </button>
               {autoSaved && (
                 <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
@@ -527,7 +555,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                 <div className="w-full" style={{ maxWidth: showMuscles ? 320 : 480 }}>
                   <FaceMap
                     markers={markers}
-                    onChange={setMarkers}
+                    onChange={updateMarkers}
                     onBgChange={handleBgChange}
                     backgroundPhotoId={backgroundPhotoId}
                     baseImage={baseImage ?? "/face-1.png"}

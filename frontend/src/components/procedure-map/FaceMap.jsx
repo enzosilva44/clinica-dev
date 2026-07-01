@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { X, Trash2, Dot, Minus, ImageIcon } from "lucide-react";
+import { X, Trash2, Dot, Minus, ImageIcon, Eraser } from "lucide-react";
 import api from "../../services/api";
 import { vividColor } from "../../data/faceMuscles";
 
@@ -72,7 +72,7 @@ export default function FaceMap({
   const [pendingMarker, setPendingMarker] = useState(null);
   const [pendingUnits, setPendingUnits] = useState("");
   const [pendingUnit, setPendingUnit] = useState("U");
-  const [form, setForm] = useState({ procedure: "", dose: "", notes: "", color: "#00704A", unit: "U" });
+  const [form, setForm] = useState({ procedure: "", dose: "", notes: "", label: "", color: "#00704A", unit: "U" });
   const [hoveredId, setHoveredId] = useState(null);
   const [linePoints, setLinePoints] = useState([]);
   const [lineForm, setLineForm] = useState({ label: "", notes: "", color: "#00704A", units: "", unit: "U" });
@@ -106,7 +106,7 @@ export default function FaceMap({
   }
 
   function handleSvgClick(e) {
-    if (readOnly || showPhotoPicker) return;
+    if (readOnly || showPhotoPicker || tool === "erase") return;
     if (e.target.closest(".marker-dot")) return;
     const { x, y } = getSvgCoords(e);
     if (!isInsideFace(x, y)) return;
@@ -115,7 +115,7 @@ export default function FaceMap({
       if (selectedMuscle) {
         setPendingUnits(String(selectedMuscle.defaultUnits ?? ""));
       }
-      setForm({ procedure: "", dose: "", notes: "", color: selectedMuscle?.color ?? "#00704A" });
+      setForm({ procedure: "", dose: "", notes: "", label: "", color: selectedMuscle?.color ?? "#00704A", unit: "U" });
     } else {
       setLinePoints((prev) => [...prev, { x, y }]);
     }
@@ -136,7 +136,7 @@ export default function FaceMap({
         ? { muscleId: selectedMuscle.id, muscleName: selectedMuscle.name, tag: selectedMuscle.tag, units, unit: pendingUnit, color: selectedMuscle.color }
         : { ...form, units, unit: form.unit }),
     };
-    onChange([...markers, marker]);
+    onChange((prev) => [...prev, marker]);
     setPendingMarker(null);
     setPendingUnits("");
     setPendingUnit("U");
@@ -153,12 +153,12 @@ export default function FaceMap({
         ? { muscleId: selectedMuscle.id, muscleName: selectedMuscle.name, tag: selectedMuscle.tag, units, unit: lineForm.unit, color: selectedMuscle.color }
         : { ...lineForm, units }),
     };
-    onChange([...markers, marker]);
+    onChange((prev) => [...prev, marker]);
     setLinePoints([]);
     setLineForm({ label: "", notes: "", color: "#00704A", units: "", unit: "U" });
   }
 
-  function removeMarker(id) { onChange(markers.filter((m) => m.id !== id)); }
+  function removeMarker(id) { onChange((prev) => prev.filter((m) => m.id !== id)); }
 
   function svgToPercent(x, y) {
     return { left: `${(x / SVG_W) * 100}%`, top: `${(y / svgH) * 100}%` };
@@ -252,6 +252,8 @@ export default function FaceMap({
                     <option value="seringas">ser.</option>
                   </select>
                 </div>
+                <input value={form.label ?? ""} onChange={(e) => setForm({ ...form, label: e.target.value })}
+                  placeholder="Técnica utilizada (ex: Botox frontal)" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   placeholder="Observação" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 <ColorPicker color={form.color} onChange={(c) => setForm({ ...form, color: c })} />
@@ -314,7 +316,7 @@ export default function FaceMap({
             ) : (
               <>
                 <input value={lineForm.label} onChange={(e) => setLineForm({ ...lineForm, label: e.target.value })}
-                  placeholder="Rótulo (ex: Botox frontal)" className="w-full border border-ambar rounded-lg p-2 text-sm" />
+                  placeholder="Técnica utilizada (ex: Botox frontal)" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 <div className="flex gap-2">
                   <input value={lineForm.units} onChange={(e) => setLineForm({ ...lineForm, units: e.target.value })}
                     type="number" min="0" step="0.5"
@@ -365,7 +367,16 @@ export default function FaceMap({
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${tool === "line" ? "bg-verde text-white" : "text-verde hover:bg-creme-100"}`}>
                 <Minus size={14} /> Traço
               </button>
+              <button onClick={() => switchTool("erase")}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${tool === "erase" ? "bg-erro text-white" : "text-erro hover:bg-erro/10"}`}>
+                <Eraser size={14} /> Apagar
+              </button>
             </div>
+            {tool === "erase" && (
+              <p className="text-xs text-erro/80 mb-2 flex items-center gap-1.5">
+                <Eraser size={12} /> Modo apagar: clique em um ponto ou traço para removê-lo.
+              </p>
+            )}
 
             {/* Photo background bar */}
             <div className="flex gap-1 mb-2">
@@ -661,10 +672,10 @@ export default function FaceMap({
               const pts = m.points.map((p) => `${p.x},${p.y}`).join(" ");
               const color = vividColor(m.color);
               return (
-                <g key={m.id} className="marker-dot" style={{ cursor: readOnly ? "default" : "pointer" }}
+                <g key={m.id} className="marker-dot" style={{ cursor: readOnly ? "default" : tool === "erase" ? "pointer" : "default" }}
                   onMouseEnter={() => setHoveredId(m.id)}
                   onMouseLeave={() => setHoveredId(null)}
-                  onClick={(e) => { e.stopPropagation(); if (!readOnly) removeMarker(m.id); }}
+                  onClick={(e) => { e.stopPropagation(); if (!readOnly && tool === "erase") removeMarker(m.id); }}
                 >
                   {/* contorno escuro por baixo — destaca a cor neon */}
                   <polyline points={pts} fill="none" stroke="#1A1A1A" strokeWidth="5.5"
@@ -697,10 +708,10 @@ export default function FaceMap({
               const r = hoveredId === m.id ? 6.5 : 5;
               const color = vividColor(m.color);
               return (
-                <g key={m.id} className="marker-dot" style={{ cursor: readOnly ? "default" : "pointer" }}
+                <g key={m.id} className="marker-dot" style={{ cursor: readOnly ? "default" : tool === "erase" ? "pointer" : "default" }}
                   onMouseEnter={() => setHoveredId(m.id)}
                   onMouseLeave={() => setHoveredId(null)}
-                  onClick={(e) => { e.stopPropagation(); if (!readOnly) removeMarker(m.id); }}
+                  onClick={(e) => { e.stopPropagation(); if (!readOnly && tool === "erase") removeMarker(m.id); }}
                 >
                   {/* anel escuro externo — destaca a cor neon sobre qualquer fundo */}
                   <circle cx={m.x} cy={m.y} r={r + 1.5} fill="#1A1A1A" opacity="0.35" />
@@ -708,14 +719,21 @@ export default function FaceMap({
                   <circle cx={m.x} cy={m.y} r={r} fill={color} stroke="white" strokeWidth="2" />
                   {/* brilho central */}
                   <circle cx={m.x - r * 0.3} cy={m.y - r * 0.3} r={r * 0.3} fill="white" opacity="0.55" />
-                  {m.units > 0 && (
+                  {m.units > 0 ? (
                     <text x={m.x + 8} y={m.y - 5}
                       fontSize="11" fill={color} fontWeight="bold" fontFamily="sans-serif"
                       stroke="white" strokeWidth="0.6" paintOrder="stroke"
                       style={{ pointerEvents: "none" }}>
                       {m.units}{m.unit ?? "U"}
                     </text>
-                  )}
+                  ) : m.label ? (
+                    <text x={m.x + 8} y={m.y - 5}
+                      fontSize="11" fill={color} fontWeight="bold" fontFamily="sans-serif"
+                      stroke="white" strokeWidth="0.6" paintOrder="stroke"
+                      style={{ pointerEvents: "none" }}>
+                      {m.label}
+                    </text>
+                  ) : null}
                 </g>
               );
             })}
@@ -820,7 +838,11 @@ export default function FaceMap({
           ) : !pendingMarker && linePoints.length === 0 && (
             <div className="text-center py-8 text-gray-400">
               <p className="text-sm">
-                {tool === "point" ? "Clique no rosto para marcar pontos de aplicação" : "Clique para traçar linhas no rosto"}
+                {tool === "erase"
+                  ? "Modo apagar: clique em uma marca para removê-la"
+                  : tool === "point"
+                    ? "Clique no rosto para marcar pontos de aplicação"
+                    : "Clique para traçar linhas no rosto"}
               </p>
             </div>
           )}
