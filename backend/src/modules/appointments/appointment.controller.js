@@ -1,4 +1,5 @@
 import * as appointmentService from "./appointment.service.js";
+import { sanitizeError } from "../../shared/errors/sanitizeError.js";
 
 export async function create(req, res) {
   try {
@@ -10,7 +11,7 @@ export async function create(req, res) {
     return res.status(201).json(appointment);
   } catch (error) {
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }
@@ -23,7 +24,7 @@ export async function findAll(req, res) {
     return res.json(appointments);
   } catch (error) {
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }
@@ -35,7 +36,7 @@ export async function getCalendar(req, res) {
     const events = await appointmentService.getCalendar(req.user, { from, to, types: typesArr });
     return res.json(events);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -50,7 +51,7 @@ export async function findById(req, res) {
     return res.json(appointment);
   } catch (error) {
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }
@@ -63,7 +64,7 @@ export async function findByPatient(req, res) {
     );
     return res.json(appointments);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -82,7 +83,7 @@ export async function update(
     return res.json(appointment);
   } catch (error) {
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }

@@ -1,4 +1,5 @@
 import * as procedureService from "./procedure.service.js";
+import { sanitizeError } from "../../shared/errors/sanitizeError.js";
 
 export async function findAll(
   req,
@@ -31,7 +32,7 @@ export async function findAll(
     console.log(error);
 
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }
@@ -54,7 +55,7 @@ export async function create(
     console.log(error);
 
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }
@@ -75,7 +76,7 @@ export async function remove(
     console.log(error);
 
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }
@@ -98,7 +99,7 @@ export async function update(
     console.log(error);
 
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }

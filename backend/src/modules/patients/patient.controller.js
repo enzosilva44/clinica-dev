@@ -1,4 +1,5 @@
 import * as patientService from "./patient.service.js";
+import { sanitizeError } from "../../shared/errors/sanitizeError.js";
 
   export async function create(req, res) {
     try {
@@ -10,7 +11,7 @@ import * as patientService from "./patient.service.js";
       return res.status(201).json(patient);
     } catch (error) {
       return res.status(400).json({
-        error: error.message,
+        error: sanitizeError(error),
       });
     }
   }
@@ -29,7 +30,7 @@ import * as patientService from "./patient.service.js";
       console.log(error);
 
       return res.status(400).json({
-        error: error.message,
+        error: sanitizeError(error),
       });
     }
   }
@@ -56,7 +57,7 @@ import * as patientService from "./patient.service.js";
       return res.json(patients);
     } catch (error) {
       return res.status(400).json({
-        error: error.message,
+        error: sanitizeError(error),
       });
     }
   }
@@ -71,7 +72,7 @@ import * as patientService from "./patient.service.js";
       return res.json(patient);
     } catch (error) {
       return res.status(400).json({
-        error: error.message,
+        error: sanitizeError(error),
       });
     }
   }
@@ -87,7 +88,7 @@ import * as patientService from "./patient.service.js";
       return res.json(patient);
     } catch (error) {
       return res.status(400).json({
-        error: error.message,
+        error: sanitizeError(error),
       });
     }
   }
@@ -100,7 +101,7 @@ import * as patientService from "./patient.service.js";
     const result = await patientService.checkImport(patients, req.user.id);
     return res.json(result);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -112,7 +113,7 @@ export async function importBulk(req, res) {
     const result = await patientService.importBulk(patients, req.user.id);
     return res.json(result);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -126,7 +127,7 @@ export async function remove(req, res) {
     return res.json(response);
   } catch (error) {
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }

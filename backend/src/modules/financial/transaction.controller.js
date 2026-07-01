@@ -1,11 +1,12 @@
 import * as transactionService from "./transaction.service.js";
+import { sanitizeError } from "../../shared/errors/sanitizeError.js";
 
 export async function findAll(req, res) {
   try {
     const transactions = await transactionService.findAll(req.user.id, req.query);
     return res.json(transactions);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -15,7 +16,7 @@ export async function getSummary(req, res) {
     const summary = await transactionService.getSummary(req.user.id, month);
     return res.json(summary);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -25,7 +26,7 @@ export async function getAnalytics(req, res) {
     const data = await transactionService.getAnalytics(req.user.id, month);
     return res.json(data);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -34,7 +35,7 @@ export async function getUpcoming(req, res) {
     const data = await transactionService.getUpcoming(req.user.id);
     return res.json(data);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -43,7 +44,7 @@ export async function create(req, res) {
     const transaction = await transactionService.create(req.user.id, req.body);
     return res.status(201).json(transaction);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -52,7 +53,7 @@ export async function update(req, res) {
     const transaction = await transactionService.update(req.params.id, req.user.id, req.body);
     return res.json(transaction);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -61,7 +62,7 @@ export async function approve(req, res) {
     const transaction = await transactionService.approve(req.params.id, req.user.id, req.body);
     return res.json(transaction);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -70,7 +71,7 @@ export async function cancel(req, res) {
     const transaction = await transactionService.cancel(req.params.id, req.user.id);
     return res.json(transaction);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -79,6 +80,6 @@ export async function remove(req, res) {
     await transactionService.remove(req.params.id, req.user.id);
     return res.status(204).send();
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }

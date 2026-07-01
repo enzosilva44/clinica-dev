@@ -5,6 +5,7 @@ import SignatureCanvas from "react-signature-canvas";
 import { X, ChevronLeft, ChevronRight, Shield, Mail, Phone, CheckCircle, Download, RefreshCw, Loader2, Trash2, Check, FlaskConical } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import { useFeatures } from "../../hooks/useFeatures";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -110,6 +111,7 @@ function PdfViewer({ docId }) {
 }
 
 export default function SigningModal({ patientDoc, patient, onClose, onSigned }) {
+  const features = useFeatures();
   const [step, setStep] = useState("signer");
 
   // Dados do assinante
@@ -404,7 +406,9 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
                 {[
                   { method: "email", icon: Mail, label: "E-mail", target: signerEmail, available: !!signerEmail },
                   { method: "sms", icon: Phone, label: "SMS", target: signerPhone, available: false, badge: "Em breve" },
-                  { method: "whatsapp", icon: Phone, label: "WhatsApp", target: signerPhone, available: !!signerPhone },
+                  ...(features.whatsapp
+                    ? [{ method: "whatsapp", icon: Phone, label: "WhatsApp", target: signerPhone, available: !!signerPhone }]
+                    : []),
                 ].map(({ method, icon: Icon, label, target, available, badge }) => (
                   <button
                     key={method}

@@ -1,4 +1,5 @@
 import * as evolutionService from "./evolution.service.js";
+import { sanitizeError } from "../../shared/errors/sanitizeError.js";
 
 export async function create(req, res) {
   try {
@@ -13,7 +14,7 @@ export async function create(req, res) {
     );
   } catch (error) {
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }
@@ -32,7 +33,7 @@ export async function findByPatient(
     return res.json(evolutions);
   } catch (error) {
     return res.status(400).json({
-      error: error.message,
+      error: sanitizeError(error),
     });
   }
 }

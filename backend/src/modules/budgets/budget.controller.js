@@ -1,4 +1,5 @@
 import * as budgetService from "./budget.service.js";
+import { sanitizeError } from "../../shared/errors/sanitizeError.js";
 
 export async function findByPatient(req, res) {
   try {
@@ -9,7 +10,7 @@ export async function findByPatient(req, res) {
 
     return res.json(budgets);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -30,7 +31,7 @@ export async function create(req, res) {
     const budget = await budgetService.create(req.body, req.user.id);
     return res.status(201).json(budget);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }
 
@@ -39,6 +40,6 @@ export async function remove(req, res) {
     await budgetService.remove(req.params.id, req.user.id);
     return res.status(204).send();
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: sanitizeError(error) });
   }
 }

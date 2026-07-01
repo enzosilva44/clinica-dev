@@ -16,8 +16,8 @@ export async function sendWhatsappOtp(phone, code, documentName, clinicUserId) {
   }
 
   if (!phoneNumberId || !accessToken) {
-    console.warn(`[OTP WhatsApp] WhatsApp não configurado. Número: ${phone} | Código: ${code}`);
-    return;
+    console.warn(`[OTP WhatsApp] WhatsApp não configurado. Número: ${phone}`);
+    throw new Error("Envio por WhatsApp indisponível. Use outro método de validação.");
   }
 
   const message = `*${code}* — Seu código para assinar o documento "${documentName}" no Iasoclin.\n\nEste código expira em 10 minutos. Não compartilhe com ninguém.`;
