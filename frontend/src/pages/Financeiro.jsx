@@ -1189,6 +1189,12 @@ export default function Financeiro() {
                         <p className={`text-base font-bold ${tx.type === "receita" ? "text-emerald-600" : "text-red-500"}`}>
                           {tx.type === "receita" ? "+" : "−"}{fmt(tx.amount).replace("R$ ", "")}
                         </p>
+                        {tx.feeAmount != null && tx.feeAmount > 0 && (
+                          <p className="text-[10px] text-gray-400 leading-tight" title="Valor líquido após taxa da maquininha">
+                            líq. {fmt(tx.netAmount).replace("R$ ", "")}
+                            <span className="text-gray-300"> · taxa {tx.feePercent}%</span>
+                          </p>
+                        )}
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_PILL[tx.status] || STATUS_PILL.cancelado}`}>
                           {tx.status === "pendente" ? "Pendente" : tx.status === "confirmado" ? "Confirmado" : "Cancelado"}
                         </span>

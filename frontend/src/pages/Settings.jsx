@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { User, Building2, MapPin, CreditCard, Lock, Save, Eye, EyeOff, Check, Sparkles } from "lucide-react";
+import { User, Building2, MapPin, CreditCard, Lock, Save, Eye, EyeOff, Check, Sparkles, Percent } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { useFeatures } from "../hooks/useFeatures";
+import CardFeesSettings from "../components/settings/CardFeesSettings";
 import toast from "react-hot-toast";
 
 const PLANS = {
@@ -38,6 +40,7 @@ const TABS = [
   { id: "endereco",  icon: MapPin,     label: "Endereço"       },
   { id: "plano",     icon: Sparkles,   label: "Plano"          },
   { id: "pagamento", icon: CreditCard, label: "Pagamento"      },
+  { id: "maquininha",icon: Percent,    label: "Maquininha", feature: "financial" },
   { id: "senha",     icon: Lock,       label: "Senha"          },
 ];
 
@@ -52,6 +55,8 @@ function maskCnpj(v)  { return v.replace(/\D/g,"").slice(0,14).replace(/(\d{2})(
 
 export default function Settings() {
   const { user: authUser } = useAuth();
+  const features = useFeatures();
+  const visibleTabs = TABS.filter((t) => !t.feature || features[t.feature]);
   const [tab,     setTab]     = useState("pessoal");
   const [profile, setProfile] = useState(null);
   const [saving,  setSaving]  = useState(false);
@@ -215,7 +220,7 @@ export default function Settings() {
 
         {/* Tabs */}
         <div className="flex gap-1 bg-white border border-creme-100 rounded-2xl p-1 mb-6 overflow-x-auto">
-          {TABS.map(({ id, icon: Icon, label }) => (
+          {visibleTabs.map(({ id, icon: Icon, label }) => (
             <button key={id} onClick={() => setTab(id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap ${
                 tab === id ? "bg-verde text-white shadow-sm" : "text-gray-500 hover:text-verde"}`}>
@@ -491,6 +496,9 @@ export default function Settings() {
             </div>
           )}
 
+          {/* ── MAQUININHA ── */}
+          {tab === "maquininha" && <CardFeesSettings />}
+
           {/* ── SENHA ── */}
           {tab === "senha" && (
             <div className="space-y-5 max-w-sm">
@@ -526,8 +534,8 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Botão salvar — oculto na aba de plano (tem botão próprio) */}
-          {tab !== "plano" && (
+          {/* Botão salvar — oculto nas abas com controles próprios */}
+          {tab !== "plano" && tab !== "maquininha" && (
             <div className="mt-8 pt-6 border-t border-creme-100 flex justify-end">
               <button
                 onClick={tab === "senha" ? changePassword : tab === "pagamento" ? saveCard : saveProfile}
