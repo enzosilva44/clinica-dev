@@ -5,6 +5,7 @@ import {
   BarChart2, Check, ChevronRight, ChevronLeft, Star, Quote,
   Target, Compass, Heart,
 } from "lucide-react";
+import { LogoMark } from "../components/ui/Logo.jsx";
 
 // URL da área administrativa (app separado)
 const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || "https://admin.iasoclin.com.br";
@@ -12,12 +13,7 @@ const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || "https://admin.iasoclin.com.
 function Logo({ light = false }) {
   return (
     <div className="flex items-center gap-2">
-      <svg viewBox="0 0 56 80" fill="none" className="w-5 h-7">
-        <line x1="14" y1="7"  x2="42" y2="7"  stroke="#CBA258" strokeWidth="4" strokeLinecap="round" />
-        <line x1="28" y1="7"  x2="28" y2="73" stroke="#CBA258" strokeWidth="4" strokeLinecap="round" />
-        <line x1="14" y1="73" x2="42" y2="73" stroke="#CBA258" strokeWidth="4" strokeLinecap="round" />
-        <path d="M28 32 Q40 14 44 12 Q46 22 38 28 Q34 31 28 32 Z" fill="#CBA258" opacity="0.85" />
-      </svg>
+      <LogoMark variant={light ? "rev" : "color"} size={26} />
       <span className="text-lg font-bold">
         <span className={light ? "text-white" : "text-[#00704A]"}>Iaso</span>
         <span className="text-[#CBA258]">clin</span>

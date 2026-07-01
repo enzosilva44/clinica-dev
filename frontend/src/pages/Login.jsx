@@ -3,18 +3,13 @@ import { Link } from "react-router-dom";
 import { Eye, EyeOff, Shield, Sparkles, MessageSquare, Map, FileSignature, BarChart2, CalendarCheck, Package } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
+import { LogoMark } from "../components/ui/Logo.jsx";
 
+// Símbolo oficial (arco). "sm" no painel branco → verde; padrão no herói escuro → creme.
 function IasoLogo({ size = "md" }) {
-  const s = size === "sm" ? { svg: "w-8 h-12", stroke: 2.5 } : { svg: "w-14 h-20", stroke: 3.5 };
-  return (
-    <svg viewBox="0 0 56 80" fill="none" xmlns="http://www.w3.org/2000/svg" className={s.svg}>
-      <line x1="14" y1="7"  x2="42" y2="7"  stroke="#CBA258" strokeWidth={s.stroke} strokeLinecap="round" />
-      <line x1="28" y1="7"  x2="28" y2="73" stroke="#CBA258" strokeWidth={s.stroke} strokeLinecap="round" />
-      <line x1="14" y1="73" x2="42" y2="73" stroke="#CBA258" strokeWidth={s.stroke} strokeLinecap="round" />
-      <path d="M28 32 Q34 24 42 20" stroke="#CBA258" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M28 32 Q40 14 44 12 Q46 22 38 28 Q34 31 28 32 Z" fill="#CBA258" opacity="0.85" />
-    </svg>
-  );
+  return size === "sm"
+    ? <LogoMark variant="color" size={38} />
+    : <LogoMark variant="rev" size={64} />;
 }
 
 const FEATURES = [

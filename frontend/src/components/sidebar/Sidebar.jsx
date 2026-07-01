@@ -4,6 +4,7 @@ import {
   Zap, LogOut, X, Receipt, ClipboardList,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { LogoMark } from "../ui/Logo.jsx";
 import { useAuth } from "../../contexts/AuthContext";
 import { useFeatures } from "../../hooks/useFeatures";
 
@@ -41,9 +42,12 @@ export default function Sidebar({ open = false, onClose }) {
     >
       {/* ── Logo ── */}
       <div className="flex items-center justify-between px-6 pt-6 pb-4">
-        <p className="text-xl font-bold tracking-wide">
-          <span className="text-white">Iaso</span><span className="text-[#CBA258]">Clin</span>
-        </p>
+        <div className="flex items-center gap-2.5">
+          <LogoMark variant="rev" size={28} />
+          <p className="text-xl font-bold tracking-wide">
+            <span className="text-white">Iaso</span><span className="text-[#CBA258]">Clin</span>
+          </p>
+        </div>
         <button onClick={onClose}
           className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1E3932] transition">
           <X size={18} />
