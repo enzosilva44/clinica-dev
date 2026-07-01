@@ -1,5 +1,96 @@
 @import "tailwindcss";
 
+/* ============================================================
+   TOKENS DE MARCA — Iasoclin (Verde Vibrante)
+   Fonte: "Design System - Verde Vibrante.dc.html" + Brand Book.
+   Fase 1: define o vocabulário. Não altera a aparência atual.
+   Uso Tailwind:  bg-verde  text-ambar  border-creme-200 ...
+   Uso CSS/inline: var(--verde) etc.
+   ============================================================ */
+@theme {
+  /* Verde — primária da marca (#00704A) */
+  --color-verde-950: #06251B;
+  --color-verde-900: #0A3326;
+  --color-verde-800: #0E4733;
+  --color-verde-700: #00704A;
+  --color-verde-600: #0E8159;
+  --color-verde-500: #1F9468;
+  --color-verde-400: #46AE85;
+  --color-verde-300: #79C6A6;
+  --color-verde-200: #A9DEC8;
+  --color-verde-100: #D0EEE0;
+  --color-verde-50:  #E7F6EF;
+  --color-verde:     #00704A; /* alias da primária */
+
+  /* Creme — superfícies (#FAF7F2) */
+  --color-creme-50:  #FAF7F2;
+  --color-creme-100: #EFE7DA;
+  --color-creme-200: #E5D8C5;
+  --color-creme-300: #D6C1A3;
+  --color-creme-400: #C8A882;
+  --color-creme-500: #B8946B;
+  --color-creme-600: #9E7547;
+  --color-creme:     #FAF7F2;
+
+  /* Âmbar — acento da marca (#C4895A) */
+  --color-ambar-50:  #FBF1E9;
+  --color-ambar-100: #F4DEC9;
+  --color-ambar-200: #E9BE9C;
+  --color-ambar-300: #DC9E70;
+  --color-ambar-400: #CE9162;
+  --color-ambar-500: #C4895A;
+  --color-ambar-600: #A86E43;
+  --color-ambar-700: #875534;
+  --color-ambar:     #C4895A;
+
+  /* Cores funcionais (status) */
+  --color-sucesso:  #3A9B6F;
+  --color-info:     #4A8EC2;
+  --color-atencao:  #C4895A;
+  --color-erro:     #E2574C;
+  --color-ia:       #7C53C9;
+  --color-premium:  #D6618B;
+
+  /* Tipografia */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Newsreader", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Raios de canto (DS) */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+
+  /* Elevação (DS) */
+  --shadow-sutil: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-card: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-elevado: 0 8px 24px rgba(0,0,0,.09);
+  --shadow-flutuante: 0 20px 50px rgba(0,0,0,.12);
+  --shadow-glow: 0 0 36px rgba(0,112,74,.45);
+}
+
+/* Espelho em :root para uso em style inline / CSS puro
+   (os style="" hardcoded de hoje podem migrar pra var(--...) sem Tailwind) */
+:root {
+  --verde-950: #06251B; --verde-900: #0A3326; --verde-800: #0E4733;
+  --verde-700: #00704A; --verde-600: #0E8159; --verde-500: #1F9468;
+  --verde-400: #46AE85; --verde-300: #79C6A6; --verde-200: #A9DEC8;
+  --verde-100: #D0EEE0; --verde-50: #E7F6EF; --verde: #00704A;
+
+  --creme-50: #FAF7F2; --creme-100: #EFE7DA; --creme-200: #E5D8C5;
+  --creme-300: #D6C1A3; --creme-400: #C8A882; --creme-500: #B8946B;
+  --creme-600: #9E7547; --creme: #FAF7F2;
+
+  --ambar-50: #FBF1E9; --ambar-100: #F4DEC9; --ambar-200: #E9BE9C;
+  --ambar-300: #DC9E70; --ambar-400: #CE9162; --ambar-500: #C4895A;
+  --ambar-600: #A86E43; --ambar-700: #875534; --ambar: #C4895A;
+
+  --sucesso: #3A9B6F; --info: #4A8EC2; --atencao: #C4895A;
+  --erro: #E2574C; --ia: #7C53C9; --premium: #D6618B;
+}
+
 /* Base */
 body {
   -webkit-font-smoothing: antialiased;
