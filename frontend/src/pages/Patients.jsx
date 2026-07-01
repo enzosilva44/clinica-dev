@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Plus, Users, Search, Sparkles, X, Upload } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
+import { Card } from "../components/ui";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
 import ImportPatientsModal from "../components/patients/ImportPatientsModal";
@@ -116,7 +117,7 @@ export default function Patients() {
 
       {/* SUGESTÕES DE RETORNO IA */}
       {showSuggestions && (
-        <div className="bg-white border border-creme-200 rounded-2xl p-5 mb-6">
+        <Card className="p-5 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Sparkles size={15} className="text-verde" />
@@ -163,7 +164,7 @@ export default function Patients() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* SEARCH + FILTRO */}
@@ -210,7 +211,7 @@ export default function Patients() {
         </div>
       ) : (
         <>
-          <div className="bg-creme-50 border border-creme-200 rounded-2xl overflow-hidden shadow-sm">
+          <Card className="bg-creme-50! p-0 overflow-hidden">
             {/* Cabeçalho da tabela */}
             <div className="px-5 py-3.5 border-b border-creme-200 bg-creme-100 flex items-center justify-between">
               <span className="text-sm font-semibold text-verde">
@@ -276,7 +277,7 @@ export default function Patients() {
               </tbody>
             </table>
             </div>
-          </div>
+          </Card>
 
           {/* PAGINAÇÃO */}
           {totalPages > 1 && (

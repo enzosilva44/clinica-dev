@@ -8,6 +8,7 @@ import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 import { Plus, X, Trash2, Calendar, MessageSquare, TrendingUp, TrendingDown, DollarSign, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
+import { Card } from "../components/ui";
 import CalendarSidebar from "../components/calendar/CalendarSidebar";
 import "../components/calendar/calendar.css";
 import api from "../services/api";
@@ -550,7 +551,7 @@ export default function Agenda() {
           </div>
 
           {/* CALENDÁRIO */}
-          <div className="bg-creme-50 border border-creme-200 rounded-2xl p-4 shadow-sm flex-1 overflow-hidden">
+          <Card className="bg-creme-50! p-4 flex-1 overflow-hidden">
             <FullCalendar
               ref={calendarRef}
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -631,7 +632,7 @@ export default function Agenda() {
                 );
               }}
             />
-          </div>
+          </Card>
         </div>
       </div>
 
