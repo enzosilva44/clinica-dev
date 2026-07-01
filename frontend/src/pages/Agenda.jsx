@@ -4,6 +4,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import rrulePlugin from "@fullcalendar/rrule";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 import { Plus, X, Trash2, Calendar, MessageSquare, TrendingUp, TrendingDown, DollarSign, Check } from "lucide-react";
 import toast from "react-hot-toast";
@@ -44,6 +45,53 @@ const APPOINTMENT_TYPES = [
   { key: "compromisso", label: "Compromisso" },
   { key: "bloqueio",    label: "Bloqueio" },
 ];
+// Tipos "simples" (sem paciente/financeiro/status/whatsapp)
+const SIMPLE_TYPES = ["lembrete", "compromisso", "bloqueio"];
+const RECURRENCE_OPTIONS = [
+  { key: "none",     label: "Não repetir" },
+  { key: "DAILY",    label: "Diária" },
+  { key: "WEEKLY",   label: "Semanal" },
+  { key: "BIWEEKLY", label: "Quinzenal" },
+  { key: "MONTHLY",  label: "Mensal" },
+];
+
+// Monta a string RRULE a partir da frequência escolhida.
+function buildRecurrenceRule(freq, until) {
+  if (!freq || freq === "none") return null;
+  const map = {
+    DAILY:    "FREQ=DAILY;INTERVAL=1",
+    WEEKLY:   "FREQ=WEEKLY;INTERVAL=1",
+    BIWEEKLY: "FREQ=WEEKLY;INTERVAL=2",
+    MONTHLY:  "FREQ=MONTHLY;INTERVAL=1",
+  };
+  let rule = map[freq];
+  if (!rule) return null;
+  if (until) {
+    // UNTIL no formato YYYYMMDD (fim do dia)
+    const d = new Date(until);
+    if (!isNaN(d)) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      rule += `;UNTIL=${y}${m}${day}T235959Z`;
+    }
+  }
+  return rule;
+}
+
+// Data no formato do DTSTART do rrule (UTC): YYYYMMDDTHHMMSSZ
+function toRRuleDate(date) {
+  return new Date(date).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+
+// Deriva a frequência (para o form de edição) a partir de um RRULE.
+function parseRecurrenceFreq(rule) {
+  if (!rule) return "none";
+  if (rule.includes("FREQ=DAILY")) return "DAILY";
+  if (rule.includes("FREQ=MONTHLY")) return "MONTHLY";
+  if (rule.includes("FREQ=WEEKLY")) return rule.includes("INTERVAL=2") ? "BIWEEKLY" : "WEEKLY";
+  return "none";
+}
 const CATEGORY_FILTERS = [
   { key: "consulta",    label: "Consultas" },
   { key: "retorno",     label: "Retornos" },
@@ -67,6 +115,7 @@ function emptyForm() {
   return {
     title: "",
     category: "consulta",
+    description: "",
     patientId: "",
     professional: "Dra Ana",
     procedureType: "",
@@ -74,6 +123,8 @@ function emptyForm() {
     status: "SCHEDULED",
     selectedDate: "",
     endDate: "",
+    recurrenceFreq: "none", // none | DAILY | WEEKLY | BIWEEKLY | MONTHLY
+    recurrenceUntil: "",
     txAmount: "",
     txPaymentMethod: "",
     txInstallments: "1",
@@ -179,17 +230,17 @@ export default function Agenda() {
           STATUS_COLORS[a.status?.toUpperCase()] ??
           PROFESSIONAL_COLORS[a.professional] ??
           "#00704A";
-        return {
+        const base = {
           id: a.id,
           title: a.title || "Agendamento",
-          start: a.startsAt,
-          end: a.endsAt,
           allDay: a.isAllDay ?? false,
           backgroundColor: statusColor,
           borderColor: "transparent",
           extendedProps: {
             kind: "appointment",
             category,
+            description: a.description ?? null,
+            recurrenceRule: a.recurrenceRule ?? null,
             professional: a.professional,
             procedureType: a.procedureType,
             notes: a.notes,
@@ -202,6 +253,17 @@ export default function Agenda() {
             transaction: a.transaction ?? null,
           },
         };
+        // Evento recorrente: usa rrule + duração; senão, start/end normais.
+        if (a.recurrenceRule) {
+          const ms = new Date(a.endsAt) - new Date(a.startsAt);
+          return {
+            ...base,
+            rrule: `DTSTART:${toRRuleDate(a.startsAt)}\nRRULE:${a.recurrenceRule}`,
+            duration: { milliseconds: ms > 0 ? ms : 60 * 60 * 1000 },
+            editable: false, // não arrastar/redimensionar ocorrências recorrentes
+          };
+        }
+        return { ...base, start: a.startsAt, end: a.endsAt };
       });
 
       // Itens financeiros (a receber / a pagar) — apenas visuais no calendário
@@ -340,6 +402,7 @@ export default function Agenda() {
       ...emptyForm(),
       title: event.title,
       category: event.extendedProps.category || "consulta",
+      description: event.extendedProps.description || "",
       patientId: event.extendedProps.patientId || "",
       professional: event.extendedProps.professional || "",
       procedureType: event.extendedProps.procedureType || "",
@@ -347,6 +410,7 @@ export default function Agenda() {
       status: event.extendedProps.status || "SCHEDULED",
       selectedDate: formatForInput(event.start),
       endDate: formatForInput(event.end),
+      recurrenceFreq: parseRecurrenceFreq(event.extendedProps.recurrenceRule),
     });
     const msg = buildWhatsAppMessage(confirmTemplate, event.extendedProps.patientName, event.start);
     setSendWhatsApp(false);
@@ -358,52 +422,63 @@ export default function Agenda() {
     if (savingAppointment) return;
     setSavingAppointment(true);
     try {
-      const isBloqueio = form.category === "bloqueio";
-      // Bloqueio usa data/hora fim explícita; demais tipos = 1h por padrão.
-      const bloqueioEnd = form.endDate ? new Date(form.endDate) : null;
+      const cat = form.category;
+      const isSimple = SIMPLE_TYPES.includes(cat);          // lembrete | compromisso | bloqueio
+      const hasEndField = cat === "compromisso" || cat === "bloqueio";
+      const isRecorrente = cat === "compromisso";
+
+      const start = new Date(form.selectedDate);
+      const explicitEnd = form.endDate ? new Date(form.endDate) : null;
+      const endsAt = hasEndField && explicitEnd
+        ? explicitEnd
+        : new Date(start.getTime() + 60 * 60 * 1000);
+      const recurrenceRule = isRecorrente
+        ? buildRecurrenceRule(form.recurrenceFreq, form.recurrenceUntil)
+        : null;
+
+      const okMsg = {
+        bloqueio: "Bloqueio", lembrete: "Lembrete", compromisso: "Compromisso",
+      }[cat] || "Agendamento";
 
       if (editing) {
-        const editStart = new Date(form.selectedDate);
         await api.put(`/appointments/${editing.id}`, {
           title: form.title,
-          startsAt: form.selectedDate,
-          endsAt: isBloqueio && bloqueioEnd
-            ? bloqueioEnd
-            : new Date(editStart.getTime() + 60 * 60 * 1000),
-          professional: form.professional,
-          procedureType: form.procedureType,
+          description: isSimple ? form.description : undefined,
+          startsAt: start,
+          endsAt,
+          professional: isSimple ? undefined : form.professional,
+          procedureType: isSimple ? undefined : form.procedureType,
           notes: form.notes,
-          status: form.status,
-          category: form.category,
+          status: isSimple ? undefined : form.status,
+          category: cat,
+          recurrenceRule: isRecorrente ? recurrenceRule : null,
         });
-        toast.success(isBloqueio ? "Bloqueio atualizado" : "Agendamento atualizado");
+        toast.success(`${okMsg} atualizado`);
       } else {
-        const title = isBloqueio && !form.title.trim() ? "Horário bloqueado" : form.title;
-        const start = new Date(form.selectedDate);
-        const end = isBloqueio && bloqueioEnd
-          ? bloqueioEnd
-          : new Date(start.getTime() + 60 * 60 * 1000);
+        const title = cat === "bloqueio" && !form.title.trim() ? "Horário bloqueado" : form.title;
         const res = await api.post("/appointments", {
           title,
+          description: isSimple ? form.description : undefined,
           startsAt: start,
-          endsAt: end,
-          patientId: isBloqueio ? undefined : form.patientId,
-          professional: form.professional,
-          color: isBloqueio ? CATEGORY_COLORS.bloqueio : PROFESSIONAL_COLORS[form.professional],
+          endsAt,
+          patientId: isSimple ? undefined : form.patientId,
+          professional: isSimple ? undefined : form.professional,
+          color: isSimple ? CATEGORY_COLORS[cat] : PROFESSIONAL_COLORS[form.professional],
           notes: form.notes,
-          procedureType: isBloqueio ? undefined : form.procedureType,
-          status: form.status,
-          category: form.category,
+          procedureType: isSimple ? undefined : form.procedureType,
+          status: isSimple ? undefined : form.status,
+          category: cat,
+          recurrenceRule,
           idempotencyKey: idempotencyKeyRef.current,
-          txAmount: isBloqueio ? undefined : (form.txAmount || undefined),
-          txPaymentMethod: isBloqueio ? undefined : (form.txPaymentMethod || undefined),
-          txInstallments: !isBloqueio && Number(form.txInstallments) > 1 ? Number(form.txInstallments) : undefined,
-          txDueDate: isBloqueio ? undefined : (form.txDueDate || undefined),
-          txNotes: isBloqueio ? undefined : (form.txNotes || undefined),
+          txAmount: isSimple ? undefined : (form.txAmount || undefined),
+          txPaymentMethod: isSimple ? undefined : (form.txPaymentMethod || undefined),
+          txInstallments: !isSimple && Number(form.txInstallments) > 1 ? Number(form.txInstallments) : undefined,
+          txDueDate: isSimple ? undefined : (form.txDueDate || undefined),
+          txNotes: isSimple ? undefined : (form.txNotes || undefined),
         });
         // Renova a chave para o próximo agendamento
         idempotencyKeyRef.current = crypto.randomUUID();
-        toast.success(isBloqueio ? "Bloqueio criado" : "Agendamento criado");
+        toast.success(`${okMsg} criado`);
 
         // Procedimento exige retorno → guarda sugestão pra abrir o modal depois
         if (res.data?.suggestedReturn) {
@@ -517,6 +592,11 @@ export default function Agenda() {
     return d.toDateString() === today.toDateString();
   }).length;
 
+  // Tipos "simples" (lembrete/compromisso/bloqueio): só título, descrição e datas.
+  const isSimple = SIMPLE_TYPES.includes(form.category);
+  const hasEndField = form.category === "compromisso" || form.category === "bloqueio";
+  const isRecorrente = form.category === "compromisso";
+
   return (
     <MainLayout>
       <div className="flex gap-5 h-[calc(100vh-90px)]">
@@ -581,7 +661,7 @@ export default function Agenda() {
           <Card className="bg-creme-50! p-4 flex-1 overflow-hidden">
             <FullCalendar
               ref={calendarRef}
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, rrulePlugin]}
               initialView="timeGridWeek"
               locale={ptBrLocale}
               selectable
@@ -707,7 +787,10 @@ export default function Agenda() {
                   <Calendar size={15} className="text-verde" />
                 </div>
                 <h2 className="text-lg font-bold text-verde">
-                  {editing ? "Editar agendamento" : "Novo agendamento"}
+                  {editing ? "Editar" : "Novo"}{" "}
+                  {isSimple
+                    ? { lembrete: "lembrete", compromisso: "compromisso", bloqueio: "bloqueio" }[form.category]
+                    : "agendamento"}
                 </h2>
               </div>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 transition">
@@ -753,7 +836,21 @@ export default function Agenda() {
                 />
               </div>
 
-              {!editing && form.category !== "bloqueio" && (
+              {/* Descrição — tipos simples */}
+              {isSimple && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1.5">Descrição</label>
+                  <textarea
+                    value={form.description}
+                    onChange={f("description")}
+                    rows={2}
+                    placeholder="Detalhes…"
+                    className="w-full border border-ambar rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-verde/20"
+                  />
+                </div>
+              )}
+
+              {!editing && !isSimple && (
                 <div className="relative">
                   <label className="text-xs font-medium text-gray-500 block mb-1.5">Paciente</label>
                   <input
@@ -800,7 +897,7 @@ export default function Agenda() {
 
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">
-                  {form.category === "bloqueio" ? "Início" : "Data e hora"}
+                  {hasEndField ? "Início" : "Data e hora"}
                 </label>
                 <input
                   type="datetime-local"
@@ -810,7 +907,7 @@ export default function Agenda() {
                 />
               </div>
 
-              {form.category === "bloqueio" && (
+              {hasEndField && (
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1.5">Fim</label>
                   <input
@@ -819,13 +916,52 @@ export default function Agenda() {
                     onChange={f("endDate")}
                     className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                   />
-                  <p className="text-[11px] text-gray-400 mt-1.5">
-                    O período fica marcado como indisponível na agenda.
-                  </p>
+                  {form.category === "bloqueio" && (
+                    <p className="text-[11px] text-gray-400 mt-1.5">
+                      O período fica marcado como indisponível na agenda.
+                    </p>
+                  )}
                 </div>
               )}
 
-              {features.multiProfessional && (
+              {/* Recorrência — só compromisso */}
+              {isRecorrente && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1.5">Repetir</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {RECURRENCE_OPTIONS.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, recurrenceFreq: key }))}
+                        className={`px-3 py-2 rounded-xl text-xs font-medium transition border ${
+                          form.recurrenceFreq === key
+                            ? "border-verde bg-verde text-white"
+                            : "border-ambar text-verde hover:bg-creme-100"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {form.recurrenceFreq !== "none" && (
+                    <div className="mt-3">
+                      <label className="text-xs font-medium text-gray-500 block mb-1.5">Repetir até (opcional)</label>
+                      <input
+                        type="date"
+                        value={form.recurrenceUntil}
+                        onChange={f("recurrenceUntil")}
+                        className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                      />
+                      <p className="text-[11px] text-gray-400 mt-1.5">
+                        Sem data limite, repete indefinidamente.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!isSimple && features.multiProfessional && (
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1.5">Profissional</label>
                   <div className="flex gap-2">
@@ -847,7 +983,7 @@ export default function Agenda() {
                 </div>
               )}
 
-              {form.category !== "bloqueio" && (
+              {!isSimple && (
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">Procedimento</label>
                 <select
@@ -865,7 +1001,7 @@ export default function Agenda() {
               </div>
               )}
 
-              {form.category !== "bloqueio" && (
+              {!isSimple && (
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">Status</label>
                 <div className="grid grid-cols-3 gap-1.5">
@@ -887,6 +1023,7 @@ export default function Agenda() {
               </div>
               )}
 
+              {!isSimple && (
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">Observações</label>
                 <textarea
@@ -897,9 +1034,10 @@ export default function Agenda() {
                   className="w-full border border-ambar rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-verde/20"
                 />
               </div>
+              )}
 
               {/* INFORMAÇÕES FINANCEIRAS (só na criação) */}
-              {!editing && form.category !== "bloqueio" && (
+              {!editing && !isSimple && (
                 <div className="border-t border-creme-200 pt-4 space-y-3">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
                     <DollarSign size={12} /> Financeiro
@@ -978,7 +1116,7 @@ export default function Agenda() {
               )}
 
               {/* SITUAÇÃO FINANCEIRA (só na edição) */}
-              {editing && (() => {
+              {editing && !isSimple && (() => {
                 const tx = editing.extendedProps.transaction;
                 const STATUS_PILL = {
                   pendente:   "bg-amber-100 text-amber-700",
@@ -1016,7 +1154,7 @@ export default function Agenda() {
               })()}
 
               {/* WHATSAPP */}
-              {features.whatsapp && form.category !== "bloqueio" && (
+              {features.whatsapp && !isSimple && (
               <div className="border-t border-creme-200 pt-4">
                 <button
                   type="button"

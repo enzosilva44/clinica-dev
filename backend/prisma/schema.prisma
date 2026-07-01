@@ -78,6 +78,7 @@ model User {
   documentVersions      DocumentVersion[]
   anamnesisTemplates    AnamnesisTemplate[]
   anamnesisResponses    AnamnesisResponse[]
+  cardFees              CardFee[]
   clinic                Clinic?              @relation(fields: [clinicId], references: [id])
 }
 
@@ -166,6 +167,7 @@ model Appointment {
   idempotencyKey String?      @unique
   category       String       @default("consulta") // consulta | retorno | lembrete | compromisso
   isAllDay       Boolean      @default(false)
+  recurrenceRule String?      // RRULE (ex: FREQ=WEEKLY;INTERVAL=1) p/ compromissos recorrentes
   parentAppointmentId String?  // liga o retorno ao agendamento de origem
   patient        Patient?     @relation(fields: [patientId], references: [id])
   user           User         @relation(fields: [userId], references: [id])
@@ -360,6 +362,10 @@ model Transaction {
   installmentNumber  Int?
   installments       Int?
   notes              String?
+  cardBrand          String?      // bandeira usada, quando pagamento no cartão
+  feePercent         Float?       // % de taxa da maquininha aplicada
+  feeAmount          Float?       // custo da taxa em R$ (amount * feePercent)
+  netAmount          Float?       // valor líquido recebido (amount - feeAmount)
   appointment        Appointment? @relation(fields: [appointmentId], references: [id])
   budget             Budget?      @relation(fields: [budgetId], references: [id])
   patient            Patient?     @relation(fields: [patientId], references: [id])
@@ -631,4 +637,22 @@ model AnamnesisResponse {
   template     AnamnesisTemplate  @relation(fields: [templateId], references: [id])
   patient      Patient            @relation(fields: [patientId], references: [id])
   user         User               @relation(fields: [userId], references: [id])
+}
+
+// Taxa da maquininha de cartão, por bandeira e tipo/faixa de parcelas.
+// type: debito | credito | credito_parcelado
+// Para credito_parcelado, a faixa installmentsFrom..installmentsTo define
+// a que número de parcelas o percentual se aplica.
+model CardFee {
+  id               String   @id @default(cuid())
+  userId           String
+  brand            String   @default("Geral") // Visa | Master | Elo | Amex | Hipercard | Geral
+  type             String   // debito | credito | credito_parcelado
+  installmentsFrom Int?     // início da faixa (só credito_parcelado)
+  installmentsTo   Int?     // fim da faixa (só credito_parcelado)
+  percent          Float    // % descontado pela maquininha
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }

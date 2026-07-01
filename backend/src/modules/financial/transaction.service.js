@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "../../config/prisma.js";
+import { computeFee } from "./cardFee.service.js";
 
 
 // ─── include padrão ──────────────────────────────────────────────────────────
@@ -153,6 +154,30 @@ export async function create(userId, data) {
   const count = data.installments ? Number(data.installments) : 1;
   const patientId = await resolvePatientId(data);
 
+  // Taxa da maquininha: só para receita paga no cartão, calculada sobre o total.
+  const fee = data.type === "receita"
+    ? await computeFee(userId, {
+        paymentMethod: data.paymentMethod,
+        cardBrand: data.cardBrand,
+        installments: count,
+        amount: Number(data.amount),
+      })
+    : null;
+
+  // Rateio proporcional da taxa por parcela (último absorve o arredondamento).
+  const feeForShare = (share, isLast, sumSoFar) => {
+    if (!fee) return {};
+    const feeAmount = isLast
+      ? Math.round((fee.feeAmount - sumSoFar) * 100) / 100
+      : Math.round(share * (fee.feePercent / 100) * 100) / 100;
+    return {
+      cardBrand: fee.cardBrand,
+      feePercent: fee.feePercent,
+      feeAmount,
+      netAmount: Math.round((share - feeAmount) * 100) / 100,
+    };
+  };
+
   if (count > 1) {
     const groupId = randomUUID();
     const total = Number(data.amount);
@@ -160,15 +185,20 @@ export async function create(userId, data) {
     const lastAmt = Math.round((total - base * (count - 1)) * 100) / 100;
     const firstDue = data.dueDate ? new Date(data.dueDate) : new Date();
 
+    let feeSum = 0;
     const ops = Array.from({ length: count }, (_, i) => {
       const dueDate = new Date(firstDue);
       dueDate.setMonth(dueDate.getMonth() + i);
+      const isLast = i === count - 1;
+      const share = isLast ? lastAmt : base;
+      const feeFields = feeForShare(share, isLast, feeSum);
+      if (feeFields.feeAmount) feeSum += feeFields.feeAmount;
       return prisma.transaction.create({
         data: {
           type: data.type,
           status: "pendente",
           description: `${data.description} (${i + 1}/${count})`,
-          amount: i === count - 1 ? lastAmt : base,
+          amount: share,
           category: data.category || null,
           paymentMethod: data.paymentMethod || null,
           notes: data.notes || null,
@@ -180,6 +210,7 @@ export async function create(userId, data) {
           appointmentId: i === 0 ? (data.appointmentId || null) : null,
           budgetId: i === 0 ? (data.budgetId || null) : null,
           userId,
+          ...feeFields,
         },
       });
     });
@@ -188,12 +219,13 @@ export async function create(userId, data) {
     return { installmentGroup: groupId, count, first: results[0] };
   }
 
+  const amount = Number(data.amount);
   return prisma.transaction.create({
     data: {
       type: data.type,
       status: "confirmado",
       description: data.description,
-      amount: Number(data.amount),
+      amount,
       category: data.category || null,
       paymentMethod: data.paymentMethod || null,
       notes: data.notes || null,
@@ -207,6 +239,7 @@ export async function create(userId, data) {
       budgetId: data.budgetId || null,
       paidAt: new Date(),
       userId,
+      ...feeForShare(amount, true, 0),
     },
     include: INCLUDE,
   });
@@ -303,13 +336,30 @@ export async function approve(id, userId, data) {
   const tx = await prisma.transaction.findFirst({ where: { id, userId, status: "pendente" } });
   if (!tx) throw new Error("Transação não encontrada ou já confirmada");
 
+  const amount = data.amount !== undefined ? Number(data.amount) : tx.amount;
+  const paymentMethod = data.paymentMethod || null;
+
+  // Recalcula a taxa da maquininha ao confirmar (método definido agora).
+  const fee = tx.type === "receita"
+    ? await computeFee(userId, {
+        paymentMethod,
+        cardBrand: data.cardBrand || tx.cardBrand,
+        installments: tx.installments || 1,
+        amount,
+      })
+    : null;
+
   return prisma.transaction.update({
     where: { id },
     data: {
       status: "confirmado",
-      amount: data.amount !== undefined ? Number(data.amount) : tx.amount,
-      paymentMethod: data.paymentMethod || null,
+      amount,
+      paymentMethod,
       paidAt: new Date(),
+      cardBrand: fee ? fee.cardBrand : null,
+      feePercent: fee ? fee.feePercent : null,
+      feeAmount: fee ? fee.feeAmount : null,
+      netAmount: fee ? fee.netAmount : null,
     },
     include: INCLUDE,
   });

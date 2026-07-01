@@ -44,6 +44,7 @@ export async function create(data, user) {
         idempotencyKey,
         category,
         isAllDay: data.isAllDay ?? false,
+        recurrenceRule: data.recurrenceRule || null,
         parentAppointmentId: data.parentAppointmentId || null,
         ...(data.patientId ? { patient: { connect: { id: data.patientId } } } : {}),
         user: { connect: { id: user.id } },
@@ -262,6 +263,8 @@ export async function update(
       notes: data.notes,
       status: data.status,
       category: data.category,
+      description: data.description,
+      recurrenceRule: data.recurrenceRule,
     },
     include: { patient: true },
   });
