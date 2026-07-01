@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
+import { LogoMark } from "../components/ui/Logo.jsx";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -280,7 +281,8 @@ export default function Signup() {
   return (
     <div className="min-h-screen bg-creme-50 flex flex-col items-center justify-start px-4 py-10">
       {/* Logo */}
-      <Link to="/" className="mb-8">
+      <Link to="/" className="mb-8 flex items-center gap-2.5">
+        <LogoMark variant="color" size={34} />
         <p className="text-2xl font-bold tracking-wide">
           <span className="text-verde">Iaso</span><span className="text-ambar">Clin</span>
         </p>

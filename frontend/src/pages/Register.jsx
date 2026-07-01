@@ -4,18 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
-
-function IasoLogo() {
-  return (
-    <svg viewBox="0 0 56 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-14">
-      <line x1="14" y1="7"  x2="42" y2="7"  stroke="#C4895A" strokeWidth="3" strokeLinecap="round" />
-      <line x1="28" y1="7"  x2="28" y2="73" stroke="#C4895A" strokeWidth="3" strokeLinecap="round" />
-      <line x1="14" y1="73" x2="42" y2="73" stroke="#C4895A" strokeWidth="3" strokeLinecap="round" />
-      <path d="M28 32 Q34 24 42 20" stroke="#C4895A" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M28 32 Q40 14 44 12 Q46 22 38 28 Q34 31 28 32 Z" fill="#C4895A" opacity="0.85" />
-    </svg>
-  );
-}
+import { LogoMark } from "../components/ui/Logo.jsx";
 
 const INPUT = "w-full border border-creme-200 bg-[#FDFCFA] rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-verde/20 focus:border-verde transition";
 
@@ -50,7 +39,7 @@ export default function Register() {
       <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl px-8 py-10">
 
         <div className="flex items-center gap-3 mb-8 justify-center">
-          <IasoLogo />
+          <LogoMark variant="color" size={44} />
           <p className="text-xl font-bold">
             <span className="text-verde">Iaso</span><span className="text-ambar">Clin</span>
           </p>
