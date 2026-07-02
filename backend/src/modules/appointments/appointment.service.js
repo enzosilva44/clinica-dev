@@ -186,15 +186,20 @@ export async function getCalendar(user, { from, to, types } = {}) {
     });
     for (const t of transactions) {
       const isReceivable = t.type === "receita";
+      // Transação só tem data (dueDate). Plotamos com horário fixo às 09h
+      // para o item aparecer na grade horária da agenda (não como dia inteiro).
+      const start = new Date(t.dueDate);
+      start.setHours(9, 0, 0, 0);
+      const end = new Date(start.getTime() + 30 * 60 * 1000);
       events.push({
         id: `tx-${t.id}`,
         kind: isReceivable ? "receivable" : "payable",
         category: isReceivable ? "receivable" : "payable",
         title: `${isReceivable ? "A receber" : "A pagar"}: ${t.description}`,
         patientName: t.patient?.name ?? null,
-        start: t.dueDate,
-        end: t.dueDate,
-        isAllDay: true,
+        start,
+        end,
+        isAllDay: false,
         color: CALENDAR_COLORS[isReceivable ? "receivable" : "payable"],
         amount: t.amount,
         status: t.status,

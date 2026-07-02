@@ -266,7 +266,8 @@ export default function Agenda() {
         return { ...base, start: a.startsAt, end: a.endsAt };
       });
 
-      // Itens financeiros (a receber / a pagar) — apenas visuais no calendário
+      // Itens financeiros (a receber / a pagar) — apenas visuais no calendário.
+      // Vêm do backend com horário fixo (09h); mostrados na grade horária.
       const finEvents = (calendar.data || [])
         .filter((e) => e.kind === "receivable" || e.kind === "payable")
         .map((e) => ({
@@ -274,7 +275,7 @@ export default function Agenda() {
           title: e.title,
           start: e.start,
           end: e.end,
-          allDay: true,
+          allDay: e.isAllDay ?? false,
           backgroundColor: e.color,
           borderColor: "transparent",
           extendedProps: {
@@ -425,7 +426,7 @@ export default function Agenda() {
       const cat = form.category;
       const isSimple = SIMPLE_TYPES.includes(cat);          // lembrete | compromisso | bloqueio
       const hasEndField = cat === "compromisso" || cat === "bloqueio";
-      const isRecorrente = cat === "compromisso";
+      const isRecorrente = isSimple; // lembrete, compromisso e bloqueio podem repetir
 
       const start = new Date(form.selectedDate);
       const explicitEnd = form.endDate ? new Date(form.endDate) : null;
@@ -595,7 +596,7 @@ export default function Agenda() {
   // Tipos "simples" (lembrete/compromisso/bloqueio): só título, descrição e datas.
   const isSimple = SIMPLE_TYPES.includes(form.category);
   const hasEndField = form.category === "compromisso" || form.category === "bloqueio";
-  const isRecorrente = form.category === "compromisso";
+  const isRecorrente = isSimple; // lembrete, compromisso e bloqueio podem repetir
 
   return (
     <MainLayout>
