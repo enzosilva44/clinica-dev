@@ -68,10 +68,12 @@ router.get("/", async (req, res) => {
     ]);
 
     // ── FINANCIAL ──────────────────────────────────────────
+    // Receita líquida: desconta taxa de maquininha quando houver.
+    const revNet = (t) => (t.feeAmount != null && t.netAmount != null ? t.netAmount : (t.amount ?? 0));
     const revenue = transactions.filter((t) => t.type === "receita");
     const expenses = transactions.filter((t) => t.type === "despesa");
 
-    const totalRevenue = revenue.reduce((s, t) => s + (t.amount ?? 0), 0);
+    const totalRevenue = revenue.reduce((s, t) => s + revNet(t), 0);
     const totalExpenses = expenses.reduce((s, t) => s + (t.amount ?? 0), 0);
     const netProfit = totalRevenue - totalExpenses;
     const avgTicket = revenue.length > 0 ? totalRevenue / revenue.length : 0;
@@ -81,7 +83,7 @@ router.get("/", async (req, res) => {
     const expensesByMonth = buildMonthlyMap(fromDate, toDate);
     for (const t of revenue) {
       const key = monthKey(t.createdAt);
-      if (revenueByMonth[key] !== undefined) revenueByMonth[key] += t.amount ?? 0;
+      if (revenueByMonth[key] !== undefined) revenueByMonth[key] += revNet(t);
     }
     for (const t of expenses) {
       const key = monthKey(t.createdAt);
@@ -97,7 +99,7 @@ router.get("/", async (req, res) => {
     const paymentMap = {};
     for (const t of revenue) {
       const method = t.paymentMethod || "Não informado";
-      paymentMap[method] = (paymentMap[method] ?? 0) + (t.amount ?? 0);
+      paymentMap[method] = (paymentMap[method] ?? 0) + revNet(t);
     }
     const byPaymentMethod = Object.entries(paymentMap)
       .map(([method, total]) => ({ method, total: Math.round(total * 100) / 100 }))

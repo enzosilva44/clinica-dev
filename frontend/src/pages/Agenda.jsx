@@ -79,6 +79,37 @@ function buildRecurrenceRule(freq, until) {
   return rule;
 }
 
+// Estimativa de taxa de maquininha no cliente (espelha computeFee do backend).
+// Retorna { feePercent, feeAmount, netAmount } ou null.
+function isCardMethod(method) {
+  if (!method) return false;
+  const m = method.toLowerCase();
+  return m.includes("cart") || m.includes("card");
+}
+function estimateCardFee(fees, { paymentMethod, installments, amount }) {
+  if (!isCardMethod(paymentMethod) || !amount || !fees?.length) return null;
+  const m = paymentMethod.toLowerCase();
+  const n = Number(installments) || 1;
+  let type;
+  if (m.includes("déb") || m.includes("deb")) type = "debito";
+  else type = n > 1 ? "credito_parcelado" : "credito";
+
+  const pool = fees.filter((f) => f.type === type);
+  if (!pool.length) return null;
+  const inRange = (f) => {
+    if (type !== "credito_parcelado") return true;
+    const from = f.installmentsFrom ?? 2;
+    const to = f.installmentsTo ?? Infinity;
+    return n >= from && n <= to;
+  };
+  const cands = pool.filter(inRange);
+  const match = cands.find((f) => f.brand === "Geral") || cands[0];
+  if (!match) return null;
+  const gross = Number(amount);
+  const feeAmount = Math.round(gross * (match.percent / 100) * 100) / 100;
+  return { feePercent: match.percent, feeAmount, netAmount: Math.round((gross - feeAmount) * 100) / 100 };
+}
+
 // Data no formato do DTSTART do rrule (UTC): YYYYMMDDTHHMMSSZ
 function toRRuleDate(date) {
   return new Date(date).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -163,6 +194,7 @@ export default function Agenda() {
   const [events, setEvents] = useState([]);
   const [patients, setPatients] = useState([]);
   const [procedures, setProcedures] = useState([]);
+  const [cardFees, setCardFees] = useState([]);
   const [selectedProfessionals, setSelectedProfessionals] = useState([...PROFESSIONALS]);
 
   const [showModal, setShowModal] = useState(false);
@@ -311,10 +343,20 @@ export default function Agenda() {
     }
   }
 
+  async function loadCardFees() {
+    try {
+      const res = await api.get("/financial/card-fees");
+      setCardFees(res.data || []);
+    } catch {
+      setCardFees([]);
+    }
+  }
+
   useEffect(() => {
     loadAppointments();
     loadPatients();
     loadProcedures();
+    if (features.financial) loadCardFees();
     if (features.whatsapp) {
       api.get("/automations/templates").then((res) => {
         const tpl = res.data.find((t) => t.type === "confirmation");
@@ -1103,6 +1145,23 @@ export default function Agenda() {
                       {" "}— vencimento mensal a partir da data informada
                     </p>
                   )}
+
+                  {/* Estimativa de taxa da maquininha (cartão) */}
+                  {(() => {
+                    const est = estimateCardFee(cardFees, {
+                      paymentMethod: form.txPaymentMethod,
+                      installments: form.txInstallments,
+                      amount: form.txAmount,
+                    });
+                    if (!est) return null;
+                    const fmtVal = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+                    return (
+                      <div className="text-[11px] bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-amber-800">
+                        Taxa estimada da maquininha ({est.feePercent}%): <strong>−{fmtVal(est.feeAmount)}</strong>
+                        {" · "}líquido previsto: <strong>{fmtVal(est.netAmount)}</strong>
+                      </div>
+                    );
+                  })()}
 
                   <div>
                     <label className="text-xs font-medium text-gray-500 block mb-1.5">Observação financeira</label>

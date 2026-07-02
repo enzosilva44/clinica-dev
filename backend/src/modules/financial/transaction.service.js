@@ -28,10 +28,20 @@ function monthRange(month) {
   return { start: new Date(year, m - 1, 1), end: new Date(year, m, 1) };
 }
 
+// Valor líquido de uma receita: desconta a taxa de maquininha quando houver.
+// Despesas e receitas sem taxa retornam o próprio amount.
+function netValue(t) {
+  if (t.type === "receita" && t.feeAmount != null && t.netAmount != null) {
+    return t.netAmount;
+  }
+  return t.amount;
+}
+
 function calcSummary(txs) {
-  const receitas = txs.filter((t) => t.type === "receita").reduce((s, t) => s + t.amount, 0);
+  const receitas = txs.filter((t) => t.type === "receita").reduce((s, t) => s + netValue(t), 0);
   const despesas = txs.filter((t) => t.type === "despesa").reduce((s, t) => s + t.amount, 0);
-  return { receitas, despesas, saldo: receitas - despesas };
+  const taxas = txs.filter((t) => t.type === "receita").reduce((s, t) => s + (t.feeAmount || 0), 0);
+  return { receitas, despesas, taxas, saldo: receitas - despesas };
 }
 
 async function resolvePatientId(data) {
@@ -104,7 +114,7 @@ export async function getAnalytics(userId, month) {
   for (const t of curr) {
     const day = new Date(t.createdAt).getDate();
     const wi = day <= 7 ? 0 : day <= 14 ? 1 : day <= 21 ? 2 : 3;
-    if (t.type === "receita") weeks[wi].receitas += t.amount;
+    if (t.type === "receita") weeks[wi].receitas += netValue(t);
     else weeks[wi].despesas += t.amount;
   }
 
@@ -112,7 +122,7 @@ export async function getAnalytics(userId, month) {
   for (const t of curr) {
     const cat = t.category || "Outros";
     if (!catMap[cat]) catMap[cat] = { receitas: 0, despesas: 0 };
-    if (t.type === "receita") catMap[cat].receitas += t.amount;
+    if (t.type === "receita") catMap[cat].receitas += netValue(t);
     else catMap[cat].despesas += t.amount;
   }
   const categories = Object.entries(catMap)

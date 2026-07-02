@@ -828,9 +828,12 @@ export default function Financeiro() {
 
   // ── totais extrato ──────────────────────────────────────────────────────────
 
+  // Receita líquida por transação: desconta a taxa de maquininha quando houver.
+  const netReceita = (t) => (t.feeAmount != null && t.netAmount != null ? t.netAmount : t.amount);
   const extTotals = {
-    receitas: extrato.filter((t) => t.type === "receita").reduce((s, t) => s + t.amount, 0),
+    receitas: extrato.filter((t) => t.type === "receita").reduce((s, t) => s + netReceita(t), 0),
     despesas: extrato.filter((t) => t.type === "despesa").reduce((s, t) => s + t.amount, 0),
+    taxas: extrato.filter((t) => t.type === "receita").reduce((s, t) => s + (t.feeAmount || 0), 0),
   };
 
   // ── max categorias (para barras) ────────────────────────────────────────────

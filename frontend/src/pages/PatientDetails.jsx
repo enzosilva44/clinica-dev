@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Sparkles, Cake, CalendarDays, ClipboardList, TrendingUp, TrendingDown, Users, FileText, Download, Trash2, Eye, Send, Plus, PartyPopper, Check } from "lucide-react";
+import { Sparkles, Cake, CalendarDays, ClipboardList, TrendingUp, TrendingDown, Users, FileText, Download, Trash2, Eye, Send, Plus, PartyPopper, Check, AlertTriangle } from "lucide-react";
+import { getAlertLevel } from "../components/patient/alertLevels";
 import MainLayout from "../layouts/MainLayout";
 import { Card } from "../components/ui";
 import Spinner from "../components/ui/Spinner";
@@ -438,7 +439,23 @@ export default function PatientDetails() {
             ← Voltar
           </button>
         </div>
-          
+
+        {/* ALERTA DO PACIENTE */}
+        {patient.alertLevel && patient.alertLevel !== "none" && (() => {
+          const level = getAlertLevel(patient.alertLevel);
+          return (
+            <div className={`flex items-start gap-3 rounded-2xl border p-4 mb-4 ${level.banner}`}>
+              <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-sm">{level.short}</p>
+                <p className="text-sm mt-0.5 whitespace-pre-line">
+                  {patient.observations?.trim() || "Este paciente possui um alerta ativo. Revise as observações clínicas."}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* HEADER */}
         <div className="bg-verde rounded-2xl p-5 md:p-6 mb-6 text-white shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
