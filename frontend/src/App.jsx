@@ -12,6 +12,7 @@ import Products from "./pages/Products";
 import Financeiro from "./pages/Financeiro";
 import Clube from "./pages/Clube";
 import Documents from "./pages/Documents";
+import Portfolio from "./pages/Portfolio";
 import Analytics from "./pages/Relatorios";
 import Faturamento from "./pages/Faturamento";
 import Automacoes from "./pages/Automacoes";
@@ -36,6 +37,7 @@ function App() {
       <Route path="/clube" element={<Clube />} />
       <Route path="/documents" element={<Documents />} />
       <Route path="/documentos" element={<Navigate to="/documents" />} />
+      <Route path="/portfolio" element={<Portfolio />} />
       <Route path="/faturamento" element={<Faturamento />} />
       <Route path="/analytics" element={<Analytics />} />
       <Route path="/relatorios" element={<Navigate to="/analytics" />} />
