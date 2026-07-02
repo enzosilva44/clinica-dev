@@ -10,6 +10,7 @@ import { getFeatures } from "../../config/features.js";
 import { requestOtp, validateOtp } from "../signature/otp.service.js";
 import { deleteFile, fileExists, getFile, saveFile } from "../../providers/storage/index.js";
 import { buildStorageKey } from "../../providers/storage/storageKey.js";
+import { seedDefaultFolders } from "../../shared/defaultFolders.js";
 
 const router = Router();
 
@@ -285,7 +286,54 @@ function documentStorageKey({ userId, originalName }) {
   });
 }
 
-// --- Pasta Sanitária ---
+// --- Pastas ---
+
+router.get("/folders", ...documentsAccess, async (req, res) => {
+  try {
+    await seedDefaultFolders(prisma, req.user.id);
+    const folders = await prisma.documentFolder.findMany({
+      where: { userId: req.user.id },
+      orderBy: [{ isDefault: "desc" }, { name: "asc" }],
+    });
+    res.json(folders);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post("/folders", ...documentsAccess, async (req, res) => {
+  try {
+    const name = (req.body.name || "").trim();
+    if (!name) return res.status(400).json({ error: "Nome da pasta é obrigatório" });
+    const folder = await prisma.documentFolder.create({
+      data: { name, userId: req.user.id },
+    });
+    res.status(201).json(folder);
+  } catch (e) {
+    if (e.code === "P2002") return res.status(409).json({ error: "Já existe uma pasta com esse nome" });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.delete("/folders/:id", ...documentsAccess, async (req, res) => {
+  try {
+    const folder = await prisma.documentFolder.findFirst({
+      where: { id: req.params.id, userId: req.user.id },
+    });
+    if (!folder) return res.status(404).json({ error: "Not found" });
+    if (folder.isDefault) return res.status(400).json({ error: "Pastas padrão não podem ser removidas" });
+    await prisma.document.updateMany({
+      where: { folderId: folder.id, userId: req.user.id },
+      data: { folderId: null },
+    });
+    await prisma.documentFolder.delete({ where: { id: folder.id } });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Documentos ---
 
 router.get("/", ...documentsAccess, async (req, res) => {
   try {
@@ -302,7 +350,7 @@ router.get("/", ...documentsAccess, async (req, res) => {
 router.post("/upload", ...documentsAccess, handlePdfUpload, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Arquivo obrigatório" });
-    const { name, type } = req.body;
+    const { name, type, folderId } = req.body;
     const filePath = documentStorageKey({ userId: req.user.id, originalName: req.file.originalname });
     await saveFile(req.file.buffer, filePath, "application/pdf");
     const doc = await prisma.document.create({
@@ -313,6 +361,7 @@ router.post("/upload", ...documentsAccess, handlePdfUpload, async (req, res) => 
         filePath,
         fileSize: req.file.size,
         userId: req.user.id,
+        folderId: folderId || null,
       },
     });
     res.status(201).json(doc);
@@ -333,6 +382,7 @@ router.put("/:id", ...documentsAccess, async (req, res) => {
         name: req.body.name ?? doc.name,
         type: req.body.type ?? doc.type,
         fields: req.body.fields ?? doc.fields,
+        folderId: req.body.folderId !== undefined ? (req.body.folderId || null) : doc.folderId,
       },
     });
     res.json(updated);

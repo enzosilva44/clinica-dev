@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FileText, Trash2, Eye, X, Plus, Settings2, Upload, Check } from "lucide-react";
+import { FileText, Trash2, Eye, X, Plus, Settings2, Upload, Check, Folder, FolderPlus } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 import toast from "react-hot-toast";
@@ -34,10 +34,14 @@ function isPdf(file) {
 
 export default function Documents() {
   const [docs, setDocs] = useState([]);
+  const [folders, setFolders] = useState([]);
+  const [activeFolder, setActiveFolder] = useState("all"); // "all" | "none" | folderId
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [form, setForm] = useState({ name: "", type: "termo" });
+  const [form, setForm] = useState({ name: "", type: "termo", folderId: "" });
   const [file, setFile] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [configuringDoc, setConfiguringDoc] = useState(null);
@@ -54,7 +58,56 @@ export default function Documents() {
     }
   }
 
-  useEffect(() => { loadDocs(); }, []);
+  async function loadFolders() {
+    try {
+      const res = await api.get("/documents/folders");
+      setFolders(res.data);
+    } catch {
+      toast.error("Erro ao carregar pastas");
+    }
+  }
+
+  useEffect(() => { loadDocs(); loadFolders(); }, []);
+
+  async function createFolder() {
+    const name = newFolderName.trim();
+    if (!name) return;
+    try {
+      const res = await api.post("/documents/folders", { name });
+      setFolders((prev) => [...prev, res.data]);
+      setNewFolderName("");
+      setShowNewFolder(false);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Erro ao criar pasta");
+    }
+  }
+
+  async function deleteFolder(id) {
+    if (!confirm("Excluir esta pasta? Os documentos voltam para 'Sem pasta'.")) return;
+    try {
+      await api.delete(`/documents/folders/${id}`);
+      setFolders((prev) => prev.filter((f) => f.id !== id));
+      setDocs((prev) => prev.map((d) => d.folderId === id ? { ...d, folderId: null } : d));
+      if (activeFolder === id) setActiveFolder("all");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Erro ao excluir pasta");
+    }
+  }
+
+  async function moveDoc(docId, folderId) {
+    try {
+      await api.put(`/documents/${docId}`, { folderId: folderId || null });
+      setDocs((prev) => prev.map((d) => d.id === docId ? { ...d, folderId: folderId || null } : d));
+    } catch {
+      toast.error("Erro ao mover documento");
+    }
+  }
+
+  const visibleDocs = docs.filter((d) => {
+    if (activeFolder === "all") return true;
+    if (activeFolder === "none") return !d.folderId;
+    return d.folderId === activeFolder;
+  });
 
   function handleDrop(e) {
     e.preventDefault();
@@ -77,11 +130,12 @@ export default function Documents() {
       fd.append("file", file);
       fd.append("name", form.name.trim());
       fd.append("type", form.type);
+      if (form.folderId) fd.append("folderId", form.folderId);
       await api.post("/documents/upload", fd);
       toast.success("Documento adicionado");
       setShowUpload(false);
       setFile(null);
-      setForm({ name: "", type: "termo" });
+      setForm({ name: "", type: "termo", folderId: activeFolder !== "all" && activeFolder !== "none" ? activeFolder : "" });
       loadDocs();
     } catch (err) {
       toast.error(err.response?.data?.error || "Erro ao fazer upload");
@@ -107,11 +161,14 @@ export default function Documents() {
     window.open(`${base}/documents/${id}/file?token=${token}`, "_blank");
   }
 
+  const activeFolderObj = folders.find((f) => f.id === activeFolder);
+  const pageTitle = activeFolder === "all" ? "Documentos" : activeFolder === "none" ? "Sem pasta" : (activeFolderObj?.name ?? "Documentos");
+
   return (
     <MainLayout>
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-verde">Pasta Sanitária</h1>
+          <h1 className="text-3xl font-bold text-verde">{pageTitle}</h1>
           <p className="text-gray-500 mt-1">Documentos da clínica para assinar com pacientes</p>
         </div>
         <button
@@ -122,11 +179,78 @@ export default function Documents() {
         </button>
       </div>
 
+      {/* PASTAS */}
+      <div className="flex items-center gap-2 flex-wrap mb-6">
+        <button
+          onClick={() => setActiveFolder("all")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+            activeFolder === "all" ? "bg-verde text-white border-verde" : "border-ambar text-verde hover:bg-creme-100"
+          }`}
+        >
+          Todos
+        </button>
+        {folders.map((folder) => (
+          <div key={folder.id} className="group relative">
+            <button
+              onClick={() => setActiveFolder(folder.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                activeFolder === folder.id ? "bg-verde text-white border-verde" : "border-ambar text-verde hover:bg-creme-100"
+              }`}
+            >
+              <Folder size={12} /> {folder.name}
+            </button>
+            {!folder.isDefault && (
+              <button
+                onClick={() => deleteFolder(folder.id)}
+                title="Excluir pasta"
+                className={`absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-100 text-red-500 items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition ${
+                  activeFolder === folder.id ? "hidden" : "hidden group-hover:flex"
+                }`}
+              >
+                ×
+              </button>
+            )}
+          </div>
+        ))}
+        <button
+          onClick={() => setActiveFolder("none")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+            activeFolder === "none" ? "bg-verde text-white border-verde" : "border-ambar text-verde hover:bg-creme-100"
+          }`}
+        >
+          Sem pasta
+        </button>
+
+        {showNewFolder ? (
+          <div className="flex items-center gap-1">
+            <input
+              autoFocus
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") createFolder(); if (e.key === "Escape") setShowNewFolder(false); }}
+              placeholder="Nome da pasta"
+              className="border border-ambar rounded-lg px-2.5 py-1.5 text-xs w-36"
+            />
+            <button onClick={createFolder} className="text-xs text-verde font-medium px-2 py-1.5">OK</button>
+            <button onClick={() => { setShowNewFolder(false); setNewFolderName(""); }} className="text-gray-400 px-1">
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowNewFolder(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-dashed border-ambar text-gray-500 hover:bg-creme-100 transition"
+          >
+            <FolderPlus size={12} /> Nova pasta
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-creme-100 rounded-xl animate-pulse" />)}
         </div>
-      ) : docs.length === 0 ? (
+      ) : visibleDocs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-28 text-center">
           <div className="w-16 h-16 bg-creme-100 rounded-2xl flex items-center justify-center mb-4">
             <FileText size={28} className="text-ambar" />
@@ -143,10 +267,10 @@ export default function Documents() {
       ) : (
         <div className="bg-creme-50 border border-creme-200 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3.5 bg-creme-100 border-b border-creme-200 flex items-center justify-between">
-            <span className="text-sm font-semibold text-verde">{docs.length} {docs.length === 1 ? "documento" : "documentos"}</span>
+            <span className="text-sm font-semibold text-verde">{visibleDocs.length} {visibleDocs.length === 1 ? "documento" : "documentos"}</span>
           </div>
           <div className="divide-y divide-creme-200">
-            {docs.map((doc) => (
+            {visibleDocs.map((doc) => (
               <div key={doc.id} className="flex items-center gap-4 px-5 py-4 hover:bg-[#F3EEE5] transition group">
                 <div className="w-9 h-9 bg-creme-100 rounded-xl flex items-center justify-center shrink-0">
                   <FileText size={17} className="text-verde" />
@@ -171,6 +295,17 @@ export default function Documents() {
                     Sem campos
                   </span>
                 )}
+
+                <select
+                  value={doc.folderId ?? ""}
+                  onChange={(e) => moveDoc(doc.id, e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-xs border border-ambar rounded-lg px-2 py-1.5 bg-white shrink-0 opacity-0 group-hover:opacity-100 transition max-w-[140px]"
+                  title="Mover para pasta"
+                >
+                  <option value="">Sem pasta</option>
+                  {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                </select>
 
                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition">
                   <button
@@ -207,7 +342,7 @@ export default function Documents() {
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
               <h2 className="text-lg font-bold text-verde">Adicionar documento</h2>
-              <button onClick={() => { setShowUpload(false); setFile(null); setForm({ name: "", type: "termo" }); }}>
+              <button onClick={() => { setShowUpload(false); setFile(null); setForm({ name: "", type: "termo", folderId: "" }); }}>
                 <X size={20} className="text-gray-400 hover:text-gray-600" />
               </button>
             </div>
@@ -277,11 +412,23 @@ export default function Documents() {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-500 block mb-1.5">Pasta</label>
+                <select
+                  value={form.folderId}
+                  onChange={(e) => setForm((p) => ({ ...p, folderId: e.target.value }))}
+                  className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                >
+                  <option value="">Sem pasta</option>
+                  {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                </select>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
               <button
-                onClick={() => { setShowUpload(false); setFile(null); setForm({ name: "", type: "termo" }); }}
+                onClick={() => { setShowUpload(false); setFile(null); setForm({ name: "", type: "termo", folderId: "" }); }}
                 className="border border-ambar px-4 py-2 rounded-xl text-sm hover:bg-creme-100 transition"
               >
                 Cancelar

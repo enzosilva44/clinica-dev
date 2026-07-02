@@ -65,6 +65,7 @@ model User {
   clubMembers           ClubMember[]
   clubPlans             ClubPlan[]
   documents             Document[]
+  documentFolders       DocumentFolder[]
   evolutions            Evolution[]
   patients              Patient[]
   patientDocuments      PatientDocument[]
@@ -396,11 +397,28 @@ model Document {
   fileSize         Int?
   fields           Json?
   userId           String
+  folderId         String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   user             User              @relation(fields: [userId], references: [id])
+  folder           DocumentFolder?   @relation(fields: [folderId], references: [id])
   patientDocuments PatientDocument[]
   versions         DocumentVersion[]
+
+  @@index([folderId])
+}
+
+model DocumentFolder {
+  id        String     @id @default(cuid())
+  name      String
+  isDefault Boolean    @default(false) // pastas fixas seedadas (Sanitária, Documentos para assinatura)
+  userId    String
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id])
+  documents Document[]
+
+  @@unique([userId, name])
+  @@index([userId])
 }
 
 model PatientDocument {
