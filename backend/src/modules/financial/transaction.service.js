@@ -220,6 +220,7 @@ export async function create(userId, data) {
           appointmentId: i === 0 ? (data.appointmentId || null) : null,
           budgetId: i === 0 ? (data.budgetId || null) : null,
           userId,
+          settlementType: data.settlementType || null,
           ...feeFields,
         },
       });
@@ -249,6 +250,7 @@ export async function create(userId, data) {
       budgetId: data.budgetId || null,
       paidAt: new Date(),
       userId,
+      settlementType: data.settlementType || null,
       ...feeForShare(amount, true, 0),
     },
     include: INCLUDE,
@@ -290,6 +292,7 @@ export async function createPending(userId, data) {
           budgetId: i === 0 ? (data.budgetId || null) : null,
           patientId: data.patientId || null,
           userId,
+          settlementType: data.settlementType || null,
         },
       });
     });
@@ -313,6 +316,7 @@ export async function createPending(userId, data) {
       budgetId: data.budgetId || null,
       patientId: data.patientId || null,
       userId,
+      settlementType: data.settlementType || null,
     },
   });
 }
@@ -335,6 +339,7 @@ export async function update(id, userId, data) {
       isRecurring: data.isRecurring !== undefined ? !!data.isRecurring : tx.isRecurring,
       recurringDay: data.recurringDay !== undefined ? Number(data.recurringDay) : tx.recurringDay,
       type: data.type ?? tx.type,
+      settlementType: data.settlementType !== undefined ? (data.settlementType || null) : tx.settlementType,
     },
     include: INCLUDE,
   });
@@ -370,6 +375,7 @@ export async function approve(id, userId, data) {
       feePercent: fee ? fee.feePercent : null,
       feeAmount: fee ? fee.feeAmount : null,
       netAmount: fee ? fee.netAmount : null,
+      settlementType: data.settlementType !== undefined ? (data.settlementType || null) : tx.settlementType,
     },
     include: INCLUDE,
   });

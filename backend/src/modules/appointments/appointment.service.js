@@ -94,6 +94,7 @@ export async function create(data, user) {
     installments: data.txInstallments ? Number(data.txInstallments) : 1,
     dueDate: data.txDueDate || null,
     notes: data.txNotes || `Agendamento criado em ${new Date(appointment.startsAt).toLocaleDateString("pt-BR")} com ${appointment.professional || "profissional não informado"}.`,
+    settlementType: data.txSettlementType || null,
   });
 
   return { ...appointment, suggestedReturn };

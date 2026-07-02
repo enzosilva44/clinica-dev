@@ -18,7 +18,7 @@ function typeLabel(t) {
 }
 
 function emptyForm() {
-  return { brand: "Geral", type: "credito", installmentsFrom: 2, installmentsTo: 12, percent: "" };
+  return { machineName: "", brand: "Geral", type: "credito", installmentsFrom: 2, installmentsTo: 12, percent: "" };
 }
 
 export default function CardFeesSettings() {
@@ -49,6 +49,7 @@ export default function CardFeesSettings() {
     setSaving(true);
     try {
       await api.post("/financial/card-fees", {
+        machineName: form.machineName || undefined,
         brand: form.brand,
         type: form.type,
         percent: Number(form.percent),
@@ -108,7 +109,9 @@ export default function CardFeesSettings() {
                         </span>
                       )}
                     </p>
-                    <p className="text-xs text-gray-400">{fee.brand}</p>
+                    <p className="text-xs text-gray-400">
+                      {fee.brand}{fee.machineName ? ` · ${fee.machineName}` : ""}
+                    </p>
                   </div>
                 </div>
                 <button
@@ -128,6 +131,12 @@ export default function CardFeesSettings() {
       <div className="border-t border-creme-200 pt-5">
         <p className="text-sm font-bold text-verde mb-3">Adicionar taxa</p>
         <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2">
+            <label className={LABEL}>Nome da máquina (opcional)</label>
+            <input className={INPUT} value={form.machineName}
+              placeholder="Ex: Stone principal, Cielo balcão…"
+              onChange={(e) => setForm((p) => ({ ...p, machineName: e.target.value }))} />
+          </div>
           <div>
             <label className={LABEL}>Bandeira</label>
             <select className={INPUT} value={form.brand} onChange={(e) => setForm((p) => ({ ...p, brand: e.target.value }))}>

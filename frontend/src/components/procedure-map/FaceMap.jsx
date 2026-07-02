@@ -225,16 +225,6 @@ export default function FaceMap({
               </div>
             ) : (
               <>
-                {procedures.length > 0 ? (
-                  <select value={form.procedure} onChange={(e) => setForm({ ...form, procedure: e.target.value })}
-                    className="w-full border border-ambar rounded-lg p-2 text-sm">
-                    <option value="">Selecione o procedimento</option>
-                    {procedures.map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
-                  </select>
-                ) : (
-                  <input value={form.procedure} onChange={(e) => setForm({ ...form, procedure: e.target.value })}
-                    placeholder="Procedimento" className="w-full border border-ambar rounded-lg p-2 text-sm" />
-                )}
                 <div className="flex gap-2">
                   <input value={pendingUnits} onChange={(e) => setPendingUnits(e.target.value)}
                     type="number" min="0" step="0.5"
@@ -253,7 +243,7 @@ export default function FaceMap({
                   </select>
                 </div>
                 <input value={form.label ?? ""} onChange={(e) => setForm({ ...form, label: e.target.value })}
-                  placeholder="Técnica utilizada (ex: Botox frontal)" className="w-full border border-ambar rounded-lg p-2 text-sm" />
+                  placeholder="Técnica utilizada (ex: Retroinjeção, Bolus)" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   placeholder="Observação" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 <ColorPicker color={form.color} onChange={(c) => setForm({ ...form, color: c })} />
@@ -316,7 +306,7 @@ export default function FaceMap({
             ) : (
               <>
                 <input value={lineForm.label} onChange={(e) => setLineForm({ ...lineForm, label: e.target.value })}
-                  placeholder="Técnica utilizada (ex: Botox frontal)" className="w-full border border-ambar rounded-lg p-2 text-sm" />
+                  placeholder="Técnica utilizada (ex: Retroinjeção, Bolus)" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 <div className="flex gap-2">
                   <input value={lineForm.units} onChange={(e) => setLineForm({ ...lineForm, units: e.target.value })}
                     type="number" min="0" step="0.5"

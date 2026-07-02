@@ -17,6 +17,12 @@ import api from "../services/api";
 // ─── constantes ──────────────────────────────────────────────────────────────
 
 const PAYMENT_METHODS = ["Dinheiro", "PIX", "Cartão de crédito", "Cartão de débito", "Transferência"];
+
+function isCardMethod(method) {
+  if (!method) return false;
+  const m = method.toLowerCase();
+  return m.includes("cart") || m.includes("card");
+}
 const CATEGORIES = ["Procedimento", "Aluguel", "Fornecedor", "Salário", "Imposto", "Marketing", "Equipamento", "Outros"];
 
 const CAT_COLORS = {
@@ -180,7 +186,7 @@ function TransactionModal({ initial, onClose, onSave }) {
 
   const [form, setForm] = useState({
     type: "receita", description: "", amount: "", category: "",
-    paymentMethod: "", dueDate: "", patientId: "",
+    paymentMethod: "", settlementType: "", dueDate: "", patientId: "",
     isRecurring: false, recurringDay: "",
     appointmentId: "", budgetId: "", notes: "",
     ...initial,
@@ -308,6 +314,17 @@ function TransactionModal({ initial, onClose, onSave }) {
               <input value={form.dueDate} onChange={f("dueDate")} type="date" className={INPUT} />
             </div>
           </div>
+
+          {isCardMethod(form.paymentMethod) && (
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Compensação</label>
+              <select value={form.settlementType ?? ""} onChange={f("settlementType")} className={INPUT}>
+                <option value="">Selecione</option>
+                <option value="imediato">Compensação imediata</option>
+                <option value="crediario">Crediário</option>
+              </select>
+            </div>
+          )}
 
           {/* paciente combobox */}
           <div className="relative">
@@ -687,7 +704,7 @@ export default function Financeiro() {
   // modal
   const [modalData, setModalData] = useState(null); // null = fechado, {} = criar, {id,...} = editar
   const [approvingId, setApprovingId] = useState(null);
-  const [approveForm, setApproveForm] = useState({ amount: "", method: "" });
+  const [approveForm, setApproveForm] = useState({ amount: "", method: "", settlementType: "" });
 
   // ── loaders ────────────────────────────────────────────────────────────────
 
@@ -792,7 +809,11 @@ export default function Financeiro() {
   async function handleApprove(id) {
     if (!approveForm.amount) return toast.error("Informe o valor recebido");
     try {
-      await api.patch(`/financial/${id}/approve`, { amount: approveForm.amount, paymentMethod: approveForm.method });
+      await api.patch(`/financial/${id}/approve`, {
+        amount: approveForm.amount,
+        paymentMethod: approveForm.method,
+        settlementType: approveForm.settlementType || undefined,
+      });
       toast.success("Recebimento confirmado!");
       setApprovingId(null);
       loadSummary(); loadAnalytics(); loadLancamentos();
@@ -1206,7 +1227,7 @@ export default function Financeiro() {
                       {/* ações */}
                       <div className="flex flex-col gap-1">
                         {tx.status === "pendente" && (
-                          <button onClick={() => { setApprovingId(approvingId === tx.id ? null : tx.id); setApproveForm({ amount: tx.amount > 0 ? String(tx.amount) : "", method: "" }); }}
+                          <button onClick={() => { setApprovingId(approvingId === tx.id ? null : tx.id); setApproveForm({ amount: tx.amount > 0 ? String(tx.amount) : "", method: "", settlementType: "" }); }}
                             className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition"
                             title="Confirmar">
                             <CheckCircle2 size={14} />
@@ -1240,6 +1261,17 @@ export default function Financeiro() {
                             {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
                           </select>
                         </div>
+                        {isCardMethod(approveForm.method) && (
+                          <div>
+                            <label className="text-xs text-gray-500 mb-1 block">Compensação</label>
+                            <select value={approveForm.settlementType} onChange={(e) => setApproveForm((p) => ({ ...p, settlementType: e.target.value }))}
+                              className="border border-ambar rounded-xl px-3 py-2 text-sm min-w-[160px]">
+                              <option value="">Selecione</option>
+                              <option value="imediato">Imediata</option>
+                              <option value="crediario">Crediário</option>
+                            </select>
+                          </div>
+                        )}
                         <button onClick={() => handleApprove(tx.id)}
                           className="bg-verde hover:bg-verde-900 text-white px-5 py-2 rounded-xl text-sm font-medium transition">
                           Confirmar

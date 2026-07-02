@@ -161,6 +161,7 @@ function emptyForm() {
     txInstallments: "1",
     txDueDate: "",
     txNotes: "",
+    txSettlementType: "",
   };
 }
 
@@ -518,6 +519,7 @@ export default function Agenda() {
           txInstallments: !isSimple && Number(form.txInstallments) > 1 ? Number(form.txInstallments) : undefined,
           txDueDate: isSimple ? undefined : (form.txDueDate || undefined),
           txNotes: isSimple ? undefined : (form.txNotes || undefined),
+          txSettlementType: isSimple ? undefined : (form.txSettlementType || undefined),
         });
         // Renova a chave para o próximo agendamento
         idempotencyKeyRef.current = crypto.randomUUID();
@@ -1144,6 +1146,21 @@ export default function Agenda() {
                       {(Number(form.txAmount) / Number(form.txInstallments)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       {" "}— vencimento mensal a partir da data informada
                     </p>
+                  )}
+
+                  {isCardMethod(form.txPaymentMethod) && (
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1.5">Compensação</label>
+                      <select
+                        value={form.txSettlementType}
+                        onChange={f("txSettlementType")}
+                        className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                      >
+                        <option value="">Selecione</option>
+                        <option value="imediato">Compensação imediata</option>
+                        <option value="crediario">Crediário</option>
+                      </select>
+                    </div>
                   )}
 
                   {/* Estimativa de taxa da maquininha (cartão) */}

@@ -35,6 +35,7 @@ export async function create(userId, data) {
   return prisma.cardFee.create({
     data: {
       userId,
+      machineName: data.machineName || null,
       brand: data.brand || "Geral",
       type: data.type,
       installmentsFrom: isParcelado ? Number(data.installmentsFrom) || 2 : null,
@@ -52,6 +53,7 @@ export async function update(userId, id, data) {
   return prisma.cardFee.update({
     where: { id },
     data: {
+      machineName: data.machineName !== undefined ? (data.machineName || null) : fee.machineName,
       brand: data.brand ?? fee.brand,
       type,
       installmentsFrom: isParcelado ? Number(data.installmentsFrom) || fee.installmentsFrom || 2 : null,
