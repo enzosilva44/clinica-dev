@@ -440,22 +440,6 @@ export default function PatientDetails() {
           </button>
         </div>
 
-        {/* ALERTA DO PACIENTE */}
-        {patient.alertLevel && patient.alertLevel !== "none" && (() => {
-          const level = getAlertLevel(patient.alertLevel);
-          return (
-            <div className={`flex items-start gap-3 rounded-2xl border p-4 mb-4 ${level.banner}`}>
-              <AlertTriangle size={20} className="shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-sm">{level.short}</p>
-                <p className="text-sm mt-0.5 whitespace-pre-line">
-                  {patient.observations?.trim() || "Este paciente possui um alerta ativo. Revise as observações clínicas."}
-                </p>
-              </div>
-            </div>
-          );
-        })()}
-
         {/* HEADER */}
         <div className="bg-verde rounded-2xl p-5 md:p-6 mb-6 text-white shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -526,6 +510,22 @@ export default function PatientDetails() {
             </div>
           )}
         </div>
+
+        {/* ALERTA DO PACIENTE */}
+        {patient.alertLevel && patient.alertLevel !== "none" && (() => {
+          const level = getAlertLevel(patient.alertLevel);
+          return (
+            <div className={`flex items-start gap-3 rounded-2xl border p-4 mb-6 ${level.banner}`}>
+              <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-sm">{level.short}</p>
+                <p className="text-sm mt-0.5 whitespace-pre-line">
+                  {patient.observations?.trim() || "Este paciente possui um alerta ativo. Revise as observações clínicas."}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
 
       {/* DASHBOARD */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

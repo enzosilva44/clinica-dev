@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { OAuth2Client } from "google-auth-library";
 
 import { prisma } from "../../config/prisma.js";
+import { seedDefaultProcedures } from "../../shared/defaultProcedures.js";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -76,6 +77,11 @@ export async function register(req, res) {
       plan:          plan          || "solo",
     },
   });
+
+  // Novo usuário nasce com o catálogo de procedimentos padrão.
+  await seedDefaultProcedures(prisma, user.id).catch((e) =>
+    console.error("[seedDefaultProcedures] register:", e.message)
+  );
 
   const token = buildToken(user);
   return res.status(201).json({ token, user: publicUser(user) });
@@ -186,6 +192,10 @@ export async function googleLogin(req, res) {
           authProvider: "google",
         },
       });
+      // Novo usuário (via Google) também recebe o catálogo padrão.
+      await seedDefaultProcedures(prisma, user.id).catch((e) =>
+        console.error("[seedDefaultProcedures] google:", e.message)
+      );
     }
 
     const token = buildToken(user);

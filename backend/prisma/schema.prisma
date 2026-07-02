@@ -205,6 +205,7 @@ model Procedure {
   price               Float?
   requiresReturn      Boolean            @default(false)
   returnDays          Int?
+  isDefault           Boolean            @default(false) // veio do catálogo padrão (não criado pelo usuário)
   evolutions          Evolution[]        @relation("ProcedureToEvolution")
   user                User               @relation(fields: [userId], references: [id])
   products            ProcedureProduct[]

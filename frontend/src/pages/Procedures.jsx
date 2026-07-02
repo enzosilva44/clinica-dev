@@ -7,6 +7,7 @@ import api from "../services/api";
 
 export default function Procedures() {
   const [procedures, setProcedures] = useState([]);
+  const [originFilter, setOriginFilter] = useState("todos"); // todos | padrao | meus
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -171,14 +172,28 @@ export default function Procedures() {
     loadProducts();
   }, []);
 
+  const hasDefaults = procedures.some((p) => p.isDefault);
+  const visibleProcedures = procedures.filter((p) => {
+    if (originFilter === "padrao") return p.isDefault;
+    if (originFilter === "meus") return !p.isDefault;
+    return true;
+  });
+
+  const FILTER_TABS = [
+    { key: "todos",  label: "Todos" },
+    { key: "padrao", label: "Padrões" },
+    { key: "meus",   label: "Meus" },
+  ];
+
   return (
     <MainLayout>
       {/* HEADER */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-verde">Procedimentos</h1>
           <p className="text-gray-500 mt-1">
-            {procedures.length} procedimento{procedures.length !== 1 ? "s" : ""} cadastrado{procedures.length !== 1 ? "s" : ""}
+            {visibleProcedures.length} procedimento{visibleProcedures.length !== 1 ? "s" : ""}
+            {originFilter === "padrao" ? " padrão" : originFilter === "meus" ? " criado por você" : " cadastrado" + (visibleProcedures.length !== 1 ? "s" : "")}
           </p>
         </div>
         <button
@@ -189,6 +204,23 @@ export default function Procedures() {
           Novo procedimento
         </button>
       </div>
+
+      {/* FILTRO origem (só faz sentido se houver procedimentos padrão) */}
+      {hasDefaults && (
+        <div className="flex gap-1 bg-white border border-creme-200 rounded-xl p-1 mb-6 w-fit">
+          {FILTER_TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setOriginFilter(t.key)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                originFilter === t.key ? "bg-verde text-white" : "text-gray-500 hover:text-verde"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* CONTENT */}
       {loading ? (
@@ -208,12 +240,17 @@ export default function Procedures() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {procedures.map((procedure) => (
+          {visibleProcedures.map((procedure) => (
             <div key={procedure.id} className="bg-creme-50 border border-creme-200 rounded-2xl p-5">
               {/* TOP */}
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-lg font-bold text-verde">{procedure.name}</h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-lg font-bold text-verde">{procedure.name}</h2>
+                    {procedure.isDefault && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-verde/10 text-verde">Padrão</span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500 mt-1">{procedure.category}</p>
                 </div>
                 <div className="flex gap-3">
