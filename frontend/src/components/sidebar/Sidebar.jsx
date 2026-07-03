@@ -23,7 +23,7 @@ export default function Sidebar({ open = false, onClose }) {
     { to: "/faturamento",icon: Receipt,          label: "Faturamento",   show: features.faturamento },
     { to: "/clube",      icon: Star,             label: "Clube",         show: features.clube },
     { to: "/documents",  icon: FolderOpen,       label: "Documentos",    show: features.documents },
-    { to: "/portfolio",  icon: Images,           label: "Portfólio",     show: true },
+    { to: "/portfolio",  icon: Images,           label: "Portfólio",     show: features.portfolio },
     { to: "/anamnese-modelos", icon: ClipboardList, label: "Anamneses",   show: true },
     { to: "/analytics",  icon: BarChart2,        label: "Analytics",     show: features.analytics },
     { to: "/automacoes", icon: Zap,              label: "Automações",    show: features.whatsapp },

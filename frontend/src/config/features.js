@@ -13,6 +13,7 @@ const ALL_FEATURES = {
   analytics:         true,
   agenda:            true,
   patients:          true,
+  portfolio:         true,
 };
 
 const PLAN_FEATURES = {
@@ -33,6 +34,7 @@ const PLAN_FEATURES = {
     analytics:         true,
     agenda:            true,
     patients:          true,
+    portfolio:         true,
   },
   clinica: {
     multiProfessional: false,
@@ -49,6 +51,7 @@ const PLAN_FEATURES = {
     analytics:         true,
     agenda:            true,
     patients:          true,
+    portfolio:         true,
   },
 };
 
