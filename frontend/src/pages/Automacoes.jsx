@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
-import Spinner from "../components/ui/Spinner";
+import { Card, Spinner } from "../components/ui";
 import api from "../services/api";
 
 const TYPE_META = {
@@ -25,10 +25,10 @@ const VARS = {
 };
 
 const STATUS_STYLE = {
-  sent:    { label: "Enviado",   icon: CheckCircle, cls: "text-green-600 bg-green-50" },
-  failed:  { label: "Falhou",    icon: XCircle,     cls: "text-red-500 bg-red-50" },
-  pending: { label: "Pendente",  icon: Clock,       cls: "text-yellow-600 bg-yellow-50" },
-  skipped: { label: "Ignorado",  icon: X,           cls: "text-gray-400 bg-gray-50" },
+  sent:    { label: "Enviado",   icon: CheckCircle, cls: "text-sucesso bg-sucesso/10" },
+  failed:  { label: "Falhou",    icon: XCircle,     cls: "text-erro bg-erro/10" },
+  pending: { label: "Pendente",  icon: Clock,       cls: "text-atencao bg-atencao/10" },
+  skipped: { label: "Ignorado",  icon: X,           cls: "text-gray-400 bg-gray-100" },
 };
 
 function StatusBadge({ status }) {
@@ -71,14 +71,14 @@ function TemplateCard({ tpl, onSave }) {
   }
 
   return (
-    <div className="bg-white border border-creme-200 rounded-2xl p-5">
+    <Card className="p-5">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: meta.color + "22" }}>
             <Icon size={17} style={{ color: meta.color }} />
           </div>
           <div>
-            <p className="font-semibold text-sm text-verde">{meta.label}</p>
+            <p className="font-bold text-sm text-verde-900">{meta.label}</p>
             <p className="text-xs text-gray-400 mt-0.5">{meta.desc}</p>
           </div>
         </div>
@@ -158,7 +158,7 @@ function TemplateCard({ tpl, onSave }) {
           </button>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -280,20 +280,20 @@ export default function Automacoes() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-8">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-verde">Automações</h1>
+          <h1 className="font-serif font-light text-3xl text-verde-900">Automações</h1>
           <p className="text-gray-500 mt-1 text-sm">Mensagens automáticas via WhatsApp</p>
         </div>
       </div>
 
       {/* STATUS WHATSAPP */}
       {wpConfig.configured ? (
-        <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl px-4 py-3 mb-6 text-sm text-green-800">
-          <Wifi size={16} className="shrink-0 text-green-600" />
+        <div className="flex items-center gap-3 bg-sucesso/10 border border-sucesso/30 rounded-2xl px-4 py-3 mb-6 text-sm text-verde-900">
+          <Wifi size={16} className="shrink-0 text-sucesso" />
           <span><strong>WhatsApp conectado.</strong> Automações ativas e enviando mensagens reais.</span>
         </div>
       ) : (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-6 text-sm text-amber-800">
-          <WifiOff size={16} className="shrink-0 text-amber-500" />
+        <div className="flex items-center gap-3 bg-atencao/10 border border-atencao/30 rounded-2xl px-4 py-3 mb-6 text-sm text-verde-900">
+          <WifiOff size={16} className="shrink-0 text-atencao" />
           <span><strong>WhatsApp não configurado.</strong> Configure na aba <button onClick={() => setTab("conexao")} className="underline font-semibold">Conexão</button> para ativar os envios.</span>
         </div>
       )}
@@ -326,8 +326,8 @@ export default function Automacoes() {
             </div>
           )}
 
-          <div className="mt-6 bg-creme-50 border border-creme-200 rounded-2xl p-5">
-            <p className="text-sm font-semibold text-verde mb-3">Testar disparo manual</p>
+          <Card className="mt-6 bg-creme-50! p-5">
+            <p className="text-sm font-bold text-verde-900 mb-3">Testar disparo manual</p>
             <div className="flex flex-wrap gap-2">
               {[["birthday", "Aniversários de hoje"], ["reminder", "Lembretes pendentes"]].map(([type, label]) => (
                 <button
@@ -341,7 +341,7 @@ export default function Automacoes() {
                 </button>
               ))}
             </div>
-          </div>
+          </Card>
         </>
       )}
 
@@ -349,12 +349,12 @@ export default function Automacoes() {
       {tab === "conexao" && (
         <div className="max-w-lg space-y-6">
           {/* Status */}
-          <div className={`flex items-center gap-3 rounded-2xl px-5 py-4 border ${wpConfig.configured ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
+          <div className={`flex items-center gap-3 rounded-2xl px-5 py-4 border ${wpConfig.configured ? "bg-sucesso/10 border-sucesso/30" : "bg-atencao/10 border-atencao/30"}`}>
             {wpConfig.configured
-              ? <Wifi size={20} className="text-green-600 shrink-0" />
-              : <WifiOff size={20} className="text-amber-500 shrink-0" />}
+              ? <Wifi size={20} className="text-sucesso shrink-0" />
+              : <WifiOff size={20} className="text-atencao shrink-0" />}
             <div>
-              <p className={`font-semibold text-sm ${wpConfig.configured ? "text-green-800" : "text-amber-800"}`}>
+              <p className="font-bold text-sm text-verde-900">
                 {wpConfig.configured ? "WhatsApp conectado" : "Não configurado"}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
@@ -364,8 +364,8 @@ export default function Automacoes() {
           </div>
 
           {/* Formulário de credenciais */}
-          <div className="bg-white border border-creme-200 rounded-2xl p-5 space-y-4">
-            <p className="font-semibold text-sm text-verde">Credenciais Meta Cloud API</p>
+          <Card className="p-5 space-y-4">
+            <p className="font-bold text-sm text-verde-900">Credenciais Meta Cloud API</p>
 
             <div>
               <label className="text-xs font-medium text-gray-600 block mb-1">Phone Number ID</label>
@@ -379,7 +379,7 @@ export default function Automacoes() {
 
             <div>
               <label className="text-xs font-medium text-gray-600 block mb-1">
-                Access Token {wpConfig.hasToken && <span className="text-green-600 font-normal">(já configurado — deixe em branco para manter)</span>}
+                Access Token {wpConfig.hasToken && <span className="text-sucesso font-normal">(já configurado — deixe em branco para manter)</span>}
               </label>
               <div className="relative">
                 <input
@@ -406,12 +406,12 @@ export default function Automacoes() {
             >
               <Save size={14} />{savingWp ? "Salvando…" : "Salvar configuração"}
             </button>
-          </div>
+          </Card>
 
           {/* Teste de envio */}
           {wpConfig.configured && (
-            <div className="bg-white border border-creme-200 rounded-2xl p-5 space-y-3">
-              <p className="font-semibold text-sm text-verde">Testar envio</p>
+            <Card className="p-5 space-y-3">
+              <p className="font-bold text-sm text-verde-900">Testar envio</p>
               <p className="text-xs text-gray-500">Envia uma mensagem de teste para confirmar que a integração está funcionando.</p>
               <div className="flex gap-2">
                 <input
@@ -429,7 +429,7 @@ export default function Automacoes() {
                 </button>
               </div>
               <p className="text-xs text-gray-400">Formato: código do país + DDD + número (ex: 5511999998888)</p>
-            </div>
+            </Card>
           )}
         </div>
       )}
@@ -461,20 +461,20 @@ export default function Automacoes() {
               Nenhum envio registrado ainda.
             </div>
           ) : (
-            <div className="bg-creme-50 border border-creme-200 rounded-2xl overflow-hidden">
+            <Card className="p-0 overflow-hidden">
               <div className="px-5 py-3 border-b border-creme-200 bg-creme-100 flex items-center justify-between">
-                <span className="text-sm font-semibold text-verde">Histórico de envios</span>
+                <span className="text-sm font-bold text-verde-900">Histórico de envios</span>
                 <span className="text-xs text-gray-500">{logTotal} registro{logTotal !== 1 ? "s" : ""}</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-creme-200">
-                      <th className="text-left px-5 py-3 text-verde text-xs font-semibold uppercase tracking-wide">Paciente</th>
-                      <th className="text-left px-5 py-3 text-verde text-xs font-semibold uppercase tracking-wide hidden sm:table-cell">Tipo</th>
-                      <th className="text-left px-5 py-3 text-verde text-xs font-semibold uppercase tracking-wide hidden md:table-cell">Mensagem</th>
-                      <th className="text-left px-5 py-3 text-verde text-xs font-semibold uppercase tracking-wide hidden md:table-cell">Data</th>
-                      <th className="text-left px-5 py-3 text-verde text-xs font-semibold uppercase tracking-wide">Status</th>
+                      <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide">Paciente</th>
+                      <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide hidden sm:table-cell">Tipo</th>
+                      <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide hidden md:table-cell">Mensagem</th>
+                      <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide hidden md:table-cell">Data</th>
+                      <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -482,9 +482,9 @@ export default function Automacoes() {
                       const meta = TYPE_META[log.type];
                       const Icon = meta?.icon ?? MessageSquare;
                       return (
-                        <tr key={log.id} className="border-t border-creme-200 hover:bg-[#F3EEE5] transition">
+                        <tr key={log.id} className="border-t border-creme-200 hover:bg-creme-50 transition">
                           <td className="px-5 py-3.5">
-                            <p className="text-sm font-medium text-verde">{log.patientName}</p>
+                            <p className="text-sm font-semibold text-verde-900">{log.patientName}</p>
                             <p className="text-xs text-gray-400">{log.phone}</p>
                           </td>
                           <td className="px-5 py-3.5 hidden sm:table-cell">
@@ -496,7 +496,7 @@ export default function Automacoes() {
                           <td className="px-5 py-3.5 hidden md:table-cell max-w-xs">
                             <p className="text-xs text-gray-500 truncate">{log.message}</p>
                           </td>
-                          <td className="px-5 py-3.5 hidden md:table-cell text-xs text-gray-400 whitespace-nowrap">
+                          <td className="px-5 py-3.5 hidden md:table-cell text-xs text-gray-400 whitespace-nowrap font-mono">
                             {new Date(log.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                           </td>
                           <td className="px-5 py-3.5">
@@ -508,7 +508,7 @@ export default function Automacoes() {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Card>
           )}
 
           {logTotalPages > 1 && (
@@ -537,14 +537,14 @@ export default function Automacoes() {
         const dailyLimit = TIERS[tier].limit;
         const todayConv  = stats?.today?.conversations ?? 0;
         const pct        = Math.min(100, Math.round((todayConv / dailyLimit) * 100));
-        const barColor   = pct >= 80 ? "bg-red-500" : pct >= 50 ? "bg-yellow-400" : "bg-green-500";
+        const barColor   = pct >= 80 ? "bg-erro" : pct >= 50 ? "bg-atencao" : "bg-sucesso";
 
         return (
           <div className="space-y-6 max-w-2xl">
 
             {/* Tier selector */}
-            <div className="bg-white border border-creme-200 rounded-2xl p-5">
-              <p className="text-sm font-semibold text-verde mb-3">Seu tier Meta WhatsApp</p>
+            <Card className="p-5">
+              <p className="text-sm font-bold text-verde-900 mb-3">Seu tier Meta WhatsApp</p>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(TIERS).map(([key, t]) => (
                   <button
@@ -563,27 +563,27 @@ export default function Automacoes() {
               <p className="text-xs text-gray-400 mt-2">
                 Novos apps começam no Tier 1. Sobe automaticamente com volume e verificação da conta.
               </p>
-            </div>
+            </Card>
 
             {/* Uso hoje */}
-            <div className="bg-white border border-creme-200 rounded-2xl p-5">
+            <Card className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold text-verde">Conversas hoje</p>
+                <p className="text-sm font-bold text-verde-900">Conversas hoje</p>
                 {pct >= 80 && (
-                  <span className="flex items-center gap-1 text-xs text-red-500 font-medium">
+                  <span className="flex items-center gap-1 text-xs text-erro font-medium">
                     <AlertTriangle size={13} />Próximo do limite
                   </span>
                 )}
               </div>
               <div className="flex items-end gap-2 mb-3">
-                <span className="text-3xl font-bold text-verde">{todayConv}</span>
+                <span className="text-3xl font-bold text-verde-900 font-mono">{todayConv}</span>
                 <span className="text-gray-400 text-sm mb-1">/ {dailyLimit.toLocaleString("pt-BR")} conversas</span>
               </div>
               <div className="w-full bg-creme-100 rounded-full h-2.5">
                 <div className={`h-2.5 rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
               </div>
               <p className="text-xs text-gray-400 mt-1.5">{pct}% do limite diário utilizado</p>
-            </div>
+            </Card>
 
             {/* Este mês */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -612,22 +612,22 @@ export default function Automacoes() {
                   color: "#6F7F73",
                 },
               ].map(({ icon: Icon, label, value, sub, color }) => (
-                <div key={label} className="bg-white border border-creme-200 rounded-2xl p-5">
+                <Card key={label} className="p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: color + "22" }}>
                       <Icon size={15} style={{ color }} />
                     </div>
                     <p className="text-xs font-medium text-gray-500">{label}</p>
                   </div>
-                  <p className="text-2xl font-bold text-verde">{value}</p>
+                  <p className="text-2xl font-bold text-verde-900 font-mono">{value}</p>
                   <p className="text-xs text-gray-400 mt-1">{sub}</p>
-                </div>
+                </Card>
               ))}
             </div>
 
             {/* Breakdown por tipo */}
-            <div className="bg-white border border-creme-200 rounded-2xl p-5">
-              <p className="text-sm font-semibold text-verde mb-4">Detalhamento do mês</p>
+            <Card className="p-5">
+              <p className="text-sm font-bold text-verde-900 mb-4">Detalhamento do mês</p>
               <div className="space-y-3">
                 {[
                   { type: "birthday",     label: "Aniversários",    icon: Cake,          cost: 0.50, color: "#C4895A" },
@@ -637,19 +637,19 @@ export default function Automacoes() {
                 ].map(({ type, label, icon: Icon, cost, color }) => {
                   const count = stats?.thisMonth?.byType?.[type] ?? 0;
                   return (
-                    <div key={type} className="flex items-center justify-between py-2 border-b border-[#F0EAE0] last:border-0">
+                    <div key={type} className="flex items-center justify-between py-2 border-b border-creme-200 last:border-0">
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: color + "22" }}>
                           <Icon size={13} style={{ color }} />
                         </div>
-                        <span className="text-sm text-verde">{label}</span>
+                        <span className="text-sm text-verde-900">{label}</span>
                       </div>
                       <div className="flex items-center gap-4 text-right">
-                        <span className="text-sm font-semibold text-verde w-8 text-right">{count}</span>
-                        <span className="text-xs text-gray-400 w-20 text-right">
+                        <span className="text-sm font-semibold text-verde-900 w-8 text-right font-mono">{count}</span>
+                        <span className="text-xs text-gray-400 w-20 text-right font-mono">
                           R$ {(count * cost).toFixed(2).replace(".", ",")}
                         </span>
-                        <span className="text-xs text-gray-300 w-16 text-right">R$ {cost.toFixed(2).replace(".", ",")}/conv</span>
+                        <span className="text-xs text-gray-300 w-16 text-right font-mono">R$ {cost.toFixed(2).replace(".", ",")}/conv</span>
                       </div>
                     </div>
                   );
@@ -658,32 +658,32 @@ export default function Automacoes() {
               <p className="text-xs text-gray-400 mt-3">
                 * Preços aproximados para o Brasil. Marketing (aniv./boas-vindas) ≈ R$0,50 · Utilidade (confirm./lembrete) ≈ R$0,20 por conversa de 24h.
               </p>
-            </div>
+            </Card>
 
             {/* Projeção próximo mês */}
-            <div className="bg-creme-50 border border-creme-200 rounded-2xl p-5">
-              <p className="text-sm font-semibold text-verde mb-3">Projeção — próximos 30 dias</p>
+            <Card className="bg-creme-50! p-5">
+              <p className="text-sm font-bold text-verde-900 mb-3">Projeção — próximos 30 dias</p>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500 text-xs">Aniversários este mês</p>
-                  <p className="font-bold text-verde text-lg">{stats?.projections?.birthdaysThisMonth ?? "—"}</p>
+                  <p className="font-bold text-verde-900 text-lg font-mono">{stats?.projections?.birthdaysThisMonth ?? "—"}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">Agendamentos (30 dias)</p>
-                  <p className="font-bold text-verde text-lg">{stats?.projections?.upcomingAppointments30days ?? "—"}</p>
+                  <p className="font-bold text-verde-900 text-lg font-mono">{stats?.projections?.upcomingAppointments30days ?? "—"}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">Conversas estimadas</p>
-                  <p className="font-bold text-verde text-lg">{stats?.projections?.estimatedConversations ?? "—"}</p>
+                  <p className="font-bold text-verde-900 text-lg font-mono">{stats?.projections?.estimatedConversations ?? "—"}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">Custo estimado</p>
-                  <p className="font-bold text-ambar text-lg">
+                  <p className="font-bold text-ambar-700 text-lg font-mono">
                     R$ {(stats?.projections?.estimatedCost ?? 0).toFixed(2).replace(".", ",")}
                   </p>
                 </div>
               </div>
-            </div>
+            </Card>
 
           </div>
         );

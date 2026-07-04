@@ -90,16 +90,16 @@ const INPUT = "w-full border border-creme-200 bg-white rounded-xl px-4 py-2.5 te
 
 const STATUS = {
   // Asaas status
-  CONFIRMED:       { label: "Pago",       bg: "bg-green-100 text-green-700",  dot: "bg-green-500" },
-  RECEIVED:        { label: "Recebido",   bg: "bg-green-100 text-green-700",  dot: "bg-green-500" },
-  PENDING:         { label: "Aguardando", bg: "bg-amber-100 text-amber-700",  dot: "bg-amber-400" },
-  OVERDUE:         { label: "Vencida",    bg: "bg-red-100 text-red-700",      dot: "bg-red-500"   },
+  CONFIRMED:       { label: "Pago",       bg: "bg-verde-100 text-verde-800",  dot: "bg-sucesso" },
+  RECEIVED:        { label: "Recebido",   bg: "bg-verde-100 text-verde-800",  dot: "bg-sucesso" },
+  PENDING:         { label: "Aguardando", bg: "bg-ambar-50 text-ambar-700",  dot: "bg-ambar" },
+  OVERDUE:         { label: "Vencida",    bg: "bg-[#FBEDEC] text-[#C2473C]",      dot: "bg-erro"   },
   CANCELLED:       { label: "Cancelada",  bg: "bg-gray-100 text-gray-500",    dot: "bg-gray-400"  },
   REFUNDED:        { label: "Estornada",  bg: "bg-gray-100 text-gray-500",    dot: "bg-gray-400"  },
   // mock status (fallback)
-  paid:      { label: "Pago",       bg: "bg-green-100 text-green-700",  dot: "bg-green-500" },
-  pending:   { label: "Aguardando", bg: "bg-amber-100 text-amber-700",  dot: "bg-amber-400" },
-  overdue:   { label: "Vencida",    bg: "bg-red-100 text-red-700",      dot: "bg-red-500"   },
+  paid:      { label: "Pago",       bg: "bg-verde-100 text-verde-800",  dot: "bg-sucesso" },
+  pending:   { label: "Aguardando", bg: "bg-ambar-50 text-ambar-700",  dot: "bg-ambar" },
+  overdue:   { label: "Vencida",    bg: "bg-[#FBEDEC] text-[#C2473C]",      dot: "bg-erro"   },
   cancelled: { label: "Cancelada",  bg: "bg-gray-100 text-gray-500",    dot: "bg-gray-400"  },
 };
 
@@ -120,7 +120,7 @@ function KpiCard({ label, value, sub, color, icon: Icon }) {
           <Icon size={15} style={{ color }} />
         </div>
       </div>
-      <p className="text-2xl font-black text-verde">{value}</p>
+      <p className="text-2xl font-black font-mono text-verde-900 tracking-tight">{value}</p>
       {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
     </div>
   );
@@ -215,9 +215,9 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
               </div>
             )}
             {charge.paidAt && (
-              <div className="bg-green-50 rounded-xl p-3">
+              <div className="bg-verde-50 rounded-xl p-3">
                 <p className="text-gray-400 mb-1">Pago em</p>
-                <p className="font-semibold text-green-700">{fmtDate(charge.paidAt)}</p>
+                <p className="font-semibold text-verde-800">{fmtDate(charge.paidAt)}</p>
               </div>
             )}
           </div>
@@ -268,7 +268,7 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
               <button
                 onClick={handleSimulate}
                 disabled={simulating}
-                className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-2 bg-ambar-500 hover:bg-ambar-600 text-white py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-60"
               >
                 {simulating ? <RefreshCw size={13} className="animate-spin" /> : <Zap size={13} />}
                 {simulating ? "Simulando…" : "Simular pagamento (sandbox)"}
@@ -342,7 +342,7 @@ function NewChargeModal({ onClose, onSave }) {
               <div className="flex items-center justify-between border border-verde bg-[#F0F7F5] rounded-xl px-4 py-2.5">
                 <span className="text-sm font-medium text-verde">{form.patient}</span>
                 <button type="button" onClick={() => set("patientId", "") || set("patient", "") || setPatientSearch("")}
-                  className="text-gray-400 hover:text-red-500 transition"><X size={14} /></button>
+                  className="text-gray-400 hover:text-erro transition"><X size={14} /></button>
               </div>
             ) : (
               <>
@@ -473,9 +473,9 @@ function SaldoTab() {
   }
 
   const WITHDRAW_STATUS = {
-    completed:  { label: "Concluída", bg: "bg-green-100 text-green-700" },
-    processing: { label: "Processando", bg: "bg-amber-100 text-amber-700" },
-    failed:     { label: "Falhou", bg: "bg-red-100 text-red-700" },
+    completed:  { label: "Concluída", bg: "bg-verde-100 text-verde-800" },
+    processing: { label: "Processando", bg: "bg-ambar-50 text-ambar-700" },
+    failed:     { label: "Falhou", bg: "bg-[#FBEDEC] text-[#C2473C]" },
   };
 
   return (
@@ -568,9 +568,9 @@ function SaldoTab() {
               )}
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
-              <AlertCircle size={13} className="text-amber-500 mt-0.5 shrink-0" />
-              <p className="text-[11px] text-amber-700">
+            <div className="bg-ambar-50 border border-ambar-200 rounded-xl p-3 flex items-start gap-2">
+              <AlertCircle size={13} className="text-ambar-500 mt-0.5 shrink-0" />
+              <p className="text-[11px] text-ambar-700">
                 Transferências PIX são processadas em segundos, 24h/dia. Conecte o Asaas para ativar essa funcionalidade.
               </p>
             </div>
@@ -730,9 +730,9 @@ function ConfigTab() {
           </div>
 
           {apiKey && (
-            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
-              <Shield size={13} className="text-green-500 shrink-0" />
-              <p className="text-xs text-green-700 font-medium">Chave configurada — clique em Salvar para ativar</p>
+            <div className="flex items-center gap-2 bg-verde-50 border border-verde-200 rounded-xl px-4 py-2.5">
+              <Shield size={13} className="text-sucesso shrink-0" />
+              <p className="text-xs text-verde-800 font-medium">Chave configurada — clique em Salvar para ativar</p>
             </div>
           )}
         </div>
@@ -922,7 +922,7 @@ export default function Faturamento() {
       {/* header */}
       <div className="flex items-start justify-between mb-7 gap-3 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold text-verde">Faturamento</h1>
+          <h1 className="font-serif font-light text-3xl text-verde-900">Faturamento</h1>
           <p className="text-gray-500 mt-1 text-sm">Cobranças, saldo e transferências</p>
         </div>
         {tab === "cobrancas" && (
@@ -952,11 +952,11 @@ export default function Faturamento() {
       </div>
 
       {/* banner — sandbox ativo */}
-      <div className="bg-green-50 border border-green-200 rounded-2xl px-5 py-3 mb-6 flex items-center gap-3">
-        <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
-          <Shield size={12} className="text-green-600" />
+      <div className="bg-verde-50 border border-verde-200 rounded-2xl px-5 py-3 mb-6 flex items-center gap-3">
+        <div className="w-6 h-6 rounded-lg bg-verde-100 flex items-center justify-center shrink-0">
+          <Shield size={12} className="text-sucesso" />
         </div>
-        <p className="text-xs text-green-800 font-medium flex-1">
+        <p className="text-xs text-verde-900 font-medium flex-1">
           <span className="font-bold">Asaas Sandbox conectado</span> — cobranças criadas aqui são de teste.
           Para produção, troque a chave em{" "}
           <button onClick={() => setTab("config")} className="underline font-bold">Configuração</button>.
@@ -964,13 +964,13 @@ export default function Faturamento() {
       </div>
 
       {/* tabs */}
-      <div className="flex gap-1 bg-creme-50 border border-creme-200 rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-2 border-b-[1.5px] border-creme-200 mb-6">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
-              tab === id ? "bg-white text-verde shadow-sm" : "text-gray-500 hover:text-verde"
+            className={`flex items-center gap-2 px-4 py-2.5 text-[13.5px] font-bold transition -mb-px border-b-[2.5px] ${
+              tab === id ? "text-verde border-verde" : "text-gray-500 border-transparent hover:text-verde"
             }`}
           >
             <Icon size={14} /> {label}
@@ -1021,9 +1021,9 @@ export default function Faturamento() {
 
           {/* tabela */}
           <div className="bg-white border border-creme-200 rounded-2xl overflow-hidden">
-            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-5 py-3 border-b border-creme-100 bg-[#FAF8F5]">
+            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-5 py-3 border-b border-creme-200 bg-creme-100">
               {["Paciente / Descrição", "Valor", "Forma", "Vencimento", "Status", ""].map((h) => (
-                <p key={h} className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">{h}</p>
+                <p key={h} className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{h}</p>
               ))}
             </div>
             {filtered.length === 0 ? (
@@ -1044,15 +1044,15 @@ export default function Faturamento() {
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-verde">{fmt(charge.amount)}</p>
+                      <p className="text-sm font-bold font-mono text-verde-900">{fmt(charge.amount)}</p>
                       {charge.installments && (
-                        <p className="text-[10px] text-gray-400">{charge.installments}x de {fmt(charge.amount / charge.installments)}</p>
+                        <p className="text-[10px] text-gray-400 font-mono">{charge.installments}x de {fmt(charge.amount / charge.installments)}</p>
                       )}
                     </div>
                     <div><MethodBadge method={charge.method} /></div>
                     <div>
-                      <p className="text-xs text-gray-600">{fmtDate(charge.dueDate)}</p>
-                      {charge.paidAt && <p className="text-[10px] text-green-600">Pago {fmtDate(charge.paidAt)}</p>}
+                      <p className="text-xs text-gray-600 font-mono">{fmtDate(charge.dueDate)}</p>
+                      {charge.paidAt && <p className="text-[10px] text-sucesso font-mono">Pago {fmtDate(charge.paidAt)}</p>}
                     </div>
                     <div><StatusBadge status={charge.status} /></div>
                     <div className="flex items-center gap-1">
@@ -1064,7 +1064,7 @@ export default function Faturamento() {
                         <button
                           onClick={() => simulateCharge(charge.id)}
                           title="Simular pagamento (sandbox)"
-                          className="w-8 h-8 rounded-xl border border-amber-300 hover:bg-amber-50 flex items-center justify-center text-amber-500 hover:text-amber-600 transition">
+                          className="w-8 h-8 rounded-xl border border-ambar-300 hover:bg-ambar-50 flex items-center justify-center text-ambar-500 hover:text-ambar-600 transition">
                           <Zap size={13} />
                         </button>
                       )}

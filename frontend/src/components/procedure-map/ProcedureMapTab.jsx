@@ -333,7 +333,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                   {m.productName && (
                     <p className={`text-[10px] truncate ${m.id === selectedId ? "text-white/70" : "text-gray-500"}`}>{m.productName}</p>
                   )}
-                  <div className={`flex items-center gap-1.5 text-[10px] ${m.id === selectedId ? "text-white/60" : "text-gray-400"}`}>
+                  <div className={`flex items-center gap-1.5 text-[10px] font-mono ${m.id === selectedId ? "text-white/60" : "text-gray-400"}`}>
                     <span>{new Date(m.date).toLocaleDateString("pt-BR")}</span>
                     {mTotal > 0 && <span>· {mTotal}U</span>}
                   </div>
@@ -606,7 +606,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                             </span>
                           </div>
                           {usedUnits > 0 && (
-                            <span className="text-xs font-bold shrink-0" style={{ color: muscle.color }}>
+                            <span className="text-xs font-bold font-mono shrink-0" style={{ color: muscle.color }}>
                               {used.length}pt · {usedUnits}U
                             </span>
                           )}
@@ -647,7 +647,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                           <span className="text-sm text-verde truncate">{name}</span>
                         </div>
                         {qty > 0 && (
-                          <span className="text-xs font-bold shrink-0 px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: color }}>
+                          <span className="text-xs font-bold font-mono shrink-0 px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: color }}>
                             {fmtNum(qty)}{m.unit ?? "U"}
                           </span>
                         )}
@@ -673,8 +673,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                     <p className="text-xs text-gray-400">Total Aplicado</p>
                     <div className="flex items-baseline gap-3 flex-wrap">
                       {totalUnitEntries.length > 0 ? totalUnitEntries.map(([unit, total]) => (
-                        <p key={unit} className="text-3xl font-black text-verde">{fmtNum(total)}<span className="text-lg">{unit}</span></p>
-                      )) : <p className="text-3xl font-black text-verde">0</p>}
+                        <p key={unit} className="text-3xl font-black font-mono text-verde">{fmtNum(total)}<span className="text-lg">{unit}</span></p>
+                      )) : <p className="text-3xl font-black font-mono text-verde">0</p>}
                     </div>
                   </div>
                   {formData.productName && (

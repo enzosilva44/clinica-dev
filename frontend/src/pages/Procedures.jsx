@@ -3,6 +3,7 @@ import { Pencil, Trash2, Copy, Plus, X, Stethoscope } from "lucide-react";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
+import { Button } from "../components/ui";
 import api from "../services/api";
 
 export default function Procedures() {
@@ -181,46 +182,47 @@ export default function Procedures() {
 
   const FILTER_TABS = [
     { key: "todos",  label: "Todos" },
-    { key: "padrao", label: "Padrões" },
+    { key: "padrao", label: "Padrão" },
     { key: "meus",   label: "Meus" },
   ];
+
+  const INPUT_CLASS =
+    "w-full border border-creme-200 bg-creme-50 rounded-xl p-3 text-sm outline-none focus:border-verde focus:bg-white transition-colors";
 
   return (
     <MainLayout>
       {/* HEADER */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-verde">Procedimentos</h1>
+          <h1 className="font-serif font-light text-3xl text-verde-900">Procedimentos</h1>
           <p className="text-gray-500 mt-1">
             {visibleProcedures.length} procedimento{visibleProcedures.length !== 1 ? "s" : ""}
             {originFilter === "padrao" ? " padrão" : originFilter === "meus" ? " criado por você" : " cadastrado" + (visibleProcedures.length !== 1 ? "s" : "")}
           </p>
         </div>
-        <button
-          onClick={() => { resetForm(); setShowModal(true); }}
-          className="bg-verde hover:bg-verde-900 text-white px-4 py-3 rounded-xl flex items-center gap-2 transition"
-        >
-          <Plus size={18} />
-          Novo procedimento
-        </button>
-      </div>
-
-      {/* FILTRO origem (só faz sentido se houver procedimentos padrão) */}
-      {hasDefaults && (
-        <div className="flex gap-1 bg-white border border-creme-200 rounded-xl p-1 mb-6 w-fit">
-          {FILTER_TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setOriginFilter(t.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                originFilter === t.key ? "bg-verde text-white" : "text-gray-500 hover:text-verde"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2.5">
+          {hasDefaults && (
+            <div className="flex gap-1 bg-creme-100 rounded-xl p-0.75">
+              {FILTER_TABS.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setOriginFilter(t.key)}
+                  className={`px-4 py-1.5 rounded-lg text-[12.5px] font-bold transition ${
+                    originFilter === t.key
+                      ? "bg-white text-verde shadow-sm"
+                      : "text-gray-500 hover:text-verde"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <Button size="md" onClick={() => { resetForm(); setShowModal(true); }}>
+            <Plus size={16} /> Novo procedimento
+          </Button>
         </div>
-      )}
+      </div>
 
       {/* CONTENT */}
       {loading ? (
@@ -228,82 +230,90 @@ export default function Procedures() {
       ) : procedures.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Stethoscope size={48} className="text-ambar mb-4" />
-          <h2 className="text-xl font-semibold text-verde mb-2">Nenhum procedimento cadastrado</h2>
+          <h2 className="text-xl font-semibold text-verde-900 mb-2">Nenhum procedimento cadastrado</h2>
           <p className="text-gray-500 mb-6">Cadastre os procedimentos realizados na clínica.</p>
-          <button
-            onClick={() => { resetForm(); setShowModal(true); }}
-            className="bg-verde hover:bg-verde-900 text-white px-5 py-3 rounded-xl flex items-center gap-2 transition"
-          >
-            <Plus size={18} />
-            Novo procedimento
-          </button>
+          <Button size="lg" onClick={() => { resetForm(); setShowModal(true); }}>
+            <Plus size={18} /> Novo procedimento
+          </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4.5">
           {visibleProcedures.map((procedure) => (
-            <div key={procedure.id} className="bg-creme-50 border border-creme-200 rounded-2xl p-5">
+            <div
+              key={procedure.id}
+              className="bg-white border border-creme-200 rounded-2xl p-5 transition hover:border-verde hover:shadow-[0_8px_24px_rgba(0,112,74,.12)]"
+            >
               {/* TOP */}
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between mb-3">
                 <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg font-bold text-verde">{procedure.name}</h2>
-                    {procedure.isDefault && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-verde/10 text-verde">Padrão</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">{procedure.category}</p>
+                  <h2 className="text-[15px] font-bold text-verde-900">{procedure.name}</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{procedure.category}</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 shrink-0">
                   <button onClick={() => handleEdit(procedure)} className="text-verde hover:text-verde-900">
-                    <Pencil size={16} />
+                    <Pencil size={15} />
                   </button>
                   <button onClick={() => handleDuplicate(procedure)} className="text-gray-400 hover:text-verde">
-                    <Copy size={16} />
+                    <Copy size={15} />
                   </button>
                   <button
-                    className="text-red-400 hover:text-red-600"
+                    className="text-erro/60 hover:text-erro"
                     onClick={() => { setProcedureToDelete(procedure); setShowDeleteModal(true); }}
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>
 
-              {/* INFO */}
-              <div className="mt-5 space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Duração:</span>
-                  <span className="font-semibold">{procedure.duration} min</span>
+              {/* DURATION / PRICE */}
+              <div className="flex gap-3 flex-wrap mb-3.5">
+                <div className="bg-creme-100 rounded-lg px-2.75 py-1 text-[10.5px] font-semibold text-gray-500">
+                  {procedure.duration} min
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Preço:</span>
-                  <span className="font-bold text-pink-600">R$ {procedure.price || "0,00"}</span>
+                <div className="bg-verde-50 rounded-lg px-2.75 py-1 text-[11px] font-bold text-verde font-mono">
+                  R$ {procedure.price || "0,00"}
                 </div>
               </div>
+
+              {/* BADGES */}
+              {(procedure.isDefault || procedure.requiresReturn || procedure.hasMultipleSessions) && (
+                <div className="flex gap-1.5 flex-wrap mb-3">
+                  {procedure.isDefault && (
+                    <span className="bg-verde-100 text-verde-900 rounded-md px-2.5 py-1 text-[10px] font-bold font-mono tracking-wide uppercase">
+                      Padrão
+                    </span>
+                  )}
+                  {procedure.requiresReturn && (
+                    <span className="bg-ambar-50 text-ambar-700 rounded-md px-2.5 py-1 text-[10px] font-bold font-mono tracking-wide uppercase">
+                      Requer retorno
+                    </span>
+                  )}
+                  {procedure.hasMultipleSessions && (
+                    <span className="bg-ia/10 text-ia rounded-md px-2.5 py-1 text-[10px] font-bold font-mono tracking-wide uppercase">
+                      Múltiplas sessões
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* RETORNO */}
               {procedure.requiresReturn && (
-                <div className="mt-5 bg-green-50 text-green-700 rounded-xl p-3 text-sm">
+                <div className="mb-3.5 bg-sucesso/10 text-sucesso rounded-xl p-3 text-sm">
                   ↺ Retorno em {procedure.returnDays} dias
                 </div>
               )}
 
               {/* PRODUTOS */}
-              <div className="mt-5">
-                <h3 className="font-semibold text-verde mb-2">Produtos:</h3>
-                <div className="space-y-2">
+              <div className="border-t border-creme-100 pt-3">
+                <div className="text-[10.5px] font-bold tracking-wide text-gray-400 uppercase mb-2">Produtos</div>
+                <div className="space-y-1">
                   {!procedure.products?.length && (
                     <p className="text-sm text-gray-400">Nenhum produto vinculado</p>
                   )}
                   {procedure.products?.map((item) => (
-                    <div key={item.id} className="bg-white border border-creme-200 rounded-lg p-3 text-sm">
-                      <div className="flex justify-between">
-                        <span>{item.product?.name || item.customName || "Produto"}</span>
-                        <span className="text-gray-500">{item.quantity}</span>
-                      </div>
-                      {item.perSession && (
-                        <p className="text-xs text-green-600 mt-1">Por sessão</p>
-                      )}
+                    <div key={item.id} className="flex justify-between text-xs text-verde-900">
+                      <span className="font-semibold">{item.product?.name || item.customName || "Produto"}</span>
+                      <span className="text-gray-400 font-mono">{item.quantity}</span>
                     </div>
                   ))}
                 </div>
@@ -318,10 +328,10 @@ export default function Procedures() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-6">
           <div className="bg-white rounded-2xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-verde">
+              <h2 className="font-serif font-light text-2xl text-verde-900">
                 {editingProcedure ? "Editar procedimento" : "Novo procedimento"}
               </h2>
-              <button onClick={() => setShowModal(false)}>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-verde transition">
                 <X size={20} />
               </button>
             </div>
@@ -331,20 +341,20 @@ export default function Procedures() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Nome do procedimento"
-                className="w-full border border-ambar rounded-xl p-3"
+                className={INPUT_CLASS}
               />
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descrição do procedimento (será usada como template na evolução do paciente)"
                 rows={4}
-                className="w-full border border-ambar rounded-xl p-3"
+                className={INPUT_CLASS}
               />
               <div className="grid grid-cols-2 gap-4">
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="border border-ambar rounded-xl p-3"
+                  className={INPUT_CLASS}
                 >
                   <option>Facial</option>
                   <option>Corporal</option>
@@ -358,7 +368,7 @@ export default function Procedures() {
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                   placeholder="Duração (min)"
-                  className="border border-ambar rounded-xl p-3"
+                  className={INPUT_CLASS}
                 />
               </div>
 
@@ -366,7 +376,7 @@ export default function Procedures() {
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="Preço"
-                className="w-full border border-ambar rounded-xl p-3"
+                className={INPUT_CLASS}
               />
 
               <div className="space-y-4">
@@ -393,21 +403,17 @@ export default function Procedures() {
                   value={returnDays}
                   onChange={(e) => setReturnDays(e.target.value)}
                   placeholder="Dias para retorno"
-                  className="w-full border border-ambar rounded-xl p-3"
+                  className={INPUT_CLASS}
                 />
               )}
 
               {/* PRODUTOS */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-verde">Produtos utilizados</h3>
-                  <button
-                    type="button"
-                    onClick={addProduct}
-                    className="bg-verde text-white px-3 py-2 rounded-lg text-sm"
-                  >
+                  <h3 className="font-semibold text-verde-900">Produtos utilizados</h3>
+                  <Button type="button" size="sm" onClick={addProduct}>
                     + Produto
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="space-y-4">
@@ -417,7 +423,7 @@ export default function Procedures() {
                         <select
                           value={item.productId}
                           onChange={(e) => updateProduct(index, "productId", e.target.value)}
-                          className="w-full border border-ambar rounded-xl p-3"
+                          className={INPUT_CLASS}
                         >
                           <option value="">Produto do estoque</option>
                           {products.map((product) => (
@@ -430,14 +436,14 @@ export default function Procedures() {
                           value={item.customName}
                           onChange={(e) => updateProduct(index, "customName", e.target.value)}
                           placeholder="Ou produto genérico"
-                          className="w-full border border-ambar rounded-xl p-3"
+                          className={INPUT_CLASS}
                         />
                       </div>
                       <input
                         value={item.quantity}
                         onChange={(e) => updateProduct(index, "quantity", e.target.value)}
                         placeholder="Qtd"
-                        className="col-span-2 border border-ambar rounded-xl p-3"
+                        className={`col-span-2 ${INPUT_CLASS}`}
                       />
                       <label className="col-span-2 flex items-center gap-2 text-sm">
                         <input
@@ -450,7 +456,7 @@ export default function Procedures() {
                       <button
                         type="button"
                         onClick={() => removeProduct(index)}
-                        className="col-span-1 text-red-400 hover:text-red-600"
+                        className="col-span-1 text-erro/60 hover:text-erro"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -460,18 +466,12 @@ export default function Procedures() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="border border-ambar px-4 py-2 rounded-xl"
-                >
+                <Button variant="secondary" size="md" onClick={() => setShowModal(false)}>
                   Cancelar
-                </button>
-                <button
-                  onClick={saveProcedure}
-                  className="bg-verde hover:bg-verde-900 text-white px-5 py-2 rounded-xl"
-                >
+                </Button>
+                <Button size="md" onClick={saveProcedure}>
                   {editingProcedure ? "Salvar alterações" : "Criar procedimento"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -482,7 +482,7 @@ export default function Procedures() {
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-60 p-6">
           <div className="bg-white rounded-2xl w-full max-w-md p-6">
-            <h2 className="text-2xl font-bold text-verde mb-3">Excluir procedimento</h2>
+            <h2 className="font-serif font-light text-2xl text-verde-900 mb-3">Excluir procedimento</h2>
             <p className="text-gray-600 leading-relaxed">
               Deseja realmente excluir o procedimento{" "}
               <strong>{procedureToDelete?.name}</strong>?
@@ -491,18 +491,20 @@ export default function Procedures() {
               Essa ação ocultará o procedimento do sistema, mas manterá históricos já registrados.
             </p>
             <div className="flex justify-end gap-3 mt-8">
-              <button
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={() => { setShowDeleteModal(false); setProcedureToDelete(null); }}
-                className="border border-ambar px-4 py-2 rounded-xl"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
+                size="md"
+                className="bg-erro! hover:bg-[#C2473C]! shadow-none!"
                 onClick={handleDelete}
-                className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl"
               >
                 Excluir
-              </button>
+              </Button>
             </div>
           </div>
         </div>

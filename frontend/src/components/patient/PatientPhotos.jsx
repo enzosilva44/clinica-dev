@@ -172,7 +172,7 @@ export default function PatientPhotos({ patientId }) {
 
                       {/* Time caption */}
                       <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent px-2 py-1.5 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
-                        <p className="text-white text-[10px] font-medium">
+                        <p className="text-white text-[10px] font-mono font-medium">
                           {new Date(photo.createdAt).toLocaleTimeString("pt-BR", {
                             hour: "2-digit", minute: "2-digit",
                           })}
@@ -211,7 +211,7 @@ export default function PatientPhotos({ patientId }) {
             />
             <div className="text-center">
               <p className="text-white/80 text-sm font-medium">{lightbox.fileName}</p>
-              <p className="text-white/50 text-xs mt-0.5">
+              <p className="text-white/50 text-xs font-mono mt-0.5">
                 {new Date(lightbox.createdAt).toLocaleString("pt-BR", {
                   day: "2-digit", month: "2-digit", year: "numeric",
                   hour: "2-digit", minute: "2-digit",

@@ -17,9 +17,10 @@
 
 /* Toolbar title */
 .fc .fc-toolbar-title {
-  font-size: 1.05rem !important;
-  font-weight: 700 !important;
-  color: var(--verde) !important;
+  font-family: var(--font-serif) !important;
+  font-size: 1.55rem !important;
+  font-weight: 300 !important;
+  color: var(--verde-900) !important;
   letter-spacing: -0.01em;
 }
 
@@ -57,27 +58,25 @@
 
 /* Day column headers */
 .fc .fc-col-header-cell {
-  background-color: #F0EAE0;
+  background-color: #fff;
   border-color: var(--creme-200) !important;
   padding: 0 !important;
 }
 
 .fc .fc-col-header-cell-cushion {
-  font-size: 0.78rem !important;
-  font-weight: 700 !important;
-  color: var(--verde) !important;
-  padding: 8px 6px !important;
+  padding: 4px 6px !important;
   text-decoration: none !important;
   text-transform: capitalize !important;
 }
 
 /* Today column highlight */
-.fc .fc-day-today .fc-col-header-cell-cushion {
-  color: var(--verde) !important;
+.fc .fc-day-today.fc-col-header-cell {
+  background-color: #F4FBF8 !important;
 }
 
 /* Time labels */
 .fc .fc-timegrid-slot-label-cushion {
+  font-family: var(--font-mono) !important;
   font-size: 0.70rem !important;
   color: #A8967E !important;
   font-weight: 600 !important;
@@ -95,17 +94,18 @@
   border-top-style: dashed !important;
 }
 
-/* Events */
+/* Events — fundo claro + borda esquerda colorida (estilo Google Calendar) */
 .fc .fc-event {
-  border-radius: 8px !important;
+  border-radius: 7px !important;
   border: none !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+  border-left: 3px solid transparent !important;
+  box-shadow: none !important;
   cursor: pointer !important;
 }
 
 .fc .fc-event:hover {
-  filter: brightness(1.08) !important;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.16) !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.16) !important;
+  z-index: 3 !important;
 }
 
 .fc .fc-event-main {

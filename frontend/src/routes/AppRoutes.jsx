@@ -16,6 +16,7 @@ import Analytics from "../pages/Relatorios";
 import Faturamento from "../pages/Faturamento";
 import EditPatient from "../pages/EditPatient";
 import Automacoes from "../pages/Automacoes";
+import Portfolio from "../pages/Portfolio";
 import LandingPage from "../pages/LandingPage";
 import Register from "../pages/Register";
 import Signup from "../pages/Signup";
@@ -50,6 +51,7 @@ export default function AppRoutes() {
       <Route path="/clube"             element={<PrivateRoute><FeatureRoute feature="clube"><Clube /></FeatureRoute></PrivateRoute>} />
       <Route path="/documents"         element={<PrivateRoute><FeatureRoute feature="documents"><Documents /></FeatureRoute></PrivateRoute>} />
       <Route path="/anamnese-modelos"  element={<PrivateRoute><AnamneseModelos /></PrivateRoute>} />
+      <Route path="/portfolio"         element={<PrivateRoute><FeatureRoute feature="portfolio"><Portfolio /></FeatureRoute></PrivateRoute>} />
       <Route path="/analytics"         element={<PrivateRoute><FeatureRoute feature="analytics"><Analytics /></FeatureRoute></PrivateRoute>} />
       <Route path="/faturamento"       element={<PrivateRoute><FeatureRoute feature="faturamento"><Faturamento /></FeatureRoute></PrivateRoute>} />
       <Route path="/automacoes"        element={<PrivateRoute><FeatureRoute feature="whatsapp"><Automacoes /></FeatureRoute></PrivateRoute>} />

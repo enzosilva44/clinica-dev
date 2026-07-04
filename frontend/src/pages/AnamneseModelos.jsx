@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, ClipboardList, X } from "lucide-react";
+import MainLayout from "../layouts/MainLayout";
+import { Card, Button, Spinner } from "../components/ui";
 import api from "../services/api";
 import toast from "react-hot-toast";
 
@@ -7,6 +9,12 @@ const TYPE_LABELS = {
   text: "Resposta aberta",
   boolean: "Sim / Não",
   choice: "Múltipla escolha",
+};
+
+const TYPE_BADGE = {
+  text: "bg-info/10 text-info",
+  boolean: "bg-verde-100 text-verde-800",
+  choice: "bg-ambar/15 text-ambar-700",
 };
 
 function newQuestion() {
@@ -71,109 +79,162 @@ export default function AnamneseModelos() {
     } catch { toast.error("Erro ao excluir"); }
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando…</div>;
+  if (loading) return <MainLayout><Spinner /></MainLayout>;
 
   /* ─── EDITOR ─── */
   if (editing) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h1 className="text-xl font-bold text-verde">{editing.id ? "Editar modelo" : "Novo modelo de anamnese"}</h1>
-          <button onClick={() => setEditing(null)} className="text-sm text-gray-400 hover:text-gray-600">✕ Cancelar</button>
-        </div>
+      <MainLayout>
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="font-serif font-light text-3xl text-verde-900">
+              {editing.id ? "Editar modelo" : "Novo modelo de anamnese"}
+            </h1>
+            <button onClick={() => setEditing(null)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition">
+              <X size={15} /> Cancelar
+            </button>
+          </div>
 
-        <input
-          value={editing.name}
-          onChange={(e) => setEditing((p) => ({ ...p, name: e.target.value }))}
-          placeholder="Nome do modelo (ex: Anamnese Facial)"
-          className="w-full border border-creme-200 rounded-xl px-4 py-3 text-sm mb-5 focus:outline-none focus:ring-2 focus:ring-verde/20"
-        />
+          <input
+            value={editing.name}
+            onChange={(e) => setEditing((p) => ({ ...p, name: e.target.value }))}
+            placeholder="Nome do modelo (ex: Anamnese Facial)"
+            className="w-full border border-creme-200 rounded-xl px-4 py-3 text-sm mb-5 bg-white focus:outline-none focus:ring-2 focus:ring-verde/20"
+          />
 
-        <div className="space-y-3">
-          {editing.questions.map((q, idx) => (
-            <div key={q.id} className="bg-creme-50 border border-creme-200 rounded-xl p-4">
-              <div className="flex items-start gap-2">
-                <GripVertical size={16} className="text-gray-300 mt-2.5 shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <input
-                    value={q.label}
-                    onChange={(e) => setQ(idx, { label: e.target.value })}
-                    placeholder={`Pergunta ${idx + 1}`}
-                    className="w-full border border-creme-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-verde/20"
-                  />
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <select
-                      value={q.type}
-                      onChange={(e) => setQ(idx, { type: e.target.value })}
-                      className="border border-creme-200 rounded-lg px-2 py-1.5 text-xs bg-white"
-                    >
-                      {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                    <label className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <input type="checkbox" checked={!!q.required} onChange={(e) => setQ(idx, { required: e.target.checked })} />
-                      Obrigatória
-                    </label>
-                    <button onClick={() => removeQ(idx)} className="ml-auto text-red-400 hover:text-red-600">
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                  {q.type === "choice" && (
+          <div className="space-y-3">
+            {editing.questions.map((q, idx) => (
+              <Card key={q.id} className="bg-creme-50! p-4">
+                <div className="flex items-start gap-2">
+                  <GripVertical size={16} className="text-gray-300 mt-2.5 shrink-0" />
+                  <div className="flex-1 space-y-2">
                     <input
-                      value={(q.options || []).join(", ")}
-                      onChange={(e) => setQ(idx, { options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-                      placeholder="Opções separadas por vírgula (ex: Leve, Moderado, Grave)"
-                      className="w-full border border-creme-200 rounded-lg px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-verde/20"
+                      value={q.label}
+                      onChange={(e) => setQ(idx, { label: e.target.value })}
+                      placeholder={`Pergunta ${idx + 1}`}
+                      className="w-full border border-creme-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-verde/20"
                     />
-                  )}
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <select
+                        value={q.type}
+                        onChange={(e) => setQ(idx, { type: e.target.value })}
+                        className="border border-creme-200 rounded-lg px-2 py-1.5 text-xs bg-white text-verde-900"
+                      >
+                        {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                      <label className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <input type="checkbox" checked={!!q.required} onChange={(e) => setQ(idx, { required: e.target.checked })} />
+                        Obrigatória
+                      </label>
+                      <button onClick={() => removeQ(idx)} className="ml-auto text-erro/70 hover:text-erro transition">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                    {q.type === "choice" && (
+                      <input
+                        value={(q.options || []).join(", ")}
+                        onChange={(e) => setQ(idx, { options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+                        placeholder="Opções separadas por vírgula (ex: Leve, Moderado, Grave)"
+                        className="w-full border border-creme-200 rounded-lg px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-verde/20"
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
 
-        <button onClick={addQ} className="mt-3 flex items-center gap-1.5 text-sm text-verde font-medium hover:underline">
-          <Plus size={15} /> Adicionar pergunta
-        </button>
-
-        <div className="flex justify-end gap-2 mt-6">
-          <button onClick={() => setEditing(null)} className="text-sm text-gray-500 px-4 py-2 rounded-xl hover:bg-creme-50 transition">Cancelar</button>
-          <button onClick={save} disabled={saving}
-            className="bg-verde hover:bg-verde-900 text-white text-sm font-semibold px-5 py-2 rounded-xl transition disabled:opacity-50">
-            {saving ? "Salvando…" : "Salvar modelo"}
+          <button onClick={addQ} className="mt-3 flex items-center gap-1.5 text-sm text-verde font-semibold hover:underline">
+            <Plus size={15} /> Adicionar pergunta
           </button>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="ghost" size="md" onClick={() => setEditing(null)}>Cancelar</Button>
+            <Button size="md" onClick={save} disabled={saving}>
+              {saving ? "Salvando…" : "Salvar modelo"}
+            </Button>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   /* ─── LISTA ─── */
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h1 className="text-xl font-bold text-verde">Modelos de Anamnese</h1>
-          <p className="text-sm text-gray-400">Crie e edite os formulários usados nos pacientes.</p>
-        </div>
-        <button onClick={startNew}
-          className="bg-verde hover:bg-verde-900 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">
-          + Novo modelo
-        </button>
-      </div>
-
-      <div className="space-y-2">
-        {templates.map((t) => (
-          <div key={t.id} className="bg-white border border-creme-100 rounded-xl px-4 py-3 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-[#141414]">{t.name}</p>
-              <p className="text-[11px] text-gray-400">{(t.questions || []).length} perguntas</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => startEdit(t)} className="text-xs text-verde font-medium hover:underline">Editar</button>
-              <button onClick={() => remove(t.id)} className="text-red-400 hover:text-red-600"><Trash2 size={15} /></button>
-            </div>
+    <MainLayout>
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="font-serif font-light text-3xl text-verde-900">Anamneses (Modelos)</h1>
+            <p className="text-gray-500 mt-1">Crie e edite os formulários usados nos pacientes.</p>
           </div>
-        ))}
+          <Button size="md" onClick={startNew}>
+            <Plus size={16} /> Novo modelo
+          </Button>
+        </div>
+
+        {templates.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-28 text-center">
+            <div className="w-16 h-16 bg-creme-100 rounded-2xl flex items-center justify-center mb-4">
+              <ClipboardList size={28} className="text-ambar" />
+            </div>
+            <h2 className="text-xl font-semibold text-verde-900 mb-2">Nenhum modelo cadastrado</h2>
+            <p className="text-gray-500 mb-6 max-w-xs">Crie o primeiro modelo de anamnese para usar nos pacientes.</p>
+            <Button onClick={startNew}>
+              <Plus size={16} /> Novo modelo
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {templates.map((t) => {
+              const questionCount = (t.questions || []).length;
+              const types = [...new Set((t.questions || []).map((q) => q.type))];
+              return (
+                <Card
+                  key={t.id}
+                  className="p-4.5 cursor-pointer hover:border-verde transition"
+                  onClick={() => startEdit(t)}
+                >
+                  <div className="flex justify-between items-start gap-3 mb-2.5">
+                    <div>
+                      <p className="text-[15px] font-bold text-verde-900">{t.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {questionCount} {questionCount === 1 ? "pergunta" : "perguntas"}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => startEdit(t)}
+                        className="bg-creme-50 border border-creme-200 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-gray-500 hover:border-verde hover:text-verde transition"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => remove(t.id)}
+                        className="bg-creme-50 border border-creme-200 rounded-lg px-2.5 py-1.5 text-erro/70 hover:border-erro hover:text-erro transition"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                  {types.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {types.map((type) => (
+                        <span
+                          key={type}
+                          className={`rounded-md px-2.5 py-1 text-[10px] font-bold font-mono uppercase tracking-wide ${TYPE_BADGE[type] || "bg-creme-100 text-gray-500"}`}
+                        >
+                          {TYPE_LABELS[type] || type}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
-    </div>
+    </MainLayout>
   );
 }

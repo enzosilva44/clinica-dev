@@ -86,8 +86,8 @@ function downloadCSV(rows, filename) {
 const INPUT = "w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20";
 
 const STATUS_PILL = {
-  pendente:   "bg-amber-100 text-amber-700",
-  confirmado: "bg-emerald-100 text-emerald-700",
+  pendente:   "bg-ambar-50 text-ambar-700",
+  confirmado: "bg-verde-100 text-verde-800",
   cancelado:  "bg-gray-100 text-gray-500",
 };
 
@@ -104,9 +104,9 @@ function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white border border-creme-200 rounded-xl p-3 shadow-lg text-xs">
-      <p className="font-semibold text-verde mb-1">{label}</p>
+      <p className="font-bold text-verde-900 mb-1 font-mono">{label}</p>
       {payload.map((p) => (
-        <p key={p.name} style={{ color: p.fill }}>
+        <p key={p.name} className="font-mono" style={{ color: p.fill }}>
           {p.name}: {fmt(p.value)}
         </p>
       ))}
@@ -118,10 +118,12 @@ function CustomTooltip({ active, payload, label }) {
 
 function Empty({ icon: Icon, text, sub }) {
   return (
-    <div className="flex flex-col items-center py-20 text-center text-gray-400">
-      <Icon size={40} className="mb-3 opacity-30" />
-      <p className="text-sm font-medium">{text}</p>
-      {sub && <p className="text-xs mt-1">{sub}</p>}
+    <div className="flex flex-col items-center py-20 text-center">
+      <div className="w-14 h-14 bg-creme-100 rounded-2xl flex items-center justify-center mb-3">
+        <Icon size={22} className="text-ambar" />
+      </div>
+      <p className="text-sm font-medium text-gray-500">{text}</p>
+      {sub && <p className="text-xs mt-1 text-gray-400">{sub}</p>}
     </div>
   );
 }
@@ -132,7 +134,7 @@ function DeltaBadge({ pct }) {
   if (pct === null || pct === undefined) return null;
   const up = pct >= 0;
   return (
-    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-2 ${up ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"}`}>
+    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-2 font-mono ${up ? "bg-sucesso/15 text-sucesso" : "bg-erro/15 text-erro"}`}>
       {up ? "↑" : "↓"} {Math.abs(pct)}%
     </span>
   );
@@ -262,18 +264,18 @@ function TransactionModal({ initial, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-lg p-6 my-4">
+      <div className="bg-white rounded-2xl w-full max-w-lg p-6 my-4 border border-creme-200">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-verde">
+          <h2 className="text-lg font-bold text-verde-900">
             {isEdit ? "Editar lançamento" : "Novo lançamento"}
           </h2>
-          <button onClick={onClose}><X size={20} /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-verde-900 transition"><X size={20} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* tipo */}
           <div className="flex rounded-xl border border-ambar overflow-hidden">
-            {[{ v: "receita", l: "Receita", c: "bg-emerald-500" }, { v: "despesa", l: "Despesa", c: "bg-red-500" }].map(({ v, l, c }) => (
+            {[{ v: "receita", l: "Receita", c: "bg-sucesso" }, { v: "despesa", l: "Despesa", c: "bg-erro" }].map(({ v, l, c }) => (
               <button key={v} type="button" onClick={() => setForm((p) => ({ ...p, type: v }))}
                 className={`flex-1 py-2.5 text-sm font-medium transition ${form.type === v ? `${c} text-white` : "bg-white text-gray-500 hover:bg-creme-50"}`}>
                 {l}
@@ -341,7 +343,7 @@ function TransactionModal({ initial, onClose, onSave }) {
               />
               {form.patientId && (
                 <button type="button" onClick={clearPatient}
-                  className="border border-ambar rounded-xl px-3 text-gray-400 hover:text-red-400 hover:border-red-300 transition">
+                  className="border border-ambar rounded-xl px-3 text-gray-400 hover:text-erro hover:border-erro/40 transition">
                   <X size={16} />
                 </button>
               )}
@@ -350,7 +352,7 @@ function TransactionModal({ initial, onClose, onSave }) {
               <div className="absolute z-10 w-full bg-white border border-creme-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
                 {patientResults.map((p) => (
                   <button key={p.id} type="button" onClick={() => selectPatient(p)}
-                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-creme-50 text-verde">
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-creme-50 text-verde-900 font-medium">
                     {p.name}
                   </button>
                 ))}
@@ -361,7 +363,7 @@ function TransactionModal({ initial, onClose, onSave }) {
           {/* vínculo: agendamento ou orçamento */}
           {hasVinculo && (
             <div className="bg-creme-50 border border-creme-200 rounded-xl p-4 space-y-3">
-              <p className="text-xs font-semibold text-verde uppercase tracking-wide">Vincular a</p>
+              <p className="text-xs font-semibold text-verde-900 uppercase tracking-wide">Vincular a</p>
               {patientAppointments.length > 0 && (
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1">
@@ -403,7 +405,7 @@ function TransactionModal({ initial, onClose, onSave }) {
                   onChange={(e) => setInstallmentsOn(e.target.checked)}
                   className="w-4 h-4 accent-verde" />
                 <label htmlFor="installments" className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
-                  <Layers size={14} className="text-indigo-500" /> Parcelar pagamento
+                  <Layers size={14} className="text-ia" /> Parcelar pagamento
                 </label>
               </div>
               {installmentsOn && (
@@ -411,12 +413,12 @@ function TransactionModal({ initial, onClose, onSave }) {
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">Número de parcelas</label>
                     <input value={installmentCount} onChange={(e) => setInstallmentCount(e.target.value)}
-                      type="number" min="2" max="60" className="border border-ambar rounded-xl px-3 py-2 text-sm w-24" />
+                      type="number" min="2" max="60" className="border border-ambar rounded-xl px-3 py-2 text-sm w-24 font-mono" />
                   </div>
                   {form.amount && installmentCount && (
                     <div className="mt-4">
                       <p className="text-xs text-gray-400">Valor por parcela</p>
-                      <p className="text-sm font-bold text-indigo-600">
+                      <p className="text-sm font-bold text-ia font-mono">
                         {fmt(Number(form.amount) / Number(installmentCount))}
                       </p>
                     </div>
@@ -424,7 +426,7 @@ function TransactionModal({ initial, onClose, onSave }) {
                 </div>
               )}
               {installmentsOn && (
-                <p className="text-[11px] text-indigo-500 bg-indigo-50 rounded-lg px-3 py-2">
+                <p className="text-[11px] text-ia bg-ia/10 rounded-lg px-3 py-2">
                   Serão criadas {installmentCount} transações pendentes, com vencimento mensal a partir da data informada.
                 </p>
               )}
@@ -445,7 +447,7 @@ function TransactionModal({ initial, onClose, onSave }) {
               <input type="checkbox" id="recurring" checked={!!form.isRecurring} onChange={fb("isRecurring")}
                 className="w-4 h-4 accent-verde" />
               <label htmlFor="recurring" className="text-sm text-gray-600 flex items-center gap-1.5">
-                <Repeat2 size={14} className="text-[#6F7F73]" /> Lançamento recorrente
+                <Repeat2 size={14} className="text-verde" /> Lançamento recorrente
               </label>
               {form.isRecurring && (
                 <div className="flex items-center gap-2 ml-auto">
@@ -460,7 +462,7 @@ function TransactionModal({ initial, onClose, onSave }) {
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
-              className="flex-1 border border-ambar text-verde py-2.5 rounded-xl text-sm hover:bg-creme-100 transition">
+              className="flex-1 border border-ambar text-verde-900 py-2.5 rounded-xl text-sm hover:bg-creme-100 transition">
               Cancelar
             </button>
             <button type="submit"
@@ -478,30 +480,30 @@ function TransactionModal({ initial, onClose, onSave }) {
 
 const SEVERITY_CONFIG = {
   critico: {
-    bg: "bg-red-50 border-red-200",
-    badge: "bg-red-100 text-red-700",
+    bg: "bg-erro/5 border-erro/25",
+    badge: "bg-erro/15 text-erro",
     icon: ShieldAlert,
-    iconColor: "text-red-500",
+    iconColor: "text-erro",
     label: "Crítico",
   },
   alerta: {
-    bg: "bg-amber-50 border-amber-200",
-    badge: "bg-amber-100 text-amber-700",
+    bg: "bg-atencao/5 border-atencao/25",
+    badge: "bg-atencao/15 text-atencao-700",
     icon: AlertTriangle,
-    iconColor: "text-amber-500",
+    iconColor: "text-atencao",
     label: "Alerta",
   },
   info: {
-    bg: "bg-blue-50 border-blue-200",
-    badge: "bg-blue-100 text-blue-700",
+    bg: "bg-info/5 border-info/25",
+    badge: "bg-info/15 text-info",
     icon: Info,
-    iconColor: "text-blue-500",
+    iconColor: "text-info",
     label: "Info",
   },
 };
 
 function ScoreRing({ score }) {
-  const color = score >= 80 ? "#3A9B6F" : score >= 50 ? "#C4895A" : "#B05248";
+  const color = score >= 80 ? "#3A9B6F" : score >= 50 ? "#C4895A" : "#E2574C";
   const r = 36;
   const circ = 2 * Math.PI * r;
   const offset = circ * (1 - score / 100);
@@ -518,7 +520,7 @@ function ScoreRing({ score }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-black" style={{ color }}>{score}</span>
+        <span className="text-2xl font-black font-mono" style={{ color }}>{score}</span>
         <span className="text-[10px] text-gray-400 font-medium">score</span>
       </div>
     </div>
@@ -533,7 +535,7 @@ function GuardianTab({ data, loading, onRefresh }) {
           <Sparkles size={20} className="text-ambar" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-semibold text-verde">Analisando fluxo financeiro…</p>
+          <p className="text-sm font-semibold text-verde-900">Analisando fluxo financeiro…</p>
           <p className="text-xs text-gray-400 mt-1">A IA está verificando padrões e inconsistências</p>
         </div>
       </div>
@@ -543,11 +545,11 @@ function GuardianTab({ data, loading, onRefresh }) {
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-5">
-        <div className="w-16 h-16 rounded-2xl bg-creme-50 border border-creme-200 flex items-center justify-center">
-          <ShieldCheck size={28} className="text-verde" />
+        <div className="w-16 h-16 rounded-2xl bg-creme-100 flex items-center justify-center">
+          <ShieldCheck size={28} className="text-ambar" />
         </div>
         <div className="text-center">
-          <p className="text-base font-bold text-verde">Guardião Financeiro</p>
+          <p className="text-base font-bold text-verde-900">Guardião Financeiro</p>
           <p className="text-sm text-gray-400 mt-1 max-w-sm">
             A IA analisa duplicidades, inadimplências e inconsistências no seu fluxo financeiro.
           </p>
@@ -575,27 +577,27 @@ function GuardianTab({ data, loading, onRefresh }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <ShieldCheck size={16} className="text-verde shrink-0" />
-            <p className="text-sm font-bold text-verde">Saúde Financeira</p>
+            <p className="text-sm font-bold text-verde-900">Saúde Financeira</p>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed">{data.resumo}</p>
           <div className="flex items-center gap-3 mt-3 flex-wrap">
             {criticos.length > 0 && (
-              <span className="text-xs bg-red-100 text-red-700 font-semibold px-2.5 py-1 rounded-full">
+              <span className="text-xs bg-erro/15 text-erro font-semibold px-2.5 py-1 rounded-full">
                 {criticos.length} crítico{criticos.length > 1 ? "s" : ""}
               </span>
             )}
             {alertas.length > 0 && (
-              <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-1 rounded-full">
+              <span className="text-xs bg-atencao/15 text-atencao-700 font-semibold px-2.5 py-1 rounded-full">
                 {alertas.length} alerta{alertas.length > 1 ? "s" : ""}
               </span>
             )}
             {infos.length > 0 && (
-              <span className="text-xs bg-blue-100 text-blue-700 font-semibold px-2.5 py-1 rounded-full">
+              <span className="text-xs bg-info/15 text-info font-semibold px-2.5 py-1 rounded-full">
                 {infos.length} info
               </span>
             )}
             {allAlerts.length === 0 && (
-              <span className="text-xs bg-green-100 text-green-700 font-semibold px-2.5 py-1 rounded-full">
+              <span className="text-xs bg-sucesso/15 text-sucesso font-semibold px-2.5 py-1 rounded-full">
                 Tudo ok
               </span>
             )}
@@ -612,11 +614,11 @@ function GuardianTab({ data, loading, onRefresh }) {
 
       {/* Alerts */}
       {allAlerts.length === 0 ? (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-6 flex items-center gap-4">
-          <ShieldCheck size={32} className="text-green-500 shrink-0" />
+        <div className="bg-sucesso/5 border border-sucesso/25 rounded-2xl p-6 flex items-center gap-4">
+          <ShieldCheck size={32} className="text-sucesso shrink-0" />
           <div>
-            <p className="text-sm font-bold text-green-700">Nenhum problema encontrado</p>
-            <p className="text-xs text-green-600 mt-0.5">O fluxo financeiro está consistente com os registros de agendamentos e orçamentos.</p>
+            <p className="text-sm font-bold text-sucesso">Nenhum problema encontrado</p>
+            <p className="text-xs text-sucesso/80 mt-0.5">O fluxo financeiro está consistente com os registros de agendamentos e orçamentos.</p>
           </div>
         </div>
       ) : (
@@ -635,7 +637,7 @@ function GuardianTab({ data, loading, onRefresh }) {
                       </span>
                       <span className="text-[10px] text-gray-400 font-medium">{alert.tipo}</span>
                       {alert.valorEmRisco > 0 && (
-                        <span className="text-[10px] font-bold text-gray-600 ml-auto">
+                        <span className="text-[10px] font-bold text-gray-600 ml-auto font-mono">
                           {fmt(alert.valorEmRisco)} em risco
                         </span>
                       )}
@@ -870,30 +872,30 @@ export default function Financeiro() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-verde">Financeiro</h1>
+          <h1 className="font-serif font-light text-3xl text-verde-900">Financeiro</h1>
           <p className="text-gray-500 mt-0.5 text-sm">Receitas, despesas e fluxo de caixa</p>
         </div>
         <button
           onClick={() => setModalData({})}
-          className="bg-verde hover:bg-verde-900 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm transition shrink-0"
+          className="bg-verde hover:bg-verde-900 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition shrink-0"
         >
           <Plus size={16} /> Novo lançamento
         </button>
       </div>
 
       {/* TABS */}
-      <div className="flex gap-1 bg-creme-50 border border-creme-200 rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-2 border-b-[1.5px] border-creme-200 mb-6">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition relative ${tab === t.id ? "bg-white text-verde shadow-sm" : "text-gray-500 hover:text-verde"}`}>
+            className={`relative px-4 py-2.5 text-sm font-semibold transition -mb-px border-b-[2.5px] ${tab === t.id ? "text-verde border-verde" : "text-gray-500 border-transparent hover:text-verde"}`}>
             {t.label}
             {t.id === "lancamentos" && summary.pendentes > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-2 w-4 h-4 bg-atencao text-white text-[10px] font-bold rounded-full flex items-center justify-center font-mono">
                 {summary.pendentes}
               </span>
             )}
             {t.id === "guardiao" && guardian?.alerts?.filter((a) => a.severity === "critico").length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-2 w-4 h-4 bg-erro text-white text-[10px] font-bold rounded-full flex items-center justify-center font-mono">
                 {guardian.alerts.filter((a) => a.severity === "critico").length}
               </span>
             )}
@@ -907,48 +909,48 @@ export default function Financeiro() {
           {/* seletor de mês */}
           <div className="mb-5">
             <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
-              className="border border-ambar rounded-xl px-3 py-2 text-sm text-verde" />
+              className="border border-ambar rounded-xl px-3 py-2 text-sm text-verde-900 font-mono" />
           </div>
 
           {loadingSum ? <Spinner /> : (
             <>
               {/* KPI CARDS */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-5">
                 {/* receitas */}
-                <div className="bg-verde rounded-2xl p-5 text-white">
-                  <div className="flex items-center gap-2 mb-2 opacity-60">
-                    <TrendingUp size={15} />
-                    <p className="text-[11px] font-semibold uppercase tracking-wide">Receitas</p>
+                <div className="bg-white border border-creme-200 rounded-2xl p-4.5">
+                  <div className="flex items-center gap-1.5 mb-2 text-gray-400">
+                    <TrendingUp size={13} />
+                    <p className="text-[10.5px] font-bold uppercase tracking-wide">Receitas</p>
                   </div>
-                  <p className="text-2xl font-bold">{fmt(summary.receitas)}</p>
+                  <p className="text-[26px] font-extrabold text-verde-900 font-mono tracking-tight">{fmt(summary.receitas)}</p>
                   <DeltaBadge pct={analytics?.comparison?.receitasPct} />
                 </div>
                 {/* despesas */}
-                <div className="bg-creme-50 border border-creme-200 rounded-2xl p-5">
-                  <div className="flex items-center gap-2 mb-2 text-gray-400">
-                    <TrendingDown size={15} className="text-red-400" />
-                    <p className="text-[11px] font-semibold uppercase tracking-wide">Despesas</p>
+                <div className="bg-white border border-creme-200 rounded-2xl p-4.5">
+                  <div className="flex items-center gap-1.5 mb-2 text-gray-400">
+                    <TrendingDown size={13} className="text-erro" />
+                    <p className="text-[10.5px] font-bold uppercase tracking-wide">Despesas</p>
                   </div>
-                  <p className="text-2xl font-bold text-red-500">{fmt(summary.despesas)}</p>
+                  <p className="text-[26px] font-extrabold text-verde-900 font-mono tracking-tight">{fmt(summary.despesas)}</p>
                   <DeltaBadge pct={analytics?.comparison?.despesasPct} />
                 </div>
                 {/* saldo */}
-                <div className={`rounded-2xl p-5 ${summary.saldo >= 0 ? "bg-verde-900 text-white" : "bg-red-50 border border-red-200"}`}>
-                  <div className="flex items-center gap-2 mb-2 opacity-60">
-                    <DollarSign size={15} />
-                    <p className="text-[11px] font-semibold uppercase tracking-wide">Saldo</p>
+                <div className="bg-white border border-creme-200 rounded-2xl p-4.5">
+                  <div className="flex items-center gap-1.5 mb-2 text-gray-400">
+                    <DollarSign size={13} />
+                    <p className="text-[10.5px] font-bold uppercase tracking-wide">Saldo</p>
                   </div>
-                  <p className={`text-2xl font-bold ${summary.saldo < 0 ? "text-red-600" : ""}`}>{fmt(summary.saldo)}</p>
+                  <p className={`text-[26px] font-extrabold font-mono tracking-tight ${summary.saldo < 0 ? "text-erro" : "text-verde"}`}>{fmt(summary.saldo)}</p>
                   <DeltaBadge pct={analytics?.comparison?.saldoPct} />
                 </div>
                 {/* pendentes */}
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock size={15} className="text-amber-500" />
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">A receber</p>
+                <div className="bg-white border border-creme-200 rounded-2xl p-4.5">
+                  <div className="flex items-center gap-1.5 mb-2 text-gray-400">
+                    <Clock size={13} className="text-atencao" />
+                    <p className="text-[10.5px] font-bold uppercase tracking-wide">A receber</p>
                   </div>
-                  <p className="text-2xl font-bold text-amber-600">{summary.pendentes}</p>
-                  <p className="text-[11px] text-amber-500 mt-0.5">
+                  <p className="text-[26px] font-extrabold text-verde-900 font-mono tracking-tight">{summary.pendentes}</p>
+                  <p className="text-[11.5px] text-gray-400 mt-1">
                     {summary.pendentes !== 1 ? "transações pendentes" : "transação pendente"}
                   </p>
                 </div>
@@ -957,8 +959,8 @@ export default function Financeiro() {
               {loadingAna ? null : analytics && (
                 <>
                   {/* GRÁFICO SEMANAL */}
-                  <div className="bg-creme-50 border border-creme-200 rounded-2xl p-5 mb-5">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Evolução semanal</p>
+                  <div className="bg-white border border-creme-200 rounded-2xl p-5 mb-5">
+                    <p className="text-[14.5px] font-bold text-verde-900 mb-4">Evolução semanal</p>
                     <ResponsiveContainer width="100%" height={180}>
                       <BarChart data={analytics.weekly} barGap={4} barSize={22}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#EFE7DA" vertical={false} />
@@ -968,7 +970,7 @@ export default function Financeiro() {
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: "#F0EBE0" }} />
                         <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
                         <Bar dataKey="receitas" name="Receitas" fill="#00704A" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="despesas" name="Despesas" fill="#f87171" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="despesas" name="Despesas" fill="#E2574C" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -976,8 +978,8 @@ export default function Financeiro() {
                   {/* PROPORÇÃO + CATEGORIAS */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                     {/* barra de proporção */}
-                    <div className="bg-creme-50 border border-creme-200 rounded-2xl p-5">
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Proporção do mês</p>
+                    <div className="bg-white border border-creme-200 rounded-2xl p-5">
+                      <p className="text-[14.5px] font-bold text-verde-900 mb-4">Proporção do mês</p>
                       {(summary.receitas + summary.despesas) === 0 ? (
                         <p className="text-sm text-gray-400 text-center py-4">Sem dados</p>
                       ) : (
@@ -985,7 +987,7 @@ export default function Financeiro() {
                           <div className="h-4 bg-creme-100 rounded-full overflow-hidden flex mb-2">
                             <div className="h-full bg-verde transition-all"
                               style={{ width: `${(summary.receitas / (summary.receitas + summary.despesas)) * 100}%` }} />
-                            <div className="h-full bg-red-400 transition-all"
+                            <div className="h-full bg-erro transition-all"
                               style={{ width: `${(summary.despesas / (summary.receitas + summary.despesas)) * 100}%` }} />
                           </div>
                           <div className="flex justify-between text-xs text-gray-400">
@@ -994,7 +996,7 @@ export default function Financeiro() {
                               Receitas {((summary.receitas / (summary.receitas + summary.despesas)) * 100).toFixed(0)}%
                             </span>
                             <span className="flex items-center gap-1.5">
-                              <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
+                              <span className="w-2.5 h-2.5 rounded-full bg-erro inline-block" />
                               Despesas {((summary.despesas / (summary.receitas + summary.despesas)) * 100).toFixed(0)}%
                             </span>
                           </div>
@@ -1003,11 +1005,11 @@ export default function Financeiro() {
                             <div className="mt-4 pt-4 border-t border-creme-200 grid grid-cols-2 gap-3 text-xs">
                               <div>
                                 <p className="text-gray-400">Mês anterior · Receitas</p>
-                                <p className="font-semibold text-verde">{fmt(analytics.comparison.previous.receitas)}</p>
+                                <p className="font-semibold text-verde font-mono">{fmt(analytics.comparison.previous.receitas)}</p>
                               </div>
                               <div>
                                 <p className="text-gray-400">Mês anterior · Despesas</p>
-                                <p className="font-semibold text-red-500">{fmt(analytics.comparison.previous.despesas)}</p>
+                                <p className="font-semibold text-erro font-mono">{fmt(analytics.comparison.previous.despesas)}</p>
                               </div>
                             </div>
                           )}
@@ -1016,8 +1018,8 @@ export default function Financeiro() {
                     </div>
 
                     {/* categorias */}
-                    <div className="bg-creme-50 border border-creme-200 rounded-2xl p-5">
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Por categoria</p>
+                    <div className="bg-white border border-creme-200 rounded-2xl p-5">
+                      <p className="text-[14.5px] font-bold text-verde-900 mb-4">Por categoria</p>
                       {analytics.categories.length === 0 ? (
                         <p className="text-sm text-gray-400 text-center py-4">Sem lançamentos categorizados</p>
                       ) : (
@@ -1025,10 +1027,10 @@ export default function Financeiro() {
                           {analytics.categories.slice(0, 6).map((c) => (
                             <div key={c.category}>
                               <div className="flex justify-between text-xs mb-1">
-                                <span className="font-medium text-verde" style={{ color: CAT_COLORS[c.category] }}>
+                                <span className="font-medium" style={{ color: CAT_COLORS[c.category] }}>
                                   {c.category}
                                 </span>
-                                <span className="text-gray-400">{fmt(c.receitas + c.despesas)}</span>
+                                <span className="text-gray-400 font-mono">{fmt(c.receitas + c.despesas)}</span>
                               </div>
                               <div className="h-1.5 bg-creme-100 rounded-full overflow-hidden">
                                 <div className="h-full rounded-full transition-all"
@@ -1055,25 +1057,25 @@ export default function Financeiro() {
                       const urgent  = diff >= 0 && diff <= 7;
                       const isReceita = tx.type === "receita";
                       return (
-                        <div className={`flex items-center justify-between bg-white border rounded-xl px-4 py-3 ${overdue ? "border-red-300" : urgent ? "border-amber-300" : "border-creme-200"}`}>
+                        <div className={`flex items-center justify-between bg-white border rounded-xl px-4 py-3 ${overdue ? "border-erro/40" : urgent ? "border-atencao/40" : "border-creme-200"}`}>
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center ${isReceita ? "bg-emerald-100" : "bg-red-100"}`}>
+                            <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center ${isReceita ? "bg-sucesso/15" : "bg-erro/15"}`}>
                               {isReceita
-                                ? <TrendingUp size={13} className="text-emerald-600" />
-                                : <TrendingDown size={13} className="text-red-500" />}
+                                ? <TrendingUp size={13} className="text-sucesso" />
+                                : <TrendingDown size={13} className="text-erro" />}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-verde truncate">{tx.description}</p>
+                              <p className="text-sm font-medium text-verde-900 truncate">{tx.description}</p>
                               {resolvePatient(tx) && (
                                 <p className="text-xs text-gray-400">{resolvePatient(tx).name}</p>
                               )}
                             </div>
                           </div>
                           <div className="text-right shrink-0 ml-3">
-                            <p className={`text-sm font-bold ${isReceita ? "text-emerald-600" : "text-red-500"}`}>
+                            <p className={`text-sm font-bold ${isReceita ? "text-sucesso" : "text-erro"}`}>
                               {isReceita ? "+" : "−"}{fmt(tx.amount).replace("R$ ", "")}
                             </p>
-                            <p className={`text-[11px] font-semibold ${overdue ? "text-red-500" : urgent ? "text-amber-600" : "text-gray-400"}`}>
+                            <p className={`text-[11px] font-semibold ${overdue ? "text-erro" : urgent ? "text-atencao-700" : "text-gray-400"}`}>
                               {overdue ? `Atrasado ${Math.abs(diff)}d` : diff === 0 ? "Vence hoje" : `Vence em ${diff}d`}
                             </p>
                           </div>
@@ -1084,17 +1086,17 @@ export default function Financeiro() {
                     return (
                       <div>
                       <div className="flex items-center gap-2 mb-3">
-                        <AlertTriangle size={14} className="text-amber-500" />
+                        <AlertTriangle size={14} className="text-atencao" />
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
                           Vencimentos nos próximos 30 dias · {upcoming.length} pendente{upcoming.length !== 1 ? "s" : ""}
                         </p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {aReceber.length > 0 && (
-                          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
+                          <div className="bg-sucesso/5 border border-sucesso/25 rounded-2xl p-5">
                             <div className="flex items-center gap-2 mb-3">
-                              <TrendingUp size={15} className="text-emerald-600" />
-                              <p className="text-sm font-semibold text-emerald-800">
+                              <TrendingUp size={15} className="text-sucesso" />
+                              <p className="text-sm font-semibold text-verde-900">
                                 A receber · {aReceber.length}
                               </p>
                             </div>
@@ -1104,10 +1106,10 @@ export default function Financeiro() {
                           </div>
                         )}
                         {aPagar.length > 0 && (
-                          <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
+                          <div className="bg-erro/5 border border-erro/25 rounded-2xl p-5">
                             <div className="flex items-center gap-2 mb-3">
-                              <TrendingDown size={15} className="text-red-500" />
-                              <p className="text-sm font-semibold text-red-800">
+                              <TrendingDown size={15} className="text-erro" />
+                              <p className="text-sm font-semibold text-verde-900">
                                 A pagar · {aPagar.length}
                               </p>
                             </div>
@@ -1178,10 +1180,10 @@ export default function Financeiro() {
                 <div key={tx.id} className="bg-creme-50 border border-creme-200 rounded-2xl overflow-hidden">
                   {/* linha principal */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4">
-                    <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center ${tx.type === "receita" ? "bg-emerald-100" : "bg-red-100"}`}>
+                    <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center ${tx.type === "receita" ? "bg-verde-100" : "bg-[#FBEDEC]"}`}>
                       {tx.type === "receita"
-                        ? <TrendingUp size={16} className="text-emerald-600" />
-                        : <TrendingDown size={16} className="text-red-500" />}
+                        ? <TrendingUp size={16} className="text-sucesso" />
+                        : <TrendingDown size={16} className="text-erro" />}
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -1210,7 +1212,7 @@ export default function Financeiro() {
 
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
-                        <p className={`text-base font-bold ${tx.type === "receita" ? "text-emerald-600" : "text-red-500"}`}>
+                        <p className={`text-base font-bold ${tx.type === "receita" ? "text-sucesso" : "text-erro"}`}>
                           {tx.type === "receita" ? "+" : "−"}{fmt(tx.amount).replace("R$ ", "")}
                         </p>
                         {tx.feeAmount != null && tx.feeAmount > 0 && (
@@ -1228,7 +1230,7 @@ export default function Financeiro() {
                       <div className="flex flex-col gap-1">
                         {tx.status === "pendente" && (
                           <button onClick={() => { setApprovingId(approvingId === tx.id ? null : tx.id); setApproveForm({ amount: tx.amount > 0 ? String(tx.amount) : "", method: "", settlementType: "" }); }}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-verde-50 text-sucesso hover:bg-verde-100 transition"
                             title="Confirmar">
                             <CheckCircle2 size={14} />
                           </button>
@@ -1277,7 +1279,7 @@ export default function Financeiro() {
                           Confirmar
                         </button>
                         <button onClick={() => handleCancel(tx.id)}
-                          className="border border-red-300 text-red-500 hover:bg-red-50 px-4 py-2 rounded-xl text-sm transition">
+                          className="border border-erro/40 text-erro hover:bg-erro/5 px-4 py-2 rounded-xl text-sm transition">
                           Cancelar transação
                         </button>
                       </div>
@@ -1364,8 +1366,8 @@ export default function Financeiro() {
                       <div>
                         <div className="flex items-center gap-2">
                           {tx.type === "receita"
-                            ? <TrendingUp size={13} className="text-emerald-500 shrink-0" />
-                            : <TrendingDown size={13} className="text-red-400 shrink-0" />}
+                            ? <TrendingUp size={13} className="text-sucesso shrink-0" />
+                            : <TrendingDown size={13} className="text-erro shrink-0" />}
                           <p className="text-sm font-semibold text-verde truncate">{tx.description}</p>
                           {tx.isRecurring && <Repeat2 size={11} className="text-gray-400 shrink-0" />}
                         </div>
@@ -1384,13 +1386,13 @@ export default function Financeiro() {
                         ) : <span className="text-xs text-gray-300">—</span>}
                       </div>
 
-                      <p className={`text-sm font-bold ${tx.type === "receita" ? "text-emerald-600" : "text-red-500"}`}>
+                      <p className={`text-sm font-bold ${tx.type === "receita" ? "text-sucesso" : "text-erro"}`}>
                         {tx.type === "receita" ? "+" : "−"}{fmt(tx.amount).replace("R$ ", "R$ ")}
                       </p>
 
                       <p className="text-xs text-gray-400">{tx.paymentMethod || "—"}</p>
 
-                      <p className={`text-sm font-bold text-right ${tx.balance >= 0 ? "text-verde" : "text-red-500"}`}>
+                      <p className={`text-sm font-bold text-right ${tx.balance >= 0 ? "text-verde" : "text-erro"}`}>
                         {fmt(tx.balance)}
                       </p>
                     </div>
@@ -1402,9 +1404,9 @@ export default function Financeiro() {
               <div className="px-5 py-3 bg-creme-50 border-t border-creme-200 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-gray-400">{extrato.length} lançamento{extrato.length !== 1 ? "s" : ""}</p>
                 <div className="flex gap-5 text-xs font-semibold">
-                  <span className="text-emerald-600">Entradas: {fmt(extTotals.receitas)}</span>
-                  <span className="text-red-500">Saídas: {fmt(extTotals.despesas)}</span>
-                  <span className={`${extTotals.receitas - extTotals.despesas >= 0 ? "text-verde" : "text-red-600"}`}>
+                  <span className="text-sucesso">Entradas: {fmt(extTotals.receitas)}</span>
+                  <span className="text-erro">Saídas: {fmt(extTotals.despesas)}</span>
+                  <span className={`${extTotals.receitas - extTotals.despesas >= 0 ? "text-verde" : "text-erro"}`}>
                     Saldo: {fmt(extTotals.receitas - extTotals.despesas)}
                   </span>
                 </div>

@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Plus, Users, Search, Sparkles, X, Upload } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
-import { Card } from "../components/ui";
+import { Card, Button } from "../components/ui";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
 import ImportPatientsModal from "../components/patients/ImportPatientsModal";
@@ -32,14 +32,25 @@ function relativeDate(date) {
   return new Date(date).toLocaleDateString("pt-BR");
 }
 
+// Faixas de recência do último agendamento — verde ≤30d, âmbar 30-90d, vermelho >90d/nunca.
+function recencyColor(date) {
+  if (!date) return "#E2574C";
+  const diff = Math.floor((Date.now() - new Date(date)) / 86400000);
+  if (diff <= 30) return "#3A9B6F";
+  if (diff <= 90) return "#C4895A";
+  return "#E2574C";
+}
+
 export default function Patients() {
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("active");
+  const [counts, setCounts] = useState({ active: null, removed: null });
   const [suggestions, setSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -63,10 +74,23 @@ export default function Patients() {
       const res = await api.get("/patients", { params: { page, search, status } });
       setPatients(res.data.data);
       setTotalPages(res.data.totalPages);
+      setTotal(res.data.total);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadCounts() {
+    try {
+      const [activeRes, removedRes] = await Promise.all([
+        api.get("/patients", { params: { page: 1, status: "active" } }),
+        api.get("/patients", { params: { page: 1, status: "removed" } }),
+      ]);
+      setCounts({ active: activeRes.data.total, removed: removedRes.data.total });
+    } catch {
+      setCounts({ active: null, removed: null });
     }
   }
 
@@ -76,95 +100,95 @@ export default function Patients() {
     return () => clearTimeout(t);
   }, [page, search, status]);
 
+  useEffect(() => {
+    loadCounts();
+  }, []);
+
   return (
     <MainLayout>
       {showImport && (
         <ImportPatientsModal
           onClose={() => setShowImport(false)}
-          onSuccess={() => { setPage(1); loadPatients(); }}
+          onSuccess={() => { setPage(1); loadPatients(); loadCounts(); }}
         />
       )}
       {/* HEADER */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-verde">Pacientes</h1>
-          <p className="text-gray-500 mt-1">Gerencie os pacientes da clínica</p>
+          <h1 className="font-serif font-light text-3xl text-verde-900">Pacientes</h1>
+          <p className="text-gray-500 mt-1">
+            {counts.active != null
+              ? `${counts.active} ativos · ${counts.removed} inativos`
+              : "Gerencie os pacientes da clínica"}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowImport(true)}
-            className="flex items-center gap-2 border border-creme-200 hover:bg-creme-100 text-verde px-4 py-2.5 rounded-xl transition text-sm font-medium"
-          >
-            <Upload size={15} />
-            Importar
-          </button>
-          <button
-            onClick={loadReturnSuggestions}
+        <div className="flex items-center gap-2.5">
+          <Button variant="secondary" size="md" onClick={() => setShowImport(true)}>
+            <Upload size={15} /> Importar CSV
+          </Button>
+          <Button
+            size="md"
             disabled={loadingSuggestions}
-            className="flex items-center gap-2 border border-ambar hover:bg-creme-100 disabled:opacity-50 text-verde px-4 py-2.5 rounded-xl transition text-sm font-medium"
+            onClick={loadReturnSuggestions}
+            className="!bg-[#F3EEFB] !text-[#7C53C9] hover:!bg-[#E9DEF8] !shadow-none"
           >
             <Sparkles size={15} className={loadingSuggestions ? "animate-pulse" : ""} />
-            {loadingSuggestions ? "Analisando…" : "Sugestões de retorno"}
-          </button>
-          <button
-            onClick={() => navigate("/patients/create")}
-            className="bg-verde hover:bg-verde-900 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
-          >
+            {loadingSuggestions ? "Analisando…" : "Sugestões IA"}
+          </Button>
+          <Button size="md" onClick={() => navigate("/patients/create")}>
             <Plus size={16} /> Novo paciente
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* SUGESTÕES DE RETORNO IA */}
       {showSuggestions && (
-        <Card className="p-5 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Sparkles size={15} className="text-verde" />
-              <span className="text-sm font-bold text-verde">Pacientes para reativar</span>
-              {suggestions.length > 0 && (
-                <span className="text-xs bg-creme-100 text-verde px-2 py-0.5 rounded-full font-medium">
-                  {suggestions.length} sugestão{suggestions.length !== 1 ? "s" : ""}
-                </span>
-              )}
+        <div className="relative bg-gradient-to-br from-verde-900 to-verde-950 rounded-2xl p-5 mb-6 text-white">
+          <div className="flex items-center gap-2.5 mb-3.5">
+            <div className="w-6.5 h-6.5 rounded-lg bg-[#7C53C9]/30 flex items-center justify-center shrink-0">
+              <Sparkles size={13} className="text-[#C9B2F0]" />
             </div>
-            <button onClick={() => setShowSuggestions(false)} className="text-gray-400 hover:text-gray-600 transition">
+            <span className="text-[13.5px] font-bold text-[#C9B2F0]">Sugestões de retorno</span>
+            {suggestions.length > 0 && (
+              <span className="text-[11px] text-white/35 ml-auto">
+                {suggestions.length} paciente{suggestions.length !== 1 ? "s" : ""} valem um contato esta semana
+              </span>
+            )}
+            <button onClick={() => setShowSuggestions(false)} className="text-white/40 hover:text-white transition shrink-0">
               <X size={16} />
             </button>
           </div>
 
           {loadingSuggestions ? (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 bg-creme-50 rounded-xl animate-pulse" />
+                <div key={i} className="h-24 bg-white/5 rounded-xl animate-pulse" />
               ))}
             </div>
           ) : suggestions.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">
+            <p className="text-sm text-white/50 text-center py-4">
               Nenhum paciente para reativar no momento.
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {suggestions.map((s, i) => (
-                <div key={i} className="flex items-center justify-between bg-creme-50 border border-creme-200 rounded-xl px-4 py-3">
-                  <div>
-                    <p className="text-sm font-semibold text-verde">{s.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{s.suggestion}</p>
-                  </div>
+                <div key={i} className="bg-white/5 border border-white/[.09] rounded-xl p-3.5">
+                  <p className="text-[13.5px] font-bold">{s.name}</p>
+                  <p className="text-[11.5px] text-white/55 leading-relaxed my-1.5 line-clamp-3">{s.suggestion}</p>
                   <button
                     onClick={() => {
                       const p = patients.find((pt) => pt.name === s.name);
                       if (p) navigate(`/patients/${p.id}`);
                     }}
-                    className="text-xs text-verde hover:opacity-70 transition shrink-0 ml-4 font-medium"
+                    className="bg-white/10 hover:bg-white/20 transition text-white text-[11.5px] font-semibold rounded-lg px-2.5 py-1.5"
                   >
-                    Ver paciente →
+                    Sugerir retorno
                   </button>
                 </div>
               ))}
             </div>
           )}
-        </Card>
+        </div>
       )}
 
       {/* SEARCH + FILTRO */}
@@ -200,34 +224,23 @@ export default function Patients() {
           <div className="w-16 h-16 bg-creme-100 rounded-2xl flex items-center justify-center mb-4">
             <Users size={28} className="text-ambar" />
           </div>
-          <h2 className="text-xl font-semibold text-verde mb-2">Nenhum paciente cadastrado</h2>
+          <h2 className="text-xl font-semibold text-verde-900 mb-2">Nenhum paciente cadastrado</h2>
           <p className="text-gray-500 mb-6 max-w-xs">Comece cadastrando o primeiro paciente da clínica.</p>
-          <button
-            onClick={() => navigate("/patients/create")}
-            className="bg-verde hover:bg-verde-900 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
-          >
+          <Button onClick={() => navigate("/patients/create")}>
             <Plus size={16} /> Novo paciente
-          </button>
+          </Button>
         </div>
       ) : (
         <>
-          <Card className="bg-creme-50! p-0 overflow-hidden">
-            {/* Cabeçalho da tabela */}
-            <div className="px-5 py-3.5 border-b border-creme-200 bg-creme-100 flex items-center justify-between">
-              <span className="text-sm font-semibold text-verde">
-                {search ? `Resultados para "${search}"` : status === "active" ? "Pacientes ativos" : "Pacientes inativos"}
-              </span>
-              <span className="text-xs text-gray-500">Página {page} de {totalPages}</span>
-            </div>
-
+          <Card className="bg-white! p-0 overflow-hidden">
             <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-creme-200">
-                  <th className="text-left px-5 py-3 text-verde text-xs font-semibold uppercase tracking-wide">Paciente</th>
-                  <th className="text-left px-5 py-3 text-verde text-xs font-semibold uppercase tracking-wide">Telefone</th>
-                  <th className="text-left px-5 py-3 text-verde text-xs font-semibold uppercase tracking-wide hidden md:table-cell">Idade</th>
-                  <th className="text-left px-5 py-3 text-verde text-xs font-semibold uppercase tracking-wide hidden md:table-cell">Último agend.</th>
+                <tr className="bg-creme-100">
+                  <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide">Paciente</th>
+                  <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide">Telefone</th>
+                  <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide hidden md:table-cell">Idade</th>
+                  <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide hidden md:table-cell">Último agendamento</th>
                   <th className="px-5 py-3 w-8" />
                 </tr>
               </thead>
@@ -236,31 +249,28 @@ export default function Patients() {
                   <tr
                     key={patient.id}
                     onClick={() => navigate(`/patients/${patient.id}`)}
-                    className="border-t border-creme-200 cursor-pointer hover:bg-[#F3EEE5] transition group"
+                    className="border-t border-creme-200 cursor-pointer hover:bg-creme-50 transition group"
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-verde text-white text-sm font-semibold flex items-center justify-center shrink-0 select-none">
+                        <div className="w-8.5 h-8.5 rounded-full bg-verde text-white text-xs font-bold flex items-center justify-center shrink-0 select-none">
                           {initials(patient.name)}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-verde leading-tight">{patient.name}</p>
+                          <p className="text-sm font-semibold text-verde-900 leading-tight">{patient.name}</p>
                           {patient.email && (
                             <p className="text-xs text-gray-400 mt-0.5">{patient.email}</p>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-sm text-gray-600">{patient.phone || "—"}</td>
+                    <td className="px-5 py-3.5 text-sm text-gray-600 font-mono">{patient.phone || "—"}</td>
                     <td className="px-5 py-3.5 text-sm text-gray-500 hidden md:table-cell">{calcAge(patient.birthDate)}</td>
                     <td className="px-5 py-3.5 hidden md:table-cell">
-                      <span className={`text-xs font-medium ${
-                        patient.lastAppointment && Math.floor((Date.now() - new Date(patient.lastAppointment)) / 86400000) < 30
-                          ? "text-verde"
-                          : "text-gray-400"
-                      }`}>
-                        {relativeDate(patient.lastAppointment)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: recencyColor(patient.lastAppointment) }} />
+                        <span className="text-xs text-gray-500">{relativeDate(patient.lastAppointment)}</span>
+                      </div>
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition">→</span>
@@ -276,6 +286,22 @@ export default function Patients() {
                 )}
               </tbody>
             </table>
+            </div>
+
+            <div className="flex items-center justify-between px-5 py-3.5 border-t border-creme-200 flex-wrap gap-3">
+              <div className="flex items-center gap-3.5 flex-wrap">
+                <span className="text-xs text-gray-400">
+                  {patients.length > 0
+                    ? `${(page - 1) * 10 + 1}–${(page - 1) * 10 + patients.length} de ${total} pacientes`
+                    : `0 de ${total} pacientes`}
+                </span>
+                <span className="flex items-center gap-3.5 text-[11px] text-gray-400">
+                  <span className="flex items-center gap-1.5"><span className="w-1.75 h-1.75 rounded-full bg-[#3A9B6F]" />até 30 dias</span>
+                  <span className="flex items-center gap-1.5"><span className="w-1.75 h-1.75 rounded-full bg-[#C4895A]" />30–90 dias</span>
+                  <span className="flex items-center gap-1.5"><span className="w-1.75 h-1.75 rounded-full bg-[#E2574C]" />mais de 90</span>
+                </span>
+              </div>
+              <span className="text-xs text-gray-400">Página {page} de {totalPages}</span>
             </div>
           </Card>
 

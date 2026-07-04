@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
 /* ============================================================
    TOKENS DE MARCA — Iasoclin (Verde Vibrante)
    Fonte: "Design System - Verde Vibrante.dc.html" + Brand Book.

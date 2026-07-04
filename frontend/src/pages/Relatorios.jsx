@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import { TrendingUp, TrendingDown, Users, CalendarCheck, DollarSign, BarChart2, Download, Sparkles, Send, Bot, User } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
+import { Card } from "../components/ui";
 import api from "../services/api";
 import toast from "react-hot-toast";
 
@@ -77,13 +78,13 @@ const CustomTooltipCount = ({ active, payload, label }) => {
 
 function KpiCard({ icon: Icon, label, value, sub, subUp, color = "#00704A", loading }) {
   return (
-    <div className="bg-white border border-creme-200 rounded-2xl p-5 flex flex-col gap-3">
+    <Card className="bg-white! p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${color}18` }}>
           <Icon size={16} style={{ color }} />
         </div>
         {sub != null && (
-          <span className={`text-xs font-semibold flex items-center gap-0.5 ${subUp ? "text-green-600" : "text-red-400"}`}>
+          <span className={`text-xs font-semibold flex items-center gap-0.5 ${subUp ? "text-sucesso" : "text-erro"}`}>
             {subUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
             {sub}
           </span>
@@ -93,11 +94,11 @@ function KpiCard({ icon: Icon, label, value, sub, subUp, color = "#00704A", load
         {loading ? (
           <div className="h-7 w-24 bg-creme-100 rounded-lg animate-pulse" />
         ) : (
-          <p className="text-2xl font-black text-verde leading-none">{value}</p>
+          <p className="text-2xl font-black text-verde-900 leading-none font-mono">{value}</p>
         )}
         <p className="text-xs text-gray-400 mt-1.5 font-medium">{label}</p>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -161,9 +162,9 @@ export default function Relatorios() {
   return (
     <MainLayout>
       {/* Header */}
-      <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-verde">Analytics</h1>
+          <h1 className="font-serif font-light text-3xl text-verde-900">Analytics</h1>
           <p className="text-gray-500 mt-1">Visão analítica da sua clínica</p>
         </div>
         <button
@@ -175,7 +176,7 @@ export default function Relatorios() {
       </div>
 
       {/* Period selector */}
-      <div className="bg-white border border-creme-200 rounded-2xl p-4 mb-7 flex flex-wrap items-center gap-3">
+      <Card className="bg-white! p-4 mb-7 flex flex-wrap items-center gap-3">
         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide shrink-0">Período</span>
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((p, i) => (
@@ -208,14 +209,14 @@ export default function Relatorios() {
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="border border-ambar rounded-xl px-3 py-1.5 text-xs text-verde focus:outline-none focus:ring-2 focus:ring-verde/20"
+              className="border border-ambar rounded-xl px-3 py-1.5 text-xs text-verde font-mono focus:outline-none focus:ring-2 focus:ring-verde/20"
             />
             <span className="text-gray-400 text-xs">até</span>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="border border-ambar rounded-xl px-3 py-1.5 text-xs text-verde focus:outline-none focus:ring-2 focus:ring-verde/20"
+              className="border border-ambar rounded-xl px-3 py-1.5 text-xs text-verde font-mono focus:outline-none focus:ring-2 focus:ring-verde/20"
             />
             <button
               onClick={applyCustom}
@@ -225,7 +226,7 @@ export default function Relatorios() {
             </button>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* AI Chat */}
       <div className="mb-7">
@@ -271,12 +272,12 @@ export default function Relatorios() {
       {/* ROW 1: Receita x Despesas + Status agendamentos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
         {/* Receita x Despesas */}
-        <div className="lg:col-span-2 bg-white border border-creme-200 rounded-2xl p-5">
+        <Card className="lg:col-span-2 bg-white! p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-bold text-verde">Receita × Despesas</h3>
+              <h3 className="text-sm font-bold text-verde-900">Receita × Despesas</h3>
               <p className="text-xs text-gray-400 mt-0.5">
-                Lucro líquido: <span className="font-semibold text-verde">{fmt(f?.netProfit)}</span>
+                Lucro líquido: <span className="font-semibold text-verde font-mono">{fmt(f?.netProfit)}</span>
               </p>
             </div>
             <div className="flex items-center gap-3 text-xs">
@@ -314,12 +315,12 @@ export default function Relatorios() {
               </AreaChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Card>
 
         {/* Status agendamentos */}
-        <div className="bg-white border border-creme-200 rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-verde mb-1">Agendamentos por status</h3>
-          <p className="text-xs text-gray-400 mb-4">
+        <Card className="bg-white! p-5">
+          <h3 className="text-sm font-bold text-verde-900 mb-1">Agendamentos por status</h3>
+          <p className="text-xs text-gray-400 mb-4 font-mono">
             {a?.cancellationRate ?? 0}% taxa de cancelamento
           </p>
           {loading ? (
@@ -353,20 +354,20 @@ export default function Relatorios() {
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[entry.key] }} />
                       <span className="text-xs text-gray-600">{entry.name}</span>
                     </div>
-                    <span className="text-xs font-bold text-verde">{entry.value}</span>
+                    <span className="text-xs font-bold text-verde font-mono">{entry.value}</span>
                   </div>
                 ))}
               </div>
             </>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* ROW 2: Formas de pagamento + Top procedimentos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {/* Formas de pagamento */}
-        <div className="bg-white border border-creme-200 rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-verde mb-5">Receita por forma de pagamento</h3>
+        <Card className="bg-white! p-5">
+          <h3 className="text-sm font-bold text-verde-900 mb-5">Receita por forma de pagamento</h3>
           {loading ? (
             <div className="h-48 bg-creme-50 rounded-xl animate-pulse" />
           ) : !f?.byPaymentMethod?.length ? (
@@ -380,8 +381,8 @@ export default function Relatorios() {
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium text-gray-600 capitalize">{item.method}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400">{pct.toFixed(1)}%</span>
-                        <span className="text-xs font-bold text-verde">{fmt(item.total)}</span>
+                        <span className="text-xs text-gray-400 font-mono">{pct.toFixed(1)}%</span>
+                        <span className="text-xs font-bold text-verde font-mono">{fmt(item.total)}</span>
                       </div>
                     </div>
                     <div className="h-2 bg-creme-100 rounded-full overflow-hidden">
@@ -395,15 +396,15 @@ export default function Relatorios() {
               })}
               <div className="pt-3 border-t border-creme-100 flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-500">Ticket médio</span>
-                <span className="text-sm font-black text-verde">{fmt(f.avgTicket)}</span>
+                <span className="text-sm font-black text-verde font-mono">{fmt(f.avgTicket)}</span>
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Top procedimentos */}
-        <div className="bg-white border border-creme-200 rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-verde mb-5">Procedimentos mais realizados</h3>
+        <Card className="bg-white! p-5">
+          <h3 className="text-sm font-bold text-verde-900 mb-5">Procedimentos mais realizados</h3>
           {loading ? (
             <div className="h-48 bg-creme-50 rounded-xl animate-pulse" />
           ) : !pr?.top?.length ? (
@@ -417,7 +418,7 @@ export default function Relatorios() {
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium text-gray-600 truncate max-w-[65%]">{item.name}</span>
-                      <span className="text-xs font-bold text-verde shrink-0">{item.count}x</span>
+                      <span className="text-xs font-bold text-verde font-mono shrink-0">{item.count}x</span>
                     </div>
                     <div className="h-2 bg-creme-100 rounded-full overflow-hidden">
                       <div
@@ -433,14 +434,14 @@ export default function Relatorios() {
               })}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* ROW 3: Agendamentos por mês + Novos pacientes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {/* Agendamentos por mês */}
-        <div className="bg-white border border-creme-200 rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-verde mb-1">Atendimentos por mês</h3>
+        <Card className="bg-white! p-5">
+          <h3 className="text-sm font-bold text-verde-900 mb-1">Atendimentos por mês</h3>
           <p className="text-xs text-gray-400 mb-4">Agendamentos realizados (excl. cancelados)</p>
           {loading ? (
             <div className="h-44 bg-creme-50 rounded-xl animate-pulse" />
@@ -457,17 +458,17 @@ export default function Relatorios() {
               </BarChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Card>
 
         {/* Novos pacientes */}
-        <div className="bg-white border border-creme-200 rounded-2xl p-5">
+        <Card className="bg-white! p-5">
           <div className="flex items-start justify-between mb-1">
             <div>
-              <h3 className="text-sm font-bold text-verde">Novos pacientes por mês</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Total ativo: {p?.totalActive ?? "—"} pacientes</p>
+              <h3 className="text-sm font-bold text-verde-900">Novos pacientes por mês</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Total ativo: <span className="font-mono">{p?.totalActive ?? "—"}</span> pacientes</p>
             </div>
             {p?.totalActiveClub != null && p.totalActiveClub > 0 && (
-              <span className="text-xs bg-creme-100 text-verde font-semibold px-2.5 py-1 rounded-full shrink-0">
+              <span className="text-xs bg-creme-100 text-verde font-semibold px-2.5 py-1 rounded-full shrink-0 font-mono">
                 {p.totalActiveClub} no clube
               </span>
             )}
@@ -488,14 +489,14 @@ export default function Relatorios() {
               </BarChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* ROW 4: Dias da semana + Profissionais */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Dias da semana */}
-        <div className="bg-white border border-creme-200 rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-verde mb-5">Atendimentos por dia da semana</h3>
+        <Card className="bg-white! p-5">
+          <h3 className="text-sm font-bold text-verde-900 mb-5">Atendimentos por dia da semana</h3>
           {loading ? (
             <div className="h-36 bg-creme-50 rounded-xl animate-pulse" />
           ) : (
@@ -509,7 +510,7 @@ export default function Relatorios() {
                     const isTop = d.count > 0 && d.count === max;
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                        <span className="text-[10px] font-semibold text-gray-400">{d.count || ""}</span>
+                        <span className="text-[10px] font-semibold text-gray-400 font-mono">{d.count || ""}</span>
                         <div
                           className="w-full rounded-t-lg transition-all duration-700"
                           style={{
@@ -526,11 +527,11 @@ export default function Relatorios() {
               );
             })()
           )}
-        </div>
+        </Card>
 
         {/* Top profissionais */}
-        <div className="bg-white border border-creme-200 rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-verde mb-5">Atendimentos por profissional</h3>
+        <Card className="bg-white! p-5">
+          <h3 className="text-sm font-bold text-verde-900 mb-5">Atendimentos por profissional</h3>
           {loading ? (
             <div className="h-36 bg-creme-50 rounded-xl animate-pulse" />
           ) : !a?.byProfessional?.length ? (
@@ -544,7 +545,7 @@ export default function Relatorios() {
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium text-gray-600 truncate max-w-[70%]">{item.name}</span>
-                      <span className="text-xs font-bold text-verde">{item.count} atend.</span>
+                      <span className="text-xs font-bold text-verde font-mono">{item.count} atend.</span>
                     </div>
                     <div className="h-2 bg-creme-100 rounded-full overflow-hidden">
                       <div
@@ -560,7 +561,7 @@ export default function Relatorios() {
               })}
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </MainLayout>
   );
@@ -617,14 +618,14 @@ function AiChat() {
   }
 
   return (
-    <div className="bg-white border border-creme-200 rounded-2xl overflow-hidden">
+    <Card className="bg-white! p-0 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-creme-100 bg-[#FAF8F5]">
         <div className="w-8 h-8 rounded-xl bg-verde flex items-center justify-center">
           <Sparkles size={14} className="text-ambar" />
         </div>
         <div>
-          <p className="text-sm font-bold text-verde">Assistente IA</p>
+          <p className="text-sm font-bold text-verde-900">Chat com dados</p>
           <p className="text-xs text-gray-400">Pergunte sobre seus pacientes e dados da clínica</p>
         </div>
       </div>
@@ -708,6 +709,6 @@ function AiChat() {
           <Send size={15} />
         </button>
       </div>
-    </div>
+    </Card>
   );
 }

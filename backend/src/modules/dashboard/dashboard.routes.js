@@ -15,6 +15,8 @@ router.get("/stats", async (req, res) => {
     const weekEnd = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
     const currentMonth = now.getMonth() + 1;
 
+    const weekStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+
     const [
       totalPatients,
       todayAppointmentsCount,
@@ -23,6 +25,8 @@ router.get("/stats", async (req, res) => {
       todaySchedule,
       nextAppointments,
       allBirthdays,
+      pastWeekAppointments,
+      todayRevenueTransactions,
     ] = await Promise.all([
       prisma.patient.count({ where: { userId, isActive: true } }),
       prisma.appointment.count({
@@ -47,7 +51,31 @@ router.get("/stats", async (req, res) => {
         where: { userId, isActive: true, birthDate: { not: null } },
         select: { id: true, name: true, birthDate: true },
       }),
+      // últimos 7 dias corridos, para calcular taxa de presença real (concluído vs cancelado)
+      prisma.appointment.findMany({
+        where: { userId, startsAt: { gte: weekStart, lt: todayStart }, status: { in: ["FINISHED", "CANCELED"] } },
+        select: { status: true },
+      }),
+      prisma.transaction.findMany({
+        where: {
+          userId,
+          type: "receita",
+          status: { in: ["pago", "confirmado"] },
+          paidAt: { gte: todayStart, lt: todayEnd },
+        },
+        select: { amount: true, feeAmount: true, netAmount: true },
+      }),
     ]);
+
+    const attendedCount = pastWeekAppointments.filter((a) => a.status === "FINISHED").length;
+    const attendanceRate = pastWeekAppointments.length > 0
+      ? Math.round((attendedCount / pastWeekAppointments.length) * 100)
+      : null;
+
+    const todayRevenue = todayRevenueTransactions.reduce(
+      (sum, t) => sum + (t.feeAmount != null && t.netAmount != null ? t.netAmount : t.amount),
+      0
+    );
 
     const birthdaysThisMonth = allBirthdays
       .filter((p) => new Date(p.birthDate).getMonth() + 1 === currentMonth)
@@ -67,6 +95,8 @@ router.get("/stats", async (req, res) => {
       todaySchedule,
       nextAppointments,
       birthdaysThisMonth,
+      attendanceRate,
+      todayRevenue,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });

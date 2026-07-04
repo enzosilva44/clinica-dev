@@ -441,69 +441,64 @@ export default function PatientDetails() {
         </div>
 
         {/* HEADER */}
-        <div className="bg-verde rounded-2xl p-5 md:p-6 mb-6 text-white shadow-sm">
+        <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="text-2xl md:text-3xl font-bold truncate">
-                {patient.name}
-              </h1>
-              <div className="flex flex-wrap gap-4 md:gap-8 mt-3 text-sm text-white/90">
-                <div>
-                  <p className="text-white/60">Telefone</p>
-                  <p>{patient.phone || "-"}</p>
-                </div>
-                <div>
-                  <p className="text-white/60">Email</p>
-                  <p className="truncate max-w-48">{patient.email || "-"}</p>
-                </div>
-                <div>
-                  <p className="text-white/60">Cidade</p>
-                  <p>{patient.city || "-"}</p>
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-14 h-14 rounded-full bg-verde flex items-center justify-center shrink-0">
+                <span className="text-white text-lg font-bold">
+                  {patient.name?.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase()}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <h1 className="font-serif font-light text-2xl md:text-[32px] text-verde-900 truncate">
+                  {patient.name}
+                </h1>
+                <div className="flex flex-wrap items-center gap-3 mt-1 text-[12.5px] text-gray-500">
+                  {patient.phone && <span className="font-mono">{patient.phone}</span>}
+                  {patientStats?.birthday && <span>{patientStats.birthday.age} anos</span>}
+                  <button
+                    onClick={() => setShowDetails((v) => !v)}
+                    className="text-verde font-semibold hover:opacity-70 transition"
+                  >
+                    {showDetails ? "menos detalhes ↑" : "mais detalhes ↓"}
+                  </button>
                 </div>
               </div>
             </div>
-            <div className="flex sm:flex-col items-center sm:items-end gap-3 shrink-0">
-              <button
-                onClick={() => setShowDetails((v) => !v)}
-                className="text-sm text-white/70 hover:text-white transition"
-              >
-                {showDetails ? "Menos detalhes ↑" : "Mais detalhes ↓"}
-              </button>
-              <button
-                onClick={() => navigate(`/patients/${id}/edit`)}
-                className="bg-[#D8C3A5] hover:bg-ambar text-verde px-4 py-2 rounded-lg font-medium text-sm transition"
-              >
-                Editar dados
-              </button>
-            </div>
+            <button
+              onClick={() => navigate(`/patients/${id}/edit`)}
+              className="border-[1.5px] border-creme-200 hover:border-verde/40 text-verde-900 px-4 py-2.5 rounded-xl font-bold text-sm transition shrink-0"
+            >
+              Editar
+            </button>
           </div>
 
           {/* DETALHES EXPANDIDOS */}
           {showDetails && (
-            <div className="mt-4 pt-4 border-t border-white/20 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-8 gap-y-3 text-sm text-white/90">
+            <div className="mt-4 pt-4 border-t border-creme-200 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-8 gap-y-3 text-sm text-gray-600">
               <div>
-                <p className="text-white/50 text-xs mb-0.5">CPF</p>
-                <p>{patient.cpf || "—"}</p>
+                <p className="text-gray-400 text-xs mb-0.5">CPF</p>
+                <p className="font-mono">{patient.cpf || "—"}</p>
               </div>
               <div>
-                <p className="text-white/50 text-xs mb-0.5">RG</p>
-                <p>{patient.rg || "—"}</p>
+                <p className="text-gray-400 text-xs mb-0.5">RG</p>
+                <p className="font-mono">{patient.rg || "—"}</p>
               </div>
               <div>
-                <p className="text-white/50 text-xs mb-0.5">Data de nascimento</p>
-                <p>{patient.birthDate ? new Date(patient.birthDate).toLocaleDateString("pt-BR") : "—"}</p>
+                <p className="text-gray-400 text-xs mb-0.5">Data de nascimento</p>
+                <p className="font-mono">{patient.birthDate ? new Date(patient.birthDate).toLocaleDateString("pt-BR") : "—"}</p>
               </div>
               <div>
-                <p className="text-white/50 text-xs mb-0.5">CEP</p>
-                <p>{patient.zipCode || "—"}</p>
+                <p className="text-gray-400 text-xs mb-0.5">CEP</p>
+                <p className="font-mono">{patient.zipCode || "—"}</p>
               </div>
               <div className="col-span-2">
-                <p className="text-white/50 text-xs mb-0.5">Endereço</p>
+                <p className="text-gray-400 text-xs mb-0.5">Endereço</p>
                 <p>{[patient.street, patient.city, patient.state].filter(Boolean).join(", ") || "—"}</p>
               </div>
               {patient.observations && (
                 <div className="col-span-2 sm:col-span-3 md:col-span-4">
-                  <p className="text-white/50 text-xs mb-0.5">Observações</p>
+                  <p className="text-gray-400 text-xs mb-0.5">Observações</p>
                   <p className="leading-relaxed">{patient.observations}</p>
                 </div>
               )}
@@ -527,43 +522,40 @@ export default function PatientDetails() {
           );
         })()}
 
-      {/* DASHBOARD */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="Total consultas"
-          value={evolutions.length}
-        />
-
-        <StatCard
-          title="Última consulta"
-          value={
-            evolutions[0]
-              ? new Date(
-                  evolutions[0].createdAt
-                ).toLocaleDateString(
-                  "pt-BR"
-                )
-              : "-"
-          }
-        />
-
-        <StatCard
-          title="Total gasto"
-          value={
-            patientStats
-              ? `R$ ${Number(patientStats.totalSpent).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              : "—"
-          }
-        />
-
-        <StatCard
-          title="Procedimento mais feito"
-          value={patientStats?.topProcedures?.[0]?.name ?? "—"}
-        />
+      {/* RESUMO IA */}
+      <div className="relative bg-gradient-to-br from-verde-900 to-verde-950 rounded-2xl p-5 mb-6 text-white">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Sparkles size={15} className="text-verde-200" />
+            <span className="text-sm font-bold text-verde-200">Resumo IA</span>
+          </div>
+          <button
+            onClick={generateSummary}
+            disabled={loadingSummary}
+            className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg transition text-xs font-semibold"
+          >
+            <Sparkles size={12} className={loadingSummary ? "animate-pulse" : ""} />
+            {loadingSummary ? "Gerando…" : aiSummary ? "Atualizar" : "Gerar resumo"}
+          </button>
+        </div>
+        {aiSummaryAt && !loadingSummary && (
+          <p className="text-[11px] font-mono text-white/40 mb-2">
+            Atualizado em {new Date(aiSummaryAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+          </p>
+        )}
+        {loadingSummary && (
+          <p className="text-sm text-white/50 animate-pulse">Analisando histórico do paciente…</p>
+        )}
+        {!loadingSummary && aiSummary && (
+          <p className="text-sm text-white/75 leading-relaxed">{aiSummary}</p>
+        )}
+        {!loadingSummary && !aiSummary && (
+          <p className="text-sm text-white/50">Clique em "Gerar resumo" para criar um resumo com IA do histórico deste paciente.</p>
+        )}
       </div>
 
       {/* MENU */}
-      <div className="bg-creme-50 border border-creme-200 rounded-2xl p-2 mb-6 flex gap-2 flex-wrap">
+      <div className="border-b-[1.5px] border-creme-200 mb-6 flex gap-1 flex-wrap overflow-x-auto">
         <TabButton
           active={
             activeTab ===
@@ -662,10 +654,10 @@ export default function PatientDetails() {
               </div>
               {patientStats?.birthday ? (
                 <>
-                  <p className={`text-2xl font-bold leading-none flex items-center gap-1.5 ${patientStats.birthday.isToday ? "text-white" : "text-verde"}`}>
+                  <p className={`text-2xl font-bold font-mono leading-none flex items-center gap-1.5 ${patientStats.birthday.isToday ? "text-white" : "text-verde"}`}>
                     {patientStats.birthday.age} anos{patientStats.birthday.isToday && <PartyPopper size={18} />}
                   </p>
-                  <p className={`text-xs mt-1.5 ${patientStats.birthday.isToday ? "text-white/80" : "text-gray-400"}`}>
+                  <p className={`text-xs font-mono mt-1.5 ${patientStats.birthday.isToday ? "text-white/80" : "text-gray-400"}`}>
                     {new Date(patientStats.birthday.date).toLocaleDateString("pt-BR")}
                   </p>
                 </>
@@ -680,11 +672,11 @@ export default function PatientDetails() {
                 <Users size={15} className="text-[#6F7F73]" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Cliente há</span>
               </div>
-              <p className="text-2xl font-bold text-verde leading-none">
+              <p className="text-2xl font-bold font-mono text-verde leading-none">
                 {patientStats?.clientSince?.label ?? "—"}
               </p>
               {patientStats?.clientSince && (
-                <p className="text-xs text-gray-400 mt-1.5">
+                <p className="text-xs font-mono text-gray-400 mt-1.5">
                   desde {new Date(patientStats.clientSince.date).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}
                 </p>
               )}
@@ -696,7 +688,7 @@ export default function PatientDetails() {
                 <CalendarDays size={15} className="text-info" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Agendamentos</span>
               </div>
-              <p className="text-2xl font-bold text-verde leading-none">
+              <p className="text-2xl font-bold font-mono text-verde leading-none">
                 {patientStats?.totalAppointments ?? "—"}
               </p>
               <p className="text-xs text-gray-400 mt-1.5">sessões realizadas</p>
@@ -708,13 +700,13 @@ export default function PatientDetails() {
                 <TrendingUp size={15} className="text-sucesso" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Ticket médio</span>
               </div>
-              <p className="text-2xl font-bold text-verde leading-none">
+              <p className="text-2xl font-bold font-mono text-verde leading-none">
                 {patientStats?.avgTicket
                   ? patientStats.avgTicket.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                   : "—"}
               </p>
               {patientStats?.totalSpent > 0 && (
-                <p className="text-xs text-gray-400 mt-1.5">
+                <p className="text-xs font-mono text-gray-400 mt-1.5">
                   total {patientStats.totalSpent.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </p>
               )}
@@ -738,7 +730,7 @@ export default function PatientDetails() {
                       const isTop = d.count > 0 && d.count === max;
                       return (
                         <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5">
-                          <span className="text-[10px] font-semibold text-gray-400">{d.count || ""}</span>
+                          <span className="text-[10px] font-mono font-semibold text-gray-400">{d.count || ""}</span>
                           <div className="w-full rounded-t-md transition-all" style={{
                             height: `${Math.max(pct, d.count > 0 ? 8 : 4)}%`,
                             backgroundColor: isTop ? "#00704A" : d.count > 0 ? "#6F7F73" : "#EFE7DA",
@@ -766,10 +758,12 @@ export default function PatientDetails() {
                 return (
                   <div className="space-y-3">
                     {patientStats.topProcedures.map((p, i) => (
-                      <div key={i}>
+                      <div key={i} className="flex items-center gap-2.5">
+                        <span className="font-serif italic text-ambar-500 text-[15px] w-4 shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-medium text-verde truncate max-w-[70%]">{p.name}</span>
-                          <span className="text-xs text-gray-400 shrink-0">{p.count}x</span>
+                          <span className="text-xs font-mono text-gray-400 shrink-0">{p.count}x</span>
                         </div>
                         <div className="h-1.5 bg-creme-100 rounded-full overflow-hidden">
                           <div
@@ -779,6 +773,7 @@ export default function PatientDetails() {
                               backgroundColor: i === 0 ? "#00704A" : "#6F7F73",
                             }}
                           />
+                        </div>
                         </div>
                       </div>
                     ))}
@@ -796,46 +791,16 @@ export default function PatientDetails() {
       {activeTab === "clinical" && (
         <div className="mb-8">
 
-          {/* HISTÓRICO IA */}
-          <div className="bg-creme-50 border border-creme-200 rounded-2xl p-5 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles size={15} className="text-verde" />
-                <span className="text-sm font-bold text-verde">Histórico do Paciente — IA</span>
-              </div>
-              <button
-                onClick={generateSummary}
-                disabled={loadingSummary}
-                className="flex items-center gap-1.5 border border-ambar hover:bg-creme-100 disabled:opacity-50 text-verde px-3 py-1.5 rounded-lg transition text-xs"
-              >
-                <Sparkles size={12} className={loadingSummary ? "animate-pulse" : ""} />
-                {loadingSummary ? "Gerando…" : aiSummary ? "Atualizar" : "Gerar resumo"}
-              </button>
-            </div>
-            {aiSummaryAt && !loadingSummary && (
-              <p className="text-[11px] text-gray-400 mb-2">
-                Atualizado em {new Date(aiSummaryAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-              </p>
-            )}
-            {loadingSummary && (
-              <p className="text-sm text-gray-400 animate-pulse">Analisando histórico do paciente…</p>
-            )}
-            {!loadingSummary && aiSummary && (
-              <p className="text-sm text-gray-700 leading-relaxed">{aiSummary}</p>
-            )}
-            {!loadingSummary && !aiSummary && (
-              <p className="text-sm text-gray-400">Clique em "Gerar resumo" para criar um resumo com IA do histórico deste paciente.</p>
-            )}
-          </div>
-
           {/* SUBMENU */}
-          <div className="flex gap-1 bg-creme-50 border border-creme-200 rounded-xl p-1 mb-5 w-fit">
+          <div className="flex gap-2 mb-5 flex-wrap">
             {[["evolucao", "Evolução"], ["mapa", "Mapa de Aplicação"], ["anamnese", "Anamnese"]].map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setClinicalSubTab(key)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                  clinicalSubTab === key ? "bg-verde text-white" : "text-verde hover:bg-creme-100"
+                className={`px-4 py-2 rounded-full text-[12.5px] font-bold transition border-[1.5px] ${
+                  clinicalSubTab === key
+                    ? "bg-verde-50 text-verde-900 border-verde-300"
+                    : "bg-creme-50 text-gray-500 border-creme-200 hover:border-ambar/40"
                 }`}
               >
                 {label}
@@ -845,7 +810,7 @@ export default function PatientDetails() {
 
           {/* SUBABA: EVOLUÇÃO */}
           {clinicalSubTab === "evolucao" && (
-          <div className="bg-creme-50 border border-creme-200 rounded-2xl p-6">
+          <Card className="bg-creme-50! rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-verde">Evoluções</h2>
               <button
@@ -951,7 +916,7 @@ export default function PatientDetails() {
               <div key={evolution.id} className="bg-white border border-creme-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-verde">{evolution.procedure}</h3>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm font-mono text-gray-500">
                     {new Date(evolution.createdAt).toLocaleDateString("pt-BR")}
                   </span>
                 </div>
@@ -962,7 +927,7 @@ export default function PatientDetails() {
               </div>
             ))}
           </div>
-          </div>
+          </Card>
           )}
 
           {/* SUBABA: MAPA */}
@@ -979,7 +944,7 @@ export default function PatientDetails() {
 
       {/* AGENDAMENTOS */}
       {activeTab === "appointments" && (
-        <div className="bg-creme-50 border border-creme-200 rounded-2xl overflow-hidden">
+        <Card className="bg-creme-50! rounded-2xl overflow-hidden p-0">
           <div className="px-5 py-3.5 bg-creme-100 border-b border-creme-200 flex items-center justify-between">
             <span className="text-sm font-semibold text-verde">Agendamentos</span>
             <span className="text-xs text-gray-500">{appointments.length} registro{appointments.length !== 1 ? "s" : ""}</span>
@@ -992,7 +957,7 @@ export default function PatientDetails() {
                 <div key={appt.id} className="flex items-center justify-between px-5 py-3.5 bg-white hover:bg-creme-50 transition">
                   <div>
                     <p className="text-sm font-semibold text-verde">{appt.procedureType || appt.title || "Agendamento"}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs font-mono text-gray-400 mt-0.5">
                       {new Date(appt.startsAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       {" · "}
                       {new Date(appt.startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -1014,7 +979,7 @@ export default function PatientDetails() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* DOCUMENTOS */}
@@ -1036,7 +1001,7 @@ export default function PatientDetails() {
           <div className="space-y-5">
             {/* Documentos Assinados */}
             {signed.length > 0 && (
-              <div className="bg-creme-50 border border-creme-200 rounded-2xl overflow-hidden">
+              <Card className="bg-creme-50! rounded-2xl overflow-hidden p-0">
                 <div className="px-5 py-3.5 bg-creme-100 border-b border-creme-200">
                   <span className="text-sm font-semibold text-verde">Documentos Assinados</span>
                 </div>
@@ -1046,7 +1011,7 @@ export default function PatientDetails() {
                       <FileText size={16} className="text-verde shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-verde truncate">{pd.document.name}</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs font-mono text-gray-400">
                           {pd.signedAt ? new Date(pd.signedAt).toLocaleDateString("pt-BR") : "—"}
                         </p>
                       </div>
@@ -1076,12 +1041,12 @@ export default function PatientDetails() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Aguardando assinatura */}
             {pending.length > 0 && (
-              <div className="bg-creme-50 border border-creme-200 rounded-2xl overflow-hidden">
+              <Card className="bg-creme-50! rounded-2xl overflow-hidden p-0">
                 <div className="px-5 py-3.5 bg-creme-100 border-b border-creme-200 flex items-center justify-between">
                   <span className="text-sm font-semibold text-verde">Aguardando Assinatura</span>
                 </div>
@@ -1091,7 +1056,7 @@ export default function PatientDetails() {
                       <FileText size={16} className="text-ambar shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-verde truncate">{pd.document.name}</p>
-                        <p className="text-xs text-gray-400">{new Date(pd.createdAt).toLocaleDateString("pt-BR")}</p>
+                        <p className="text-xs font-mono text-gray-400">{new Date(pd.createdAt).toLocaleDateString("pt-BR")}</p>
                       </div>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${TYPE_COLORS[pd.document.type] ?? TYPE_COLORS.outro}`}>
                         {pd.document.type}
@@ -1111,11 +1076,11 @@ export default function PatientDetails() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Disponíveis para enviar */}
-            <div className="bg-creme-50 border border-creme-200 rounded-2xl overflow-hidden">
+            <Card className="bg-creme-50! rounded-2xl overflow-hidden p-0">
               <div className="px-5 py-3.5 bg-creme-100 border-b border-creme-200 flex items-center justify-between">
                 <span className="text-sm font-semibold text-verde">Documentos Disponíveis para Assinar</span>
               </div>
@@ -1156,7 +1121,7 @@ export default function PatientDetails() {
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
           </div>
         );
       })()}
@@ -1276,7 +1241,7 @@ export default function PatientDetails() {
                             </div>
                             <div>
                               <label className="text-xs font-medium text-gray-500 block mb-1.5">Total</label>
-                              <div className="w-full border border-creme-200 bg-white rounded-xl p-3 text-sm text-gray-500">
+                              <div className="w-full border border-creme-200 bg-white rounded-xl p-3 text-sm font-mono text-gray-500">
                                 {itemTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                               </div>
                             </div>
@@ -1307,7 +1272,7 @@ export default function PatientDetails() {
                 <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-verde">Subtotal</span>
-                    <strong className="text-verde">
+                    <strong className="font-mono text-verde">
                       {subtotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </strong>
                   </div>
@@ -1324,7 +1289,7 @@ export default function PatientDetails() {
                   </div>
                   <div className="flex items-center justify-between border-t border-rose-100 pt-3">
                     <span className="text-base font-bold text-verde">Total</span>
-                    <strong className="text-lg text-pink-600">
+                    <strong className="text-lg font-mono text-pink-600">
                       {total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </strong>
                   </div>
@@ -1389,8 +1354,10 @@ export default function PatientDetails() {
 
                       {txN > 1 && txTotal > 0 && (
                         <p className="text-[11px] text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2">
-                          {txN}x de{" "}
-                          {(txTotal / txN).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          <span className="font-mono">
+                            {txN}x de{" "}
+                            {(txTotal / txN).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          </span>
                           {" "}— vencimento mensal a partir da data informada
                         </p>
                       )}
@@ -1436,13 +1403,13 @@ export default function PatientDetails() {
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div>
                       <h3 className="font-semibold text-verde">{budget.title}</h3>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs font-mono text-gray-400 mt-0.5">
                         Criado em {new Date(budget.createdAt).toLocaleDateString("pt-BR")}
                         {budget.validUntil ? ` · válido até ${new Date(budget.validUntil).toLocaleDateString("pt-BR")}` : ""}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-base font-bold text-verde">
+                      <span className="text-base font-bold font-mono text-verde">
                         {budget.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       </span>
                       <button
@@ -1464,7 +1431,7 @@ export default function PatientDetails() {
                             <p className="text-xs text-gray-400 truncate">{item.observation}</p>
                           )}
                         </div>
-                        <span className="text-xs text-gray-500 shrink-0">
+                        <span className="text-xs font-mono text-gray-500 shrink-0">
                           {item.quantity} x {item.unitPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </span>
                       </div>
@@ -1498,7 +1465,7 @@ export default function PatientDetails() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-xs font-bold text-verde">
+                                <span className="text-xs font-bold font-mono text-verde">
                                   {Number(tx.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                                 </span>
                                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${pillColor}`}>
@@ -1604,7 +1571,7 @@ export default function PatientDetails() {
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.badge}`}>
                             {item.badge ?? cfg.label}
                           </span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs font-mono text-gray-400">
                             {item.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
                             {" "}
                             {item.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -1627,23 +1594,6 @@ export default function PatientDetails() {
     </MainLayout>
   );
 }
-function StatCard({
-  title,
-  value,
-}) {
-  return (
-    <Card className="bg-creme-50! p-5">
-      <p className="text-sm text-gray-500">
-        {title}
-      </p>
-
-      <h2 className="text-lg font-semibold text-verde mt-1">
-        {value || "-"}
-      </h2>
-    </Card>
-  );
-}
-
 function TabButton({
   children,
   active,
@@ -1652,10 +1602,10 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-xl text-sm transition ${
+      className={`px-4 py-2.5 text-[13.5px] whitespace-nowrap transition border-b-2 ${
         active
-          ? "bg-verde text-white"
-          : "text-verde hover:bg-creme-100"
+          ? "border-verde text-verde-900 font-bold"
+          : "border-transparent text-gray-500 font-medium hover:text-verde"
       }`}
     >
       {children}

@@ -35,61 +35,67 @@ export default function Sidebar({ open = false, onClose }) {
   return (
     <aside
       className={[
-        "w-64 shrink-0 min-h-screen bg-verde text-white flex flex-col shadow-xl",
+        "w-64 shrink-0 min-h-screen bg-verde-950 text-white flex flex-col",
         "fixed lg:static inset-y-0 left-0 z-50 lg:z-auto",
         "transition-transform duration-200 ease-in-out",
+        "p-3.5 pb-4.5",
         open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       ].join(" ")}
     >
       {/* ── Logo ── */}
-      <div className="flex items-center justify-between px-6 pt-6 pb-4">
-        <div className="flex items-center gap-2.5">
-          <LogoMark variant="rev" size={28} />
-          <p className="text-xl font-bold tracking-wide">
-            <span className="text-white">Iaso</span><span className="text-ambar">Clin</span>
-          </p>
+      <div className="flex items-center justify-between gap-2.5 px-2 pb-4.5 mb-3.5 border-b border-white/10">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-[10px] bg-verde flex items-center justify-center shrink-0 shadow-lg">
+            <LogoMark variant="rev" size={21} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[17px] leading-none truncate">
+              <span className="font-light text-white">iaso</span><span className="font-semibold text-verde-200">clin</span>
+            </p>
+            <p className="text-white/40 text-[10.5px] font-medium mt-1.5 truncate">
+              {[user?.clinicName, user?.city].filter(Boolean).join(" · ") || "Clínica"}
+            </p>
+          </div>
         </div>
         <button onClick={onClose}
-          className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-verde-900 transition">
+          className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition shrink-0">
           <X size={18} />
         </button>
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 overflow-y-auto px-6 py-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto flex flex-col gap-0.5">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink key={to} to={to} onClick={onClose}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-xl transition text-sm ${
+              `flex items-center gap-2.5 px-2.5 py-2 rounded-[9px] transition text-[13px] ${
                 isActive
-                  ? "bg-white/10 text-creme-200 font-semibold"
-                  : "text-white/70 hover:bg-white/5 hover:text-creme-200"
+                  ? "bg-verde text-white font-bold"
+                  : "text-white/60 font-medium hover:bg-white/7 hover:text-white"
               }`}>
-            <Icon size={18} />
+            <Icon size={19} />
             {label}
           </NavLink>
         ))}
       </nav>
 
-      {/* ── Perfil + Sair ── */}
-      <div className="px-4 pb-6 pt-3 border-t border-white/10">
+      {/* ── Perfil ── */}
+      <div className="mt-3.5 p-3 rounded-xl bg-white/4 border border-white/7 flex items-center gap-2.5">
         <button
           onClick={() => { navigate("/settings"); onClose?.(); }}
-          className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/10 transition group text-left"
+          className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
         >
-          <div className="w-9 h-9 rounded-xl bg-ambar/30 flex items-center justify-center shrink-0">
-            <span className="text-ambar text-xs font-bold">{initials}</span>
+          <div className="w-8.5 h-8.5 rounded-full bg-verde flex items-center justify-center shrink-0">
+            <span className="text-white text-xs font-bold">{initials}</span>
           </div>
           <div className="min-w-0">
-            <p className="text-white text-sm font-semibold leading-tight truncate">{displayName}</p>
-            <p className="text-white/40 text-[11px] truncate">{user?.clinicName || "Configurações"}</p>
+            <p className="text-white text-[12.5px] font-semibold whitespace-nowrap truncate">{displayName}</p>
+            <p className="text-white/40 text-[10.5px] truncate">{user?.plan ? `Plano ${user.plan}` : "Configurações"}</p>
           </div>
         </button>
-
-        <button onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition text-sm mt-1">
-          <LogOut size={16} />
-          Sair
+        <button onClick={logout} title="Sair"
+          className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition">
+          <LogOut size={15} />
         </button>
       </div>
     </aside>

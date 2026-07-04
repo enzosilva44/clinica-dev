@@ -110,6 +110,17 @@ function estimateCardFee(fees, { paymentMethod, installments, amount }) {
   return { feePercent: match.percent, feeAmount, netAmount: Math.round((gross - feeAmount) * 100) / 100 };
 }
 
+// Clareia uma cor hex misturando com branco (fundo pastel do evento, estilo Google Calendar).
+function pastelize(hex, ratio = 0.85) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "");
+  if (!m) return "#EFE7DA";
+  const [r, g, b] = [1, 2, 3].map((i) => {
+    const c = parseInt(m[i], 16);
+    return Math.round(c + (255 - c) * ratio);
+  });
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 // Data no formato do DTSTART do rrule (UTC): YYYYMMDDTHHMMSSZ
 function toRRuleDate(date) {
   return new Date(date).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -659,7 +670,7 @@ export default function Agenda() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-3xl font-bold text-verde">Agenda</h1>
+                <h1 className="font-serif font-light text-3xl text-verde-900">Agenda</h1>
                 <span className="bg-creme-100 text-verde border border-ambar text-xs font-semibold px-2.5 py-1 rounded-full">
                   Agora {formatTime(now)}
                 </span>
@@ -673,28 +684,26 @@ export default function Agenda() {
             </div>
             <button
               onClick={() => openCreate()}
-              className="bg-verde hover:bg-verde-900 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
+              className="bg-verde hover:bg-verde-900 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium shadow-[0_4px_14px_rgba(0,112,74,.22)]"
             >
               <Plus size={16} /> Novo agendamento
             </button>
           </div>
 
           {/* FILTROS POR CATEGORIA */}
-          <div className="flex flex-wrap gap-2 mb-3">
+          <div className="flex flex-wrap items-center gap-4 mb-3 px-1">
             {CATEGORY_FILTERS.map((c) => {
               const on = activeCategories.includes(c.key);
               return (
                 <button
                   key={c.key}
                   onClick={() => toggleCategory(c.key)}
-                  className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition ${
-                    on ? "text-white border-transparent" : "text-gray-400 border-creme-200 bg-white"
-                  }`}
-                  style={on ? { backgroundColor: CATEGORY_COLORS[c.key] } : {}}
+                  className="flex items-center gap-1.5 text-[11.5px] font-semibold transition"
+                  style={{ color: on ? "#3a473f" : "#c3ccc6" }}
                 >
                   <span
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: on ? "#fff" : CATEGORY_COLORS[c.key] }}
+                    className="w-2.5 h-2.5 rounded-[2px]"
+                    style={{ backgroundColor: on ? CATEGORY_COLORS[c.key] : "#EDEAE5" }}
                   />
                   {c.label}
                 </button>
@@ -722,6 +731,28 @@ export default function Agenda() {
                 right: "dayGridMonth,timeGridWeek,timeGridDay",
               }}
               buttonText={{ today: "Hoje", month: "Mês", week: "Semana", day: "Dia" }}
+              dayHeaderContent={(arg) => {
+                if (arg.view.type === "dayGridMonth") return arg.text;
+                const dow = new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(arg.date).replace(".", "").toUpperCase();
+                const dayNum = arg.date.getDate();
+                return (
+                  <div className="flex flex-col items-center gap-1 py-1">
+                    <span className="text-[10px] font-extrabold tracking-wide" style={{ color: arg.isToday ? "#00704A" : "#a3aea7" }}>
+                      {dow}
+                    </span>
+                    <span
+                      className="text-[17px] font-extrabold flex items-center justify-center"
+                      style={
+                        arg.isToday
+                          ? { width: 26, height: 26, borderRadius: 999, background: "#00704A", color: "#fff", fontSize: 15 }
+                          : { color: "#0A3326" }
+                      }
+                    >
+                      {dayNum}
+                    </span>
+                  </div>
+                );
+              }}
               events={events}
               height="100%"
               slotMinTime="07:00:00"
@@ -733,21 +764,22 @@ export default function Agenda() {
               eventDidMount={(info) => {
                 const color = info.event.extendedProps.statusColor;
                 if (color) {
-                  info.el.style.backgroundColor = color;
-                  info.el.style.borderColor = "transparent";
+                  info.el.style.backgroundColor = pastelize(color);
+                  info.el.style.borderLeftColor = color;
                 }
               }}
               eventContent={(info) => {
                 const isMonth = info.view.type === "dayGridMonth";
-                const { patientName, procedureType, professional, professionalColor } = info.event.extendedProps;
+                const { patientName, procedureType, professional, professionalColor, statusColor } = info.event.extendedProps;
+                const textColor = statusColor || "#0A3326";
                 if (isMonth) {
                   return (
                     <div className="px-1.5 py-0.5 w-full overflow-hidden">
-                      <p className="text-[11px] font-semibold truncate text-white leading-tight">
+                      <p className="text-[11px] font-bold truncate leading-tight" style={{ color: textColor }}>
                         {info.event.title}
                       </p>
                       {patientName && (
-                        <p className="text-[9px] truncate text-white/70 leading-tight">
+                        <p className="text-[9px] truncate leading-tight opacity-70" style={{ color: textColor }}>
                           {patientName}
                         </p>
                       )}
@@ -756,16 +788,16 @@ export default function Agenda() {
                 }
                 return (
                   <div className="px-2 py-1 text-xs w-full h-full overflow-hidden flex flex-col gap-0.5">
-                    <p className="font-semibold truncate leading-tight text-white">
+                    <p className="font-bold truncate leading-tight" style={{ color: textColor }}>
                       {info.event.title}
                     </p>
                     {patientName && (
-                      <p className="truncate leading-tight text-white/80 text-[10px]">
+                      <p className="truncate leading-tight text-[10px] opacity-75" style={{ color: textColor }}>
                         {patientName}
                       </p>
                     )}
                     {procedureType && (
-                      <p className="truncate leading-tight text-white/60 text-[10px]">
+                      <p className="truncate leading-tight text-[10px] opacity-60" style={{ color: textColor }}>
                         {procedureType}
                       </p>
                     )}
@@ -775,7 +807,7 @@ export default function Agenda() {
                           className="w-2 h-2 rounded-full shrink-0"
                           style={{ backgroundColor: professionalColor }}
                         />
-                        <p className="truncate text-white/70 text-[10px]">
+                        <p className="truncate text-[10px] opacity-70" style={{ color: textColor }}>
                           {professional}
                         </p>
                       </div>
@@ -822,16 +854,20 @@ export default function Agenda() {
         </div>
       )}
 
-      {/* MODAL */}
+      {/* PAINEL DE EVENTO (drawer lateral) */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setShowModal(false)}
+          />
+          <div className="relative bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-[slideIn_.2s_ease-out]">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-creme-200 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 bg-creme-100 rounded-lg flex items-center justify-center">
                   <Calendar size={15} className="text-verde" />
                 </div>
-                <h2 className="text-lg font-bold text-verde">
+                <h2 className="text-lg font-bold text-verde-900">
                   {editing ? "Editar" : "Novo"}{" "}
                   {isSimple
                     ? { lembrete: "lembrete", compromisso: "compromisso", bloqueio: "bloqueio" }[form.category]
@@ -843,7 +879,7 @@ export default function Agenda() {
               </button>
             </div>
 
-            <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
               {/* TIPO — escolhido antes de preencher o resto */}
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">Tipo</label>
@@ -1213,7 +1249,7 @@ export default function Agenda() {
                             ? <TrendingUp size={14} className="text-emerald-600" />
                             : <TrendingDown size={14} className="text-red-500" />}
                           <div>
-                            <p className="text-sm font-semibold text-verde">{fmtVal(tx.amount)}</p>
+                            <p className="text-sm font-semibold font-mono text-verde">{fmtVal(tx.amount)}</p>
                             {tx.paymentMethod && <p className="text-xs text-gray-400">{tx.paymentMethod}</p>}
                           </div>
                         </div>
@@ -1305,7 +1341,7 @@ export default function Agenda() {
               )}
             </div>
 
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-creme-200 shrink-0">
               <div>
                 {editing && (
                   <button

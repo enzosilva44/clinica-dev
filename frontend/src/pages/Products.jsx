@@ -7,6 +7,7 @@ import {
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
+import { Button } from "../components/ui";
 import api from "../services/api";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -19,9 +20,9 @@ function stockStatus(product) {
 }
 
 const STATUS_STYLES = {
-  ok:   { bar: "bg-emerald-500", pill: "bg-emerald-100 text-emerald-700", label: "OK" },
-  low:  { bar: "bg-amber-400",   pill: "bg-amber-100 text-amber-700",     label: "Baixo" },
-  zero: { bar: "bg-red-400",     pill: "bg-red-100 text-red-600",         label: "Zerado" },
+  ok:   { bar: "bg-sucesso", pill: "bg-verde-100 text-verde-900", label: "OK" },
+  low:  { bar: "bg-ambar",   pill: "bg-ambar-50 text-ambar-700",  label: "Baixo" },
+  zero: { bar: "bg-erro",    pill: "bg-erro/10 text-erro",        label: "Zerado" },
 };
 
 function fmtDate(d) {
@@ -35,7 +36,7 @@ function fmtDateShort(d) {
   return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-const INPUT = "w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20";
+const INPUT = "w-full border border-creme-200 bg-creme-50 rounded-xl p-3 text-sm outline-none focus:border-verde focus:bg-white transition-colors";
 
 // ─── tabs ────────────────────────────────────────────────────────────────────
 
@@ -249,21 +250,18 @@ export default function Products() {
   return (
     <MainLayout>
       {/* HEADER */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-verde">Produtos & Estoque</h1>
+          <h1 className="font-serif font-light text-3xl text-verde-900">Produtos & Estoque</h1>
           <p className="text-gray-500 mt-1 text-sm">{products.length} produto{products.length !== 1 ? "s" : ""} cadastrado{products.length !== 1 ? "s" : ""}</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="bg-verde hover:bg-verde-900 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm transition"
-        >
+        <Button size="md" onClick={openCreate}>
           <Plus size={16} /> Novo produto
-        </button>
+        </Button>
       </div>
 
       {/* TABS */}
-      <div className="flex gap-1 bg-creme-50 border border-creme-200 rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-creme-100 rounded-xl p-0.75 mb-6 w-fit">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -276,7 +274,7 @@ export default function Products() {
           >
             {t.label}
             {t.id === "solicitacoes" && pendingCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-ambar text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                 {pendingCount}
               </span>
             )}
@@ -290,14 +288,14 @@ export default function Products() {
           {/* summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {[
-              { label: "Total",   value: stats.total, color: "text-verde",   bg: "bg-creme-50" },
-              { label: "OK",      value: stats.ok,    color: "text-emerald-600",  bg: "bg-emerald-50" },
-              { label: "Baixo",   value: stats.low,   color: "text-amber-600",    bg: "bg-amber-50" },
-              { label: "Zerado",  value: stats.zero,  color: "text-red-500",      bg: "bg-red-50" },
+              { label: "Total",   value: stats.total, color: "text-verde-900", bg: "bg-creme-50" },
+              { label: "OK",      value: stats.ok,    color: "text-sucesso",   bg: "bg-verde-50" },
+              { label: "Baixo",   value: stats.low,   color: "text-ambar-700", bg: "bg-ambar-50" },
+              { label: "Zerado",  value: stats.zero,  color: "text-erro",      bg: "bg-erro/5" },
             ].map((s) => (
               <div key={s.label} className={`${s.bg} border border-creme-200 rounded-2xl p-4`}>
                 <p className="text-xs text-gray-500 mb-1">{s.label}</p>
-                <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+                <p className={`text-3xl font-bold font-mono ${s.color}`}>{s.value}</p>
               </div>
             ))}
           </div>
@@ -307,11 +305,11 @@ export default function Products() {
           ) : products.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <Package size={48} className="text-ambar mb-4" />
-              <h2 className="text-xl font-semibold text-verde mb-2">Nenhum produto cadastrado</h2>
+              <h2 className="text-xl font-semibold text-verde-900 mb-2">Nenhum produto cadastrado</h2>
               <p className="text-gray-500 mb-6">Cadastre produtos e insumos utilizados nos procedimentos.</p>
-              <button onClick={openCreate} className="bg-verde hover:bg-verde-900 text-white px-5 py-3 rounded-xl flex items-center gap-2 transition">
+              <Button size="lg" onClick={openCreate}>
                 <Plus size={18} /> Novo produto
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -324,11 +322,11 @@ export default function Products() {
                   : stockVal > 0 ? 100 : 0;
 
                 return (
-                  <div key={product.id} className="bg-creme-50 border border-creme-200 rounded-2xl p-5 flex flex-col gap-4">
+                  <div key={product.id} className="bg-white border border-creme-200 rounded-2xl p-5 flex flex-col gap-4">
                     {/* top */}
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h2 className="text-base font-bold text-verde truncate">{product.name}</h2>
+                        <h2 className="text-base font-bold text-verde-900 truncate">{product.name}</h2>
                         {product.description && (
                           <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{product.description}</p>
                         )}
@@ -340,9 +338,9 @@ export default function Products() {
 
                     {/* stock number */}
                     <div>
-                      <p className="text-4xl font-bold text-verde leading-none">
+                      <p className="text-4xl font-bold font-mono text-verde-900 leading-none">
                         {stockVal % 1 === 0 ? stockVal : stockVal.toFixed(2)}
-                        <span className="text-sm font-normal text-gray-400 ml-1.5">{product.unit || "un"}</span>
+                        <span className="text-sm font-sans font-normal text-gray-400 ml-1.5">{product.unit || "un"}</span>
                       </p>
                       {product.minStock != null && (
                         <p className="text-[11px] text-gray-400 mt-1">mín. {product.minStock} {product.unit || "un"}</p>
@@ -359,19 +357,16 @@ export default function Products() {
 
                     {/* actions */}
                     <div className="flex items-center justify-between pt-1">
-                      <button
-                        onClick={() => openRequest(product)}
-                        className="flex items-center gap-1.5 text-xs font-medium text-white bg-verde hover:bg-verde-900 px-3 py-2 rounded-lg transition"
-                      >
+                      <Button size="sm" onClick={() => openRequest(product)}>
                         <Plus size={13} /> Solicitar movimentação
-                      </button>
+                      </Button>
                       <div className="flex gap-2">
                         <button onClick={() => openEdit(product)} className="text-verde/60 hover:text-verde transition">
                           <Pencil size={15} />
                         </button>
                         <button
                           onClick={() => { setProductToDelete(product); setShowDeleteModal(true); }}
-                          className="text-red-300 hover:text-red-500 transition"
+                          className="text-erro/40 hover:text-erro transition"
                         >
                           <Trash2 size={15} />
                         </button>
@@ -422,23 +417,23 @@ export default function Products() {
               {requests.map((req) => (
                 <div
                   key={req.id}
-                  className="bg-creme-50 border border-creme-200 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4"
+                  className="bg-white border border-creme-200 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4"
                 >
                   {/* tipo badge */}
                   <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center ${
-                    req.type === "entrada" ? "bg-emerald-100" : "bg-red-100"
+                    req.type === "entrada" ? "bg-verde-100" : "bg-erro/10"
                   }`}>
                     {req.type === "entrada"
-                      ? <ArrowDownCircle size={20} className="text-emerald-600" />
-                      : <ArrowUpCircle size={20} className="text-red-500" />}
+                      ? <ArrowDownCircle size={20} className="text-sucesso" />
+                      : <ArrowUpCircle size={20} className="text-erro" />}
                   </div>
 
                   {/* info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-verde text-sm">{req.product.name}</span>
+                      <span className="font-semibold text-verde-900 text-sm">{req.product.name}</span>
                       <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                        req.type === "entrada" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                        req.type === "entrada" ? "bg-verde-100 text-verde-900" : "bg-erro/10 text-erro"
                       }`}>
                         {req.type === "entrada" ? "Entrada" : "Saída"} · {req.quantity} {req.product.unit || "un"}
                       </span>
@@ -453,13 +448,13 @@ export default function Products() {
                       <>
                         <button
                           onClick={() => handleApprove(req.id)}
-                          className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
+                          className="flex items-center gap-1.5 bg-sucesso hover:bg-verde-900 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
                         >
                           <CheckCircle2 size={14} /> Aprovar
                         </button>
                         <button
                           onClick={() => handleReject(req.id)}
-                          className="flex items-center gap-1.5 border border-red-300 text-red-500 hover:bg-red-50 text-xs font-medium px-3 py-2 rounded-lg transition"
+                          className="flex items-center gap-1.5 border border-erro/40 text-erro hover:bg-erro/5 text-xs font-medium px-3 py-2 rounded-lg transition"
                         >
                           <XCircle size={14} /> Rejeitar
                         </button>
@@ -467,8 +462,8 @@ export default function Products() {
                     ) : (
                       <span className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg ${
                         req.status === "approved"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-red-100 text-red-600"
+                          ? "bg-verde-100 text-verde-900"
+                          : "bg-erro/10 text-erro"
                       }`}>
                         {req.status === "approved"
                           ? <><CheckCircle2 size={13} /> Aprovada</>
@@ -493,7 +488,7 @@ export default function Products() {
               <select
                 value={movProductFilter}
                 onChange={(e) => setMovProductFilter(e.target.value)}
-                className="border border-ambar rounded-xl px-3 py-2 text-sm bg-white min-w-[180px]"
+                className="border border-creme-200 rounded-xl px-3 py-2 text-sm bg-white min-w-[180px]"
               >
                 <option value="">Todos os produtos</option>
                 {products.map((p) => (
@@ -507,7 +502,7 @@ export default function Products() {
                 type="date"
                 value={movStart}
                 onChange={(e) => setMovStart(e.target.value)}
-                className="border border-ambar rounded-xl px-3 py-2 text-sm"
+                className="border border-creme-200 rounded-xl px-3 py-2 text-sm"
               />
             </div>
             <div>
@@ -516,15 +511,12 @@ export default function Products() {
                 type="date"
                 value={movEnd}
                 onChange={(e) => setMovEnd(e.target.value)}
-                className="border border-ambar rounded-xl px-3 py-2 text-sm"
+                className="border border-creme-200 rounded-xl px-3 py-2 text-sm"
               />
             </div>
-            <button
-              onClick={loadMovements}
-              className="flex items-center gap-1.5 bg-verde hover:bg-verde-900 text-white text-sm px-4 py-2 rounded-xl transition"
-            >
+            <Button size="md" onClick={loadMovements}>
               <Filter size={14} /> Filtrar
-            </button>
+            </Button>
             {(movProductFilter || movStart || movEnd) && (
               <button
                 onClick={() => { setMovProductFilter(""); setMovStart(""); setMovEnd(""); }}
@@ -557,35 +549,35 @@ export default function Products() {
                 {movements.map((mov, i) => (
                   <div
                     key={mov.id}
-                    className={`grid grid-cols-[2fr_1fr_1fr_auto] gap-4 px-5 py-4 items-center hover:bg-[#FAFAF8] transition ${
-                      i % 2 === 0 ? "" : "bg-[#FDFCFA]"
+                    className={`grid grid-cols-[2fr_1fr_1fr_auto] gap-4 px-5 py-4 items-center hover:bg-creme-50/60 transition ${
+                      i % 2 === 0 ? "" : "bg-creme-50/30"
                     }`}
                   >
                     {/* produto */}
                     <div>
-                      <p className="text-sm font-semibold text-verde">{mov.product?.name}</p>
+                      <p className="text-sm font-semibold text-verde-900">{mov.product?.name}</p>
                       {mov.reason && <p className="text-xs text-gray-400 mt-0.5">{mov.reason}</p>}
                     </div>
 
                     {/* tipo */}
                     <div className="flex items-center gap-1.5">
                       {mov.type === "entrada" ? (
-                        <ArrowDownCircle size={15} className="text-emerald-500 shrink-0" />
+                        <ArrowDownCircle size={15} className="text-sucesso shrink-0" />
                       ) : (
-                        <ArrowUpCircle size={15} className="text-red-400 shrink-0" />
+                        <ArrowUpCircle size={15} className="text-erro shrink-0" />
                       )}
-                      <span className={`text-xs font-medium ${mov.type === "entrada" ? "text-emerald-600" : "text-red-500"}`}>
+                      <span className={`text-xs font-medium ${mov.type === "entrada" ? "text-sucesso" : "text-erro"}`}>
                         {mov.type === "entrada" ? "Entrada" : "Saída"}
                       </span>
                     </div>
 
                     {/* qty */}
-                    <p className={`text-base font-bold ${mov.type === "entrada" ? "text-emerald-600" : "text-red-500"}`}>
+                    <p className={`text-base font-bold font-mono ${mov.type === "entrada" ? "text-sucesso" : "text-erro"}`}>
                       {mov.type === "entrada" ? "+" : "−"}{mov.quantity} {mov.product?.unit || "un"}
                     </p>
 
                     {/* data */}
-                    <p className="text-xs text-gray-400 whitespace-nowrap">{fmtDateShort(mov.createdAt)}</p>
+                    <p className="text-xs text-gray-400 whitespace-nowrap font-mono">{fmtDateShort(mov.createdAt)}</p>
                   </div>
                 ))}
               </div>
@@ -605,7 +597,7 @@ export default function Products() {
           <div className="bg-white rounded-2xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-lg font-bold text-verde">Solicitar movimentação</h2>
+                <h2 className="text-lg font-bold text-verde-900">Solicitar movimentação</h2>
                 <p className="text-sm text-gray-500 mt-0.5">
                   {requestProduct.name} · estoque atual:{" "}
                   <strong>{requestProduct.stock ?? 0} {requestProduct.unit || "un"}</strong>
@@ -616,10 +608,10 @@ export default function Products() {
 
             <form onSubmit={handleRequest} className="space-y-4">
               {/* tipo toggle */}
-              <div className="flex rounded-xl border border-ambar overflow-hidden">
+              <div className="flex rounded-xl border border-creme-200 overflow-hidden">
                 {[
-                  { value: "entrada", label: "Entrada", icon: ArrowDownCircle, active: "bg-emerald-500" },
-                  { value: "saida",   label: "Saída",   icon: ArrowUpCircle,   active: "bg-red-500" },
+                  { value: "entrada", label: "Entrada", icon: ArrowDownCircle, active: "bg-sucesso" },
+                  { value: "saida",   label: "Saída",   icon: ArrowUpCircle,   active: "bg-erro" },
                 ].map(({ value, label, icon: Icon, active }) => (
                   <button
                     key={value}
@@ -659,25 +651,28 @@ export default function Products() {
                 </div>
               </div>
 
-              <p className="text-xs text-gray-400 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <p className="text-xs text-gray-400 bg-ambar-50 border border-ambar-200 rounded-xl px-4 py-3">
                 A solicitação será enviada para aprovação antes de alterar o estoque.
               </p>
 
               <div className="flex gap-3 pt-1">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="md"
+                  className="flex-1"
                   onClick={() => setShowRequestModal(false)}
-                  className="flex-1 border border-ambar text-verde py-2.5 rounded-xl text-sm hover:bg-creme-100 transition"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  size="md"
+                  className="flex-1"
                   disabled={savingReq}
-                  className="flex-1 bg-verde hover:bg-verde-900 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
                 >
                   {savingReq ? "Enviando..." : "Enviar solicitação"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -689,7 +684,7 @@ export default function Products() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-verde">
+              <h2 className="text-lg font-bold text-verde-900">
                 {editingProduct ? "Editar produto" : "Novo produto"}
               </h2>
               <button onClick={() => setShowModal(false)}><X size={20} /></button>
@@ -748,18 +743,12 @@ export default function Products() {
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="border border-ambar px-4 py-2.5 rounded-xl text-sm"
-                >
+                <Button variant="secondary" size="md" onClick={() => setShowModal(false)}>
                   Cancelar
-                </button>
-                <button
-                  onClick={saveProduct}
-                  className="bg-verde hover:bg-verde-900 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition"
-                >
+                </Button>
+                <Button size="md" onClick={saveProduct}>
                   {editingProduct ? "Salvar" : "Criar produto"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -770,23 +759,25 @@ export default function Products() {
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-60 p-4">
           <div className="bg-white rounded-2xl w-full max-w-sm p-6">
-            <h2 className="text-lg font-bold text-verde mb-2">Excluir produto</h2>
+            <h2 className="text-lg font-bold text-verde-900 mb-2">Excluir produto</h2>
             <p className="text-sm text-gray-600">
               Deseja excluir <strong>{productToDelete?.name}</strong>? O histórico de movimentações será removido.
             </p>
             <div className="flex justify-end gap-3 mt-6">
-              <button
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={() => { setShowDeleteModal(false); setProductToDelete(null); }}
-                className="border border-ambar px-4 py-2 rounded-xl text-sm"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
+                size="md"
+                className="bg-erro! hover:bg-[#C2473C]! shadow-none!"
                 onClick={handleDelete}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
               >
                 Excluir
-              </button>
+              </Button>
             </div>
           </div>
         </div>

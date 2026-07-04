@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { User, Building2, MapPin, CreditCard, Lock, Save, Eye, EyeOff, Check, Sparkles, Percent } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
+import { Card } from "../components/ui";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useFeatures } from "../hooks/useFeatures";
@@ -214,12 +215,12 @@ export default function Settings() {
     <MainLayout>
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-verde">Configurações</h1>
-          <p className="text-sm text-gray-400 mt-1">Gerencie seus dados, clínica e preferências.</p>
+          <h1 className="font-serif font-light text-3xl text-verde-900">Configurações</h1>
+          <p className="text-gray-500 mt-1">Gerencie seus dados, clínica e preferências.</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-white border border-creme-100 rounded-2xl p-1 mb-6 overflow-x-auto">
+        <div className="flex gap-1 bg-white border border-creme-200 rounded-2xl p-1 mb-6 overflow-x-auto">
           {visibleTabs.map(({ id, icon: Icon, label }) => (
             <button key={id} onClick={() => setTab(id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap ${
@@ -230,7 +231,7 @@ export default function Settings() {
           ))}
         </div>
 
-        <div className="bg-white rounded-3xl border border-creme-100 p-8 shadow-sm">
+        <Card className="bg-white! p-8">
 
           {/* ── DADOS PESSOAIS ── */}
           {tab === "pessoal" && (
@@ -262,11 +263,11 @@ export default function Settings() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={LABEL}>Telefone / WhatsApp</label>
-                  <input value={phone} onChange={(e)=>setPhone(maskPhone(e.target.value))} placeholder="(11) 99999-9999" inputMode="numeric" className={INPUT} />
+                  <input value={phone} onChange={(e)=>setPhone(maskPhone(e.target.value))} placeholder="(11) 99999-9999" inputMode="numeric" className={INPUT + " font-mono"} />
                 </div>
                 <div>
                   <label className={LABEL}>Data de nascimento</label>
-                  <input type="date" value={birthDate} onChange={(e)=>setBirthDate(e.target.value)} className={INPUT} />
+                  <input type="date" value={birthDate} onChange={(e)=>setBirthDate(e.target.value)} className={INPUT + " font-mono"} />
                 </div>
               </div>
 
@@ -299,17 +300,17 @@ export default function Settings() {
                   <>
                     <div>
                       <label className={LABEL}>CPF</label>
-                      <input value={cpf} onChange={(e)=>setCpf(maskCpf(e.target.value))} placeholder="000.000.000-00" inputMode="numeric" className={INPUT} />
+                      <input value={cpf} onChange={(e)=>setCpf(maskCpf(e.target.value))} placeholder="000.000.000-00" inputMode="numeric" className={INPUT + " font-mono"} />
                     </div>
                     <div>
                       <label className={LABEL}>RG</label>
-                      <input value={rg} onChange={(e)=>setRg(e.target.value.slice(0,9))} className={INPUT} />
+                      <input value={rg} onChange={(e)=>setRg(e.target.value.slice(0,9))} className={INPUT + " font-mono"} />
                     </div>
                   </>
                 ) : (
                   <div className="col-span-2">
                     <label className={LABEL}>CNPJ</label>
-                    <input value={cnpj} onChange={(e)=>setCnpj(maskCnpj(e.target.value))} placeholder="00.000.000/0000-00" inputMode="numeric" className={INPUT} />
+                    <input value={cnpj} onChange={(e)=>setCnpj(maskCnpj(e.target.value))} placeholder="00.000.000/0000-00" inputMode="numeric" className={INPUT + " font-mono"} />
                   </div>
                 )}
               </div>
@@ -346,7 +347,7 @@ export default function Settings() {
                   <input value={zipCode}
                     onChange={(e)=>{ const v=maskZip(e.target.value); setZipCode(v); if(v.replace(/\D/g,"").length===8) lookupZip(v); }}
                     placeholder="00000-000" inputMode="numeric"
-                    className={INPUT+(zipLoading?" opacity-60":"")} />
+                    className={INPUT+" font-mono"+(zipLoading?" opacity-60":"")} />
                 </div>
                 <div>
                   <label className={LABEL}>Estado</label>
@@ -384,7 +385,7 @@ export default function Settings() {
           {tab === "plano" && (
             <div className="space-y-5">
               <div>
-                <p className="text-sm font-bold text-verde mb-1">Seu plano atual: <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ml-1 ${PLANS[profile?.plan]?.color ?? "bg-gray-100 text-gray-600"}`}>{PLANS[profile?.plan]?.label ?? profile?.plan}</span></p>
+                <p className="text-sm font-bold text-verde-900 mb-1">Seu plano atual: <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ml-1 ${PLANS[profile?.plan]?.color ?? "bg-gray-100 text-gray-600"}`}>{PLANS[profile?.plan]?.label ?? profile?.plan}</span></p>
                 <p className="text-xs text-gray-400">Selecione um plano abaixo para fazer upgrade ou downgrade.</p>
               </div>
 
@@ -402,9 +403,9 @@ export default function Settings() {
                           ATUAL
                         </span>
                       )}
-                      <p className={`font-bold text-sm mb-0.5 ${isSelected?"text-white":"text-verde"}`}>{p.label}</p>
+                      <p className={`font-bold text-sm mb-0.5 ${isSelected?"text-white":"text-verde-900"}`}>{p.label}</p>
                       <p className={`text-[11px] mb-3 ${isSelected?"text-white/60":"text-gray-400"}`}>{p.desc}</p>
-                      <p className={`text-2xl font-black mb-1 ${isSelected?"text-white":"text-verde"}`}>{p.price}</p>
+                      <p className={`text-2xl font-black mb-1 font-mono ${isSelected?"text-white":"text-verde"}`}>{p.price}</p>
                       <p className={`text-[11px] mb-4 ${isSelected?"text-white/50":"text-gray-400"}`}>{p.period}</p>
                       <ul className="space-y-1.5">
                         {p.features.map((f) => (
@@ -438,7 +439,7 @@ export default function Settings() {
             <div className="space-y-6">
               {/* Cartão salvo */}
               {cardLast4 && (
-                <div className="bg-gradient-to-br from-verde to-[#2D6B60] rounded-2xl p-5 text-white">
+                <div className="bg-linear-to-br from-verde to-[#2D6B60] rounded-2xl p-5 text-white">
                   <p className="text-[11px] text-white/50 uppercase tracking-widest mb-3">Cartão cadastrado</p>
                   <p className="text-lg font-mono tracking-widest mb-2">•••• •••• •••• {cardLast4}</p>
                   <div className="flex justify-between items-end">
@@ -459,7 +460,7 @@ export default function Settings() {
               )}
 
               <div>
-                <p className="text-sm font-bold text-verde mb-4">{cardLast4 ? "Atualizar cartão" : "Adicionar cartão"}</p>
+                <p className="text-sm font-bold text-verde-900 mb-4">{cardLast4 ? "Atualizar cartão" : "Adicionar cartão"}</p>
                 <div className="space-y-4">
                   <div>
                     <label className={LABEL}>Número do cartão</label>
@@ -468,7 +469,7 @@ export default function Settings() {
                         const v = e.target.value.replace(/\D/g,"").slice(0,16).replace(/(\d{4})/g,"$1 ").trim();
                         setCardNumber(v);
                       }}
-                      placeholder="0000 0000 0000 0000" inputMode="numeric" maxLength={19} className={INPUT} />
+                      placeholder="0000 0000 0000 0000" inputMode="numeric" maxLength={19} className={INPUT + " font-mono"} />
                     <p className="text-[11px] text-gray-400 mt-1">Apenas os últimos 4 dígitos são salvos. O número completo não é armazenado.</p>
                   </div>
                   <div>
@@ -481,7 +482,7 @@ export default function Settings() {
                       <label className={LABEL}>Validade</label>
                       <input value={cardExpiry}
                         onChange={(e) => setCardExpiry(e.target.value.replace(/\D/g,"").slice(0,4).replace(/(\d{2})(\d{0,2})/,"$1/$2").replace(/\/$/,""))}
-                        placeholder="MM/AA" inputMode="numeric" maxLength={5} className={INPUT} />
+                        placeholder="MM/AA" inputMode="numeric" maxLength={5} className={INPUT + " font-mono"} />
                     </div>
                     <div>
                       <label className={LABEL}>Bandeira</label>
@@ -549,7 +550,7 @@ export default function Settings() {
               </button>
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </MainLayout>
   );

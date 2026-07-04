@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
+import { Card, Button } from "../components/ui";
 import AlertLevelPicker from "../components/patient/AlertLevelPicker";
 
 function Field({ label, children }) {
@@ -17,7 +18,15 @@ function Field({ label, children }) {
   );
 }
 
-const INPUT = "w-full border border-ambar rounded-xl p-3 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-verde/20";
+const INPUT = "w-full border-[1.5px] border-creme-200 rounded-xl px-3.5 py-2.5 text-sm bg-creme-50 focus:outline-none focus:border-verde focus:bg-white transition";
+
+function SectionTitle({ children }) {
+  return (
+    <p className="text-[11px] font-bold tracking-widest text-ambar-600 font-mono uppercase mb-4">
+      {children}
+    </p>
+  );
+}
 
 export default function EditPatient() {
   const { id } = useParams();
@@ -117,21 +126,21 @@ export default function EditPatient() {
       <div className="flex items-center gap-3 mb-8">
         <button
           onClick={() => navigate(`/patients/${id}`)}
-          className="w-9 h-9 flex items-center justify-center rounded-xl border border-ambar hover:bg-creme-100 transition"
+          className="w-9 h-9 flex items-center justify-center rounded-xl border-[1.5px] border-creme-200 hover:bg-creme-100 transition"
         >
-          <ArrowLeft size={16} className="text-verde" />
+          <ArrowLeft size={16} className="text-verde-900" />
         </button>
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-verde">Editar paciente</h1>
+          <h1 className="font-serif font-light text-2xl md:text-[32px] text-verde-900">Editar paciente</h1>
           <p className="text-gray-500 text-sm mt-0.5">Atualize os dados cadastrais</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
 
-        {/* DADOS PESSOAIS */}
-        <div className="bg-creme-50 border border-creme-200 rounded-2xl p-6">
-          <h2 className="text-sm font-bold text-verde uppercase tracking-wide mb-5">Dados pessoais</h2>
+        {/* IDENTIFICAÇÃO */}
+        <Card className="bg-white! p-6 rounded-2xl">
+          <SectionTitle>Identificação</SectionTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Nome completo">
               <input className={INPUT} value={form.name} onChange={f("name")} required placeholder="Nome completo" />
@@ -147,12 +156,12 @@ export default function EditPatient() {
               />
             </Field>
 
-            <Field label="E-mail">
-              <input className={INPUT} type="email" value={form.email} onChange={f("email")} placeholder="email@exemplo.com" />
-            </Field>
-
             <Field label="Data de nascimento">
               <input className={INPUT} type="date" value={form.birthDate} onChange={f("birthDate")} />
+            </Field>
+
+            <Field label="E-mail">
+              <input className={INPUT} type="email" value={form.email} onChange={f("email")} placeholder="email@exemplo.com" />
             </Field>
 
             <Field label="CPF">
@@ -175,11 +184,11 @@ export default function EditPatient() {
               />
             </Field>
           </div>
-        </div>
+        </Card>
 
         {/* ENDEREÇO */}
-        <div className="bg-creme-50 border border-creme-200 rounded-2xl p-6">
-          <h2 className="text-sm font-bold text-verde uppercase tracking-wide mb-5">Endereço</h2>
+        <Card className="bg-white! p-6 rounded-2xl">
+          <SectionTitle>Endereço</SectionTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="CEP">
               <IMaskInput
@@ -209,77 +218,73 @@ export default function EditPatient() {
               <input className={INPUT} value={form.state} onChange={f("state")} placeholder="SP" maxLength={2} />
             </Field>
           </div>
-        </div>
+        </Card>
 
-        {/* OBSERVAÇÕES */}
-        <div className="bg-creme-50 border border-creme-200 rounded-2xl p-6">
-          <h2 className="text-sm font-bold text-verde uppercase tracking-wide mb-5">Observações clínicas</h2>
-          <textarea
-            className={`${INPUT} resize-none`}
-            rows={4}
-            value={form.observations}
-            onChange={f("observations")}
-            placeholder="Alergias, condições especiais, histórico relevante…"
+        {/* CUIDADOS & OBSERVAÇÕES */}
+        <Card className="bg-white! p-6 rounded-2xl">
+          <SectionTitle>Cuidados & Observações</SectionTitle>
+          <AlertLevelPicker
+            value={form.alertLevel}
+            onChange={fm("alertLevel")}
           />
           <div className="mt-5">
-            <AlertLevelPicker
-              value={form.alertLevel}
-              onChange={fm("alertLevel")}
-            />
+            <Field label="Observações clínicas">
+              <textarea
+                className={`${INPUT} resize-none`}
+                rows={4}
+                value={form.observations}
+                onChange={f("observations")}
+                placeholder="Alergias, condições especiais, histórico relevante…"
+              />
+            </Field>
           </div>
-        </div>
+        </Card>
 
         {/* BOTÕES SALVAR */}
         <div className="flex gap-3 flex-wrap">
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex items-center gap-2 bg-verde hover:bg-verde-900 text-white px-6 py-3 rounded-xl text-sm font-medium transition disabled:opacity-50"
-          >
+          <Button type="submit" disabled={saving}>
             <Save size={15} />{saving ? "Salvando…" : "Salvar alterações"}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate(`/patients/${id}`)}
-            className="border border-ambar text-verde px-5 py-3 rounded-xl text-sm hover:bg-creme-100 transition"
-          >
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate(`/patients/${id}`)}>
             Cancelar
-          </button>
+          </Button>
         </div>
 
         {/* ZONA DE PERIGO */}
-        <div className="border border-red-200 rounded-2xl p-5 bg-red-50/40">
-          <h2 className="text-sm font-bold text-red-600 mb-1">Zona de perigo</h2>
+        <div className="border border-[#EBCBC7] rounded-xl p-5 bg-[#FCF3F2]">
+          <h2 className="text-sm font-bold text-erro mb-1">Zona de perigo</h2>
           <p className="text-xs text-gray-500 mb-4">
             Inativar o paciente remove-o da listagem ativa. O histórico é preservado e pode ser reativado depois em "Inativos".
           </p>
 
           {!confirmDeactivate ? (
-            <button
+            <Button
               type="button"
+              variant="destructive"
               onClick={() => setConfirmDeactivate(true)}
-              className="flex items-center gap-2 border border-red-300 text-red-500 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-medium transition"
             >
               <UserX size={15} /> Inativar paciente
-            </button>
+            </Button>
           ) : (
             <div className="flex items-center gap-3 flex-wrap">
-              <p className="text-sm text-red-600 font-medium">Tem certeza? Esta ação pode ser desfeita.</p>
-              <button
+              <p className="text-sm text-erro font-medium">Tem certeza? Esta ação pode ser desfeita.</p>
+              <Button
                 type="button"
+                variant="destructive"
                 onClick={handleDeactivate}
                 disabled={deactivating}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition disabled:opacity-50"
+                className="bg-erro! text-white! border-erro! hover:bg-erro!"
               >
                 {deactivating ? "Inativando…" : "Sim, inativar"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => setConfirmDeactivate(false)}
-                className="border border-gray-300 text-gray-500 px-4 py-2 rounded-xl text-sm transition hover:bg-gray-50"
+                className="border-gray-300! text-gray-500! hover:bg-gray-50! hover:text-gray-500!"
               >
                 Cancelar
-              </button>
+              </Button>
             </div>
           )}
         </div>

@@ -811,7 +811,7 @@ export default function FaceMap({
                       <div>
                         <p className="text-sm font-medium text-verde">
                           {m.procedure || m.muscleName || m.label || (m.type === "line" ? `Traço ${i + 1}` : `Ponto ${i + 1}`)}
-                          {m.units > 0 && <span className="text-xs text-gray-500 ml-1.5">({m.units}{m.unit ?? "U"})</span>}
+                          {m.units > 0 && <span className="text-xs font-mono text-gray-500 ml-1.5">({m.units}{m.unit ?? "U"})</span>}
                         </p>
                         {m.notes && <p className="text-xs text-gray-400">{m.notes}</p>}
                       </div>

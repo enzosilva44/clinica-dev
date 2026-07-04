@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText, Trash2, Eye, X, Plus, Settings2, Upload, Check, Folder, FolderPlus } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
+import { Card, Button } from "../components/ui";
 import api from "../services/api";
 import toast from "react-hot-toast";
 import FieldPlacementModal from "../components/documents/FieldPlacementModal";
@@ -14,10 +15,10 @@ const DOC_TYPES = [
 ];
 
 const TYPE_COLORS = {
-  contrato: "bg-blue-100 text-blue-700",
-  termo:    "bg-amber-100 text-amber-700",
-  anamnese: "bg-purple-100 text-purple-700",
-  laudo:    "bg-green-100 text-green-700",
+  contrato: "bg-info/15 text-info",
+  termo:    "bg-[#FAF0E4] text-ambar-600",
+  anamnese: "bg-ia/15 text-ia",
+  laudo:    "bg-sucesso/15 text-sucesso",
   outro:    "bg-gray-100 text-gray-500",
 };
 
@@ -166,25 +167,22 @@ export default function Documents() {
 
   return (
     <MainLayout>
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-verde">{pageTitle}</h1>
+          <h1 className="font-serif font-light text-3xl text-verde-900">{pageTitle}</h1>
           <p className="text-gray-500 mt-1">Documentos da clínica para assinar com pacientes</p>
         </div>
-        <button
-          onClick={() => setShowUpload(true)}
-          className="bg-verde hover:bg-verde-900 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
-        >
+        <Button size="md" onClick={() => setShowUpload(true)}>
           <Plus size={16} /> Adicionar documento
-        </button>
+        </Button>
       </div>
 
       {/* PASTAS */}
       <div className="flex items-center gap-2 flex-wrap mb-6">
         <button
           onClick={() => setActiveFolder("all")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-            activeFolder === "all" ? "bg-verde text-white border-verde" : "border-ambar text-verde hover:bg-creme-100"
+          className={`px-3.5 py-2 rounded-full text-[13px] font-bold border-[1.5px] transition ${
+            activeFolder === "all" ? "bg-verde-50 text-verde border-verde-200" : "bg-creme-50 border-creme-200 text-gray-500 hover:border-verde/30"
           }`}
         >
           Todos
@@ -193,8 +191,8 @@ export default function Documents() {
           <div key={folder.id} className="group relative">
             <button
               onClick={() => setActiveFolder(folder.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-                activeFolder === folder.id ? "bg-verde text-white border-verde" : "border-ambar text-verde hover:bg-creme-100"
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-bold border-[1.5px] transition ${
+                activeFolder === folder.id ? "bg-verde-50 text-verde border-verde-200" : "bg-creme-50 border-creme-200 text-gray-500 hover:border-verde/30"
               }`}
             >
               <Folder size={12} /> {folder.name}
@@ -203,7 +201,7 @@ export default function Documents() {
               <button
                 onClick={() => deleteFolder(folder.id)}
                 title="Excluir pasta"
-                className={`absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-100 text-red-500 items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition ${
+                className={`absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-erro/15 text-erro items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition ${
                   activeFolder === folder.id ? "hidden" : "hidden group-hover:flex"
                 }`}
               >
@@ -214,8 +212,8 @@ export default function Documents() {
         ))}
         <button
           onClick={() => setActiveFolder("none")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-            activeFolder === "none" ? "bg-verde text-white border-verde" : "border-ambar text-verde hover:bg-creme-100"
+          className={`px-3.5 py-2 rounded-full text-[13px] font-bold border-[1.5px] transition ${
+            activeFolder === "none" ? "bg-verde-50 text-verde border-verde-200" : "bg-creme-50 border-creme-200 text-gray-500 hover:border-verde/30"
           }`}
         >
           Sem pasta
@@ -229,17 +227,17 @@ export default function Documents() {
               onChange={(e) => setNewFolderName(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") createFolder(); if (e.key === "Escape") setShowNewFolder(false); }}
               placeholder="Nome da pasta"
-              className="border border-ambar rounded-lg px-2.5 py-1.5 text-xs w-36"
+              className="border border-ambar rounded-lg px-2.5 py-1.5 text-xs w-36 focus:outline-none focus:ring-2 focus:ring-verde/20"
             />
-            <button onClick={createFolder} className="text-xs text-verde font-medium px-2 py-1.5">OK</button>
-            <button onClick={() => { setShowNewFolder(false); setNewFolderName(""); }} className="text-gray-400 px-1">
+            <button onClick={createFolder} className="text-xs text-verde font-bold px-2 py-1.5">OK</button>
+            <button onClick={() => { setShowNewFolder(false); setNewFolderName(""); }} className="text-gray-400 hover:text-gray-600 transition px-1">
               <X size={14} />
             </button>
           </div>
         ) : (
           <button
             onClick={() => setShowNewFolder(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-dashed border-ambar text-gray-500 hover:bg-creme-100 transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-bold border-[1.5px] border-dashed border-ambar-300 text-verde hover:border-verde transition"
           >
             <FolderPlus size={12} /> Nova pasta
           </button>
@@ -255,43 +253,40 @@ export default function Documents() {
           <div className="w-16 h-16 bg-creme-100 rounded-2xl flex items-center justify-center mb-4">
             <FileText size={28} className="text-ambar" />
           </div>
-          <h2 className="text-xl font-semibold text-verde mb-2">Nenhum documento</h2>
+          <h2 className="text-xl font-semibold text-verde-900 mb-2">Nenhum documento</h2>
           <p className="text-gray-500 mb-6 max-w-xs">Adicione contratos, termos e anamneses para usar com os pacientes.</p>
-          <button
-            onClick={() => setShowUpload(true)}
-            className="bg-verde hover:bg-verde-900 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition text-sm font-medium"
-          >
+          <Button onClick={() => setShowUpload(true)}>
             <Plus size={16} /> Adicionar documento
-          </button>
+          </Button>
         </div>
       ) : (
-        <div className="bg-creme-50 border border-creme-200 rounded-2xl overflow-hidden shadow-sm">
+        <Card className="bg-white! p-0 overflow-hidden">
           <div className="px-5 py-3.5 bg-creme-100 border-b border-creme-200 flex items-center justify-between">
-            <span className="text-sm font-semibold text-verde">{visibleDocs.length} {visibleDocs.length === 1 ? "documento" : "documentos"}</span>
+            <span className="text-sm font-bold text-verde-900">{visibleDocs.length} {visibleDocs.length === 1 ? "documento" : "documentos"}</span>
           </div>
           <div className="divide-y divide-creme-200">
             {visibleDocs.map((doc) => (
-              <div key={doc.id} className="flex items-center gap-4 px-5 py-4 hover:bg-[#F3EEE5] transition group">
+              <div key={doc.id} className="flex items-center gap-4 px-5 py-4 hover:bg-creme-50 transition group">
                 <div className="w-9 h-9 bg-creme-100 rounded-xl flex items-center justify-center shrink-0">
-                  <FileText size={17} className="text-verde" />
+                  <FileText size={17} className="text-ambar-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-verde text-sm truncate">{doc.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="font-semibold text-verde-900 text-sm truncate">{doc.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 font-mono">
                     {new Date(doc.createdAt).toLocaleDateString("pt-BR")}
                     {doc.fileSize ? ` · ${formatSize(doc.fileSize)}` : ""}
                   </p>
                 </div>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${TYPE_COLORS[doc.type] ?? TYPE_COLORS.outro}`}>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${TYPE_COLORS[doc.type] ?? TYPE_COLORS.outro}`}>
                   {DOC_TYPES.find((t) => t.value === doc.type)?.label ?? doc.type}
                 </span>
                 {/* Badge: campos configurados */}
                 {(doc.fields ?? []).some((f) => f.type === "patient_sig") ? (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0 hidden sm:inline-flex items-center gap-1">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sucesso/15 text-sucesso shrink-0 hidden sm:inline-flex items-center gap-1">
                     <Check size={10} /> Campos configurados
                   </span>
                 ) : (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 shrink-0 hidden sm:inline">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF0E4] text-ambar-600 shrink-0 hidden sm:inline">
                     Sem campos
                   </span>
                 )}
@@ -300,7 +295,7 @@ export default function Documents() {
                   value={doc.folderId ?? ""}
                   onChange={(e) => moveDoc(doc.id, e.target.value)}
                   onClick={(e) => e.stopPropagation()}
-                  className="text-xs border border-ambar rounded-lg px-2 py-1.5 bg-white shrink-0 opacity-0 group-hover:opacity-100 transition max-w-[140px]"
+                  className="text-xs border border-ambar rounded-lg px-2 py-1.5 bg-white shrink-0 opacity-0 group-hover:opacity-100 transition max-w-35"
                   title="Mover para pasta"
                 >
                   <option value="">Sem pasta</option>
@@ -310,7 +305,7 @@ export default function Documents() {
                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition">
                   <button
                     onClick={() => setConfiguringDoc(doc)}
-                    className="flex items-center gap-1 px-2.5 h-8 border border-ambar rounded-lg hover:bg-white transition text-xs text-verde font-medium shrink-0"
+                    className="flex items-center gap-1 px-2.5 h-8 border border-ambar rounded-lg hover:bg-white transition text-xs text-verde font-semibold shrink-0"
                     title="Configurar campos de assinatura"
                   >
                     <Settings2 size={13} /> Campos
@@ -324,16 +319,16 @@ export default function Documents() {
                   </button>
                   <button
                     onClick={() => handleDelete(doc.id)}
-                    className="w-8 h-8 flex items-center justify-center border border-red-200 rounded-lg hover:bg-red-50 transition"
+                    className="w-8 h-8 flex items-center justify-center border border-[#EBCBC7] rounded-lg hover:bg-erro/10 transition"
                     title="Excluir"
                   >
-                    <Trash2 size={14} className="text-red-400" />
+                    <Trash2 size={14} className="text-erro" />
                   </button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* MODAL UPLOAD */}
