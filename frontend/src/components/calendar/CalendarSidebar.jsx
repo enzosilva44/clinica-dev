@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 const PROFESSIONALS = [
   { name: "Dra Ana",    color: "#00704A" },
@@ -127,6 +127,32 @@ function MiniCalendar({ allEvents, gotoDate }) {
 export default function CalendarSidebar({ selectedProfessionals, toggleProfessional, allEvents = [], gotoDate }) {
   const showProfessionals = !!selectedProfessionals && !!toggleProfessional;
   const allSelected = showProfessionals && PROFESSIONALS.every((p) => selectedProfessionals.includes(p.name));
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem("agendaSidebarCollapsed") === "1"
+  );
+
+  function toggleCollapsed() {
+    setCollapsed((c) => {
+      const next = !c;
+      localStorage.setItem("agendaSidebarCollapsed", next ? "1" : "0");
+      return next;
+    });
+  }
+
+  // Recolhida: faixa fina só com o botão de expandir, devolvendo espaço à agenda.
+  if (collapsed) {
+    return (
+      <div className="w-10 shrink-0 flex flex-col items-center pt-1">
+        <button
+          onClick={toggleCollapsed}
+          title="Expandir painel"
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-creme-50 border border-creme-200 text-verde hover:bg-creme-100 transition"
+        >
+          <PanelLeftOpen size={16} />
+        </button>
+      </div>
+    );
+  }
 
   function toggleAll() {
     if (allSelected) {
@@ -142,6 +168,17 @@ export default function CalendarSidebar({ selectedProfessionals, toggleProfessio
 
   return (
     <div className="w-52 shrink-0 flex flex-col gap-5">
+      {/* Botão de recolher o painel */}
+      <div className="flex justify-end -mb-3">
+        <button
+          onClick={toggleCollapsed}
+          title="Recolher painel"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-verde hover:bg-creme-100 transition"
+        >
+          <PanelLeftClose size={16} />
+        </button>
+      </div>
+
       {/* Mini calendar */}
       <MiniCalendar allEvents={allEvents} gotoDate={gotoDate} />
 

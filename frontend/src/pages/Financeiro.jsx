@@ -13,6 +13,7 @@ import { notify } from "../lib/tomDeVoz";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
+import { fmtDateOnlyShort } from "../utils/date";
 
 // ─── constantes ──────────────────────────────────────────────────────────────
 
@@ -1198,7 +1199,7 @@ export default function Financeiro() {
                           </span>
                         )}
                         <span className="text-xs text-gray-400 ml-auto flex flex-col items-end gap-0.5">
-                          <span>{fmtDateShort(tx.paidAt || tx.dueDate || tx.createdAt)}</span>
+                          <span>{tx.paidAt ? fmtDateShort(tx.paidAt) : tx.dueDate ? fmtDateOnlyShort(tx.dueDate) : fmtDateShort(tx.createdAt)}</span>
                           <span className="text-[10px] text-gray-300">
                             {tx.paidAt ? "pago em" : tx.dueDate ? "vence em" : "criado em"}
                           </span>

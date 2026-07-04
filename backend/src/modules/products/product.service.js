@@ -15,6 +15,8 @@ export async function create(data, userId) {
       stock: data.stock ? Number(data.stock) : 0,
       minStock: data.minStock != null ? Number(data.minStock) : null,
       unit: data.unit,
+      lotNumber: data.lotNumber || null,
+      expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
       userId,
     },
   });
@@ -32,6 +34,10 @@ export async function update(id, userId, data) {
       stock: data.stock !== undefined ? Number(data.stock) : product.stock,
       minStock: data.minStock != null ? Number(data.minStock) : product.minStock,
       unit: data.unit,
+      lotNumber: data.lotNumber !== undefined ? (data.lotNumber || null) : product.lotNumber,
+      expiryDate: data.expiryDate !== undefined
+        ? (data.expiryDate ? new Date(data.expiryDate) : null)
+        : product.expiryDate,
     },
   });
 }

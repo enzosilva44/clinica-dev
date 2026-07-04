@@ -263,7 +263,7 @@ export default function Agenda() {
       // Agendamentos (clicáveis/editáveis) + itens financeiros (visuais) do calendário unificado
       const [appts, calendar] = await Promise.all([
         api.get("/appointments"),
-        api.get("/calendar").catch(() => ({ data: [] })),
+        api.get("/appointments/calendar").catch(() => ({ data: [] })),
       ]);
 
       const apptEvents = appts.data.map((a) => {
@@ -762,7 +762,9 @@ export default function Agenda() {
               scrollTimeReset={false}
               allDaySlot={false}
               eventDidMount={(info) => {
-                const color = info.event.extendedProps.statusColor;
+                // Itens financeiros (a receber/a pagar) não têm statusColor;
+                // usam a cor do próprio evento (verde/vermelho) vinda do backend.
+                const color = info.event.extendedProps.statusColor || info.event.backgroundColor;
                 if (color) {
                   info.el.style.backgroundColor = pastelize(color);
                   info.el.style.borderLeftColor = color;
@@ -771,7 +773,7 @@ export default function Agenda() {
               eventContent={(info) => {
                 const isMonth = info.view.type === "dayGridMonth";
                 const { patientName, procedureType, professional, professionalColor, statusColor } = info.event.extendedProps;
-                const textColor = statusColor || "#0A3326";
+                const textColor = statusColor || info.event.backgroundColor || "#0A3326";
                 if (isMonth) {
                   return (
                     <div className="px-1.5 py-0.5 w-full overflow-hidden">
@@ -1073,7 +1075,7 @@ export default function Agenda() {
                   className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                 >
                   <option value="">Selecione o procedimento</option>
-                  {procedures.map((p) => (
+                  {procedures.filter((p) => !p.isDefault).map((p) => (
                     <option key={p.id} value={p.name}>
                       {p.name}{p.duration ? ` (${p.duration} min)` : ""}
                     </option>

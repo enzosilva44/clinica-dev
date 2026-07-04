@@ -2,13 +2,30 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Plus, Pencil, Trash2, X, Package,
   ArrowDownCircle, ArrowUpCircle, CheckCircle2, XCircle,
-  Clock, Filter,
+  Clock, Filter, AlertTriangle, CalendarClock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import { Button } from "../components/ui";
 import api from "../services/api";
+import { fmtDateOnly } from "../utils/date";
+
+// Dias até a validade (data-só, guardada como meia-noite UTC → lemos em UTC).
+const EXPIRY_WARN_DAYS = 30;
+function expiryStatus(expiryDate) {
+  if (!expiryDate) return null;
+  const e = new Date(expiryDate);
+  if (isNaN(e)) return null;
+  const exp = Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), e.getUTCDate());
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((exp - today) / 86400000);
+  if (days < 0) return { level: "expired", days, label: "Vencido" };
+  if (days === 0) return { level: "expired", days, label: "Vence hoje" };
+  if (days <= EXPIRY_WARN_DAYS) return { level: "soon", days, label: `Vence em ${days}d` };
+  return { level: "ok", days, label: null };
+}
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -58,7 +75,7 @@ export default function Products() {
   // modal produto
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [form, setForm] = useState({ name: "", description: "", stock: "", minStock: "", unit: "" });
+  const [form, setForm] = useState({ name: "", description: "", stock: "", minStock: "", unit: "", lotNumber: "", expiryDate: "" });
 
   // modal excluir
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -135,7 +152,7 @@ export default function Products() {
 
   function openCreate() {
     setEditingProduct(null);
-    setForm({ name: "", description: "", stock: "", minStock: "", unit: "" });
+    setForm({ name: "", description: "", stock: "", minStock: "", unit: "", lotNumber: "", expiryDate: "" });
     setShowModal(true);
   }
 
@@ -147,6 +164,8 @@ export default function Products() {
       stock: p.stock ?? "",
       minStock: p.minStock ?? "",
       unit: p.unit || "",
+      lotNumber: p.lotNumber || "",
+      expiryDate: p.expiryDate ? String(p.expiryDate).slice(0, 10) : "",
     });
     setShowModal(true);
   }
@@ -241,6 +260,10 @@ export default function Products() {
     ok:    products.filter((p) => stockStatus(p) === "ok").length,
     low:   products.filter((p) => stockStatus(p) === "low").length,
     zero:  products.filter((p) => stockStatus(p) === "zero").length,
+    expiring: products.filter((p) => {
+      const e = expiryStatus(p.expiryDate);
+      return e && (e.level === "soon" || e.level === "expired");
+    }).length,
   };
 
   const pendingCount = requests.filter((r) => r.status === "pending").length;
@@ -286,12 +309,13 @@ export default function Products() {
       {tab === "estoque" && (
         <>
           {/* summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             {[
-              { label: "Total",   value: stats.total, color: "text-verde-900", bg: "bg-creme-50" },
-              { label: "OK",      value: stats.ok,    color: "text-sucesso",   bg: "bg-verde-50" },
-              { label: "Baixo",   value: stats.low,   color: "text-ambar-700", bg: "bg-ambar-50" },
-              { label: "Zerado",  value: stats.zero,  color: "text-erro",      bg: "bg-erro/5" },
+              { label: "Total",    value: stats.total,    color: "text-verde-900", bg: "bg-creme-50" },
+              { label: "OK",       value: stats.ok,       color: "text-sucesso",   bg: "bg-verde-50" },
+              { label: "Baixo",    value: stats.low,      color: "text-ambar-700", bg: "bg-ambar-50" },
+              { label: "Zerado",   value: stats.zero,     color: "text-erro",      bg: "bg-erro/5" },
+              { label: "A vencer", value: stats.expiring, color: "text-ambar-700", bg: "bg-ambar-50" },
             ].map((s) => (
               <div key={s.label} className={`${s.bg} border border-creme-200 rounded-2xl p-4`}>
                 <p className="text-xs text-gray-500 mb-1">{s.label}</p>
@@ -316,6 +340,7 @@ export default function Products() {
               {products.map((product) => {
                 const st = stockStatus(product);
                 const styles = STATUS_STYLES[st];
+                const exp = expiryStatus(product.expiryDate);
                 const stockVal = product.stock ?? 0;
                 const barPct = product.minStock
                   ? Math.min(100, (stockVal / (product.minStock * 3)) * 100)
@@ -331,9 +356,18 @@ export default function Products() {
                           <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{product.description}</p>
                         )}
                       </div>
-                      <span className={`ml-2 shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${styles.pill}`}>
-                        {styles.label}
-                      </span>
+                      <div className="ml-2 shrink-0 flex flex-col items-end gap-1">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${styles.pill}`}>
+                          {styles.label}
+                        </span>
+                        {exp?.label && (
+                          <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            exp.level === "expired" ? "bg-erro/10 text-erro" : "bg-ambar-50 text-ambar-700"
+                          }`}>
+                            <AlertTriangle size={10} /> {exp.label}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* stock number */}
@@ -354,6 +388,21 @@ export default function Products() {
                         style={{ width: `${Math.max(barPct, stockVal > 0 ? 4 : 0)}%` }}
                       />
                     </div>
+
+                    {/* lote / validade */}
+                    {(product.lotNumber || product.expiryDate) && (
+                      <div className="flex items-center gap-3 text-[11px] text-gray-400 -mt-1">
+                        {product.lotNumber && <span>Lote {product.lotNumber}</span>}
+                        {product.expiryDate && (
+                          <span className={`flex items-center gap-1 ${
+                            exp?.level === "expired" ? "text-erro font-medium"
+                            : exp?.level === "soon" ? "text-ambar-700 font-medium" : ""
+                          }`}>
+                            <CalendarClock size={11} /> val. {fmtDateOnly(product.expiryDate)}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {/* actions */}
                     <div className="flex items-center justify-between pt-1">
@@ -737,6 +786,26 @@ export default function Products() {
                     value={form.unit}
                     onChange={(e) => setForm((p) => ({ ...p, unit: e.target.value }))}
                     placeholder="ml, un, g…"
+                    className={INPUT}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Lote</label>
+                  <input
+                    value={form.lotNumber}
+                    onChange={(e) => setForm((p) => ({ ...p, lotNumber: e.target.value }))}
+                    placeholder="nº do lote"
+                    className={INPUT}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Validade</label>
+                  <input
+                    value={form.expiryDate}
+                    onChange={(e) => setForm((p) => ({ ...p, expiryDate: e.target.value }))}
+                    type="date"
                     className={INPUT}
                   />
                 </div>

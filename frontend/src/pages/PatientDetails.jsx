@@ -7,6 +7,7 @@ import MainLayout from "../layouts/MainLayout";
 import { Card } from "../components/ui";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
+import { fmtDateOnly } from "../utils/date";
 import ProcedureMapTab from "../components/procedure-map/ProcedureMapTab";
 import AnamnesisTab from "../components/anamnesis/AnamnesisTab";
 import SigningModal from "../components/documents/SigningModal";
@@ -486,7 +487,7 @@ export default function PatientDetails() {
               </div>
               <div>
                 <p className="text-gray-400 text-xs mb-0.5">Data de nascimento</p>
-                <p className="font-mono">{patient.birthDate ? new Date(patient.birthDate).toLocaleDateString("pt-BR") : "—"}</p>
+                <p className="font-mono">{fmtDateOnly(patient.birthDate)}</p>
               </div>
               <div>
                 <p className="text-gray-400 text-xs mb-0.5">CEP</p>
@@ -658,7 +659,7 @@ export default function PatientDetails() {
                     {patientStats.birthday.age} anos{patientStats.birthday.isToday && <PartyPopper size={18} />}
                   </p>
                   <p className={`text-xs font-mono mt-1.5 ${patientStats.birthday.isToday ? "text-white/80" : "text-gray-400"}`}>
-                    {new Date(patientStats.birthday.date).toLocaleDateString("pt-BR")}
+                    {fmtDateOnly(patientStats.birthday.date)}
                   </p>
                 </>
               ) : (

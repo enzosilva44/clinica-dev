@@ -187,10 +187,11 @@ export async function getCalendar(user, { from, to, types } = {}) {
     });
     for (const t of transactions) {
       const isReceivable = t.type === "receita";
-      // Transação só tem data (dueDate). Plotamos com horário fixo às 09h
-      // para o item aparecer na grade horária da agenda (não como dia inteiro).
-      const start = new Date(t.dueDate);
-      start.setHours(9, 0, 0, 0);
+      // Transação só tem data (dueDate), guardada como meia-noite UTC. Lemos os
+      // componentes em UTC e plotamos ao meio-dia UTC (09h no horário do Brasil)
+      // para o item cair no DIA CORRETO da grade, sem deslocamento por fuso.
+      const due = new Date(t.dueDate);
+      const start = new Date(Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate(), 12, 0, 0));
       const end = new Date(start.getTime() + 30 * 60 * 1000);
       events.push({
         id: `tx-${t.id}`,

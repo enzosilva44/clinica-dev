@@ -37,18 +37,22 @@ router.get("/:id/stats", async (req, res) => {
     // Birthday
     let birthday = null;
     if (patient.birthDate) {
+      // birthDate é uma data-só, guardada como meia-noite UTC. Lemos os
+      // componentes em UTC para não deslocar o dia pelo fuso do servidor.
       const b = new Date(patient.birthDate);
+      const bMonth = b.getUTCMonth();
+      const bDate = b.getUTCDate();
       const now = new Date();
-      let age = now.getFullYear() - b.getFullYear();
-      if (now.getMonth() < b.getMonth() || (now.getMonth() === b.getMonth() && now.getDate() < b.getDate())) age--;
-      const next = new Date(now.getFullYear(), b.getMonth(), b.getDate());
+      let age = now.getFullYear() - b.getUTCFullYear();
+      if (now.getMonth() < bMonth || (now.getMonth() === bMonth && now.getDate() < bDate)) age--;
+      const next = new Date(now.getFullYear(), bMonth, bDate);
       if (next < now) next.setFullYear(now.getFullYear() + 1);
       const daysUntil = Math.ceil((next - now) / 86400000);
       birthday = {
         date: patient.birthDate,
         age,
         daysUntil: daysUntil >= 365 ? 0 : daysUntil,
-        isToday: b.getDate() === now.getDate() && b.getMonth() === now.getMonth(),
+        isToday: bDate === now.getDate() && bMonth === now.getMonth(),
       };
     }
 

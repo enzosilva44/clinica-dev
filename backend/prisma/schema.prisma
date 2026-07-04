@@ -233,6 +233,8 @@ model Product {
   userId            String
   createdAt         DateTime           @default(now())
   minStock          Float?
+  lotNumber         String?
+  expiryDate        DateTime?
   procedureProducts ProcedureProduct[]
   user              User               @relation(fields: [userId], references: [id])
   movements         ProductMovement[]
