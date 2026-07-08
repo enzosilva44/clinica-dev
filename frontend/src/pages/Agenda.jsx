@@ -1360,7 +1360,7 @@ export default function Agenda() {
                             key={`${p.origin}:${p.itemId}:${p.sourceId}`}
                             value={`${p.origin}:${p.itemId}:${p.origin === "club" ? p.sourceId : ""}`}
                           >
-                            {p.origin === "club" ? "Clube" : "Orçamento"} · {p.procedureName} ({p.remaining} restante{p.remaining > 1 ? "s" : ""})
+                            {p.origin === "club" ? "Clube" : "Orçamento"} · {p.origin === "budget" ? p.title : p.procedureName} ({p.remaining} restante{p.remaining > 1 ? "s" : ""})
                           </option>
                         ))}
                       </select>

@@ -3,8 +3,9 @@ import { prisma } from "../../config/prisma.js";
 // Visão unificada de "pacotes de sessões" das duas origens:
 //  - CLUB: cada ClubPlanItem de um membro ativo é um pacote (contratado = quantity,
 //          realizado = nº de ClubApplication daquele item).
-//  - ORÇAMENTO: cada BudgetItem de um orçamento APROVADO é um pacote
-//          (contratado = quantity, realizado = nº de BudgetSession).
+//  - ORÇAMENTO: cada orçamento-pacote APROVADO é UM pacote (contratado = sessionCount,
+//          realizado = nº de BudgetSession). Uma sessão pode ter vários procedimentos;
+//          os itens do orçamento são o escopo/inclusos, NÃO a contagem de sessões.
 // Pagamento é rastreado à parte (não bloqueia consumo) — expomos o vínculo mas
 // deixamos a UI mostrar pago × realizado lado a lado.
 export async function getOverview(userId, { patientId } = {}) {
@@ -28,7 +29,8 @@ export async function getOverview(userId, { patientId } = {}) {
       where: budgetWhere,
       include: {
         patient: { select: { id: true, name: true, phone: true } },
-        items: { include: { sessions: { orderBy: { performedAt: "desc" } } } },
+        items: true,
+        sessions: { orderBy: { performedAt: "desc" } },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -62,26 +64,28 @@ export async function getOverview(userId, { patientId } = {}) {
   }
 
   for (const budget of budgets) {
-    for (const item of budget.items) {
-      const sessions = item.sessions.map((s) => ({
-        id: s.id,
-        performedAt: s.performedAt,
-        appointmentId: s.appointmentId,
-        notes: s.notes,
-      }));
-      packages.push({
-        origin: "budget",
-        sourceId: budget.id, // budgetId
-        itemId: item.id, // budgetItemId
-        patient: budget.patient,
-        title: budget.title,
-        procedureName: item.procedureName,
-        contracted: item.quantity,
-        done: sessions.length,
-        remaining: Math.max(item.quantity - sessions.length, 0),
-        sessions,
-      });
-    }
+    const sessions = budget.sessions.map((s) => ({
+      id: s.id,
+      performedAt: s.performedAt,
+      appointmentId: s.appointmentId,
+      procedures: s.procedures || null,
+      notes: s.notes,
+    }));
+    // Escopo do pacote: procedimentos inclusos (nomes dos itens do orçamento).
+    const includedProcedures = budget.items.map((i) => i.procedureName);
+    packages.push({
+      origin: "budget",
+      sourceId: budget.id, // budgetId
+      itemId: budget.id, // pacote é o próprio orçamento (consumo por budgetId)
+      patient: budget.patient,
+      title: budget.title,
+      procedureName: includedProcedures.join(", ") || budget.title,
+      includedProcedures,
+      contracted: budget.sessionCount,
+      done: sessions.length,
+      remaining: Math.max(budget.sessionCount - sessions.length, 0),
+      sessions,
+    });
   }
 
   return packages;

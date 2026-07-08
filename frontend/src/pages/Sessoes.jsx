@@ -49,9 +49,13 @@ function PackageCard({ pkg, onRegister, onRemoveSession, busy }) {
           <div className="flex items-center gap-2 mb-0.5">
             <OriginBadge origin={pkg.origin} />
           </div>
-          <h3 className="font-semibold text-verde-900 truncate">{pkg.procedureName}</h3>
+          <h3 className="font-semibold text-verde-900 truncate">
+            {pkg.origin === "budget" ? pkg.title : pkg.procedureName}
+          </h3>
           <p className="text-xs text-gray-500 truncate">
-            {pkg.patient?.name} · {pkg.title}
+            {pkg.patient?.name}
+            {pkg.origin === "budget" && pkg.includedProcedures?.length > 0 && ` · ${pkg.includedProcedures.join(", ")}`}
+            {pkg.origin === "club" && ` · ${pkg.title}`}
           </p>
         </div>
         <div className="text-right shrink-0">
@@ -102,17 +106,25 @@ function PackageCard({ pkg, onRegister, onRemoveSession, busy }) {
 
       {open && pkg.sessions.length > 0 && (
         <div className="border-t border-creme-200 pt-2 flex flex-col gap-1">
-          {pkg.sessions.map((s) => (
-            <div key={s.id} className="flex items-center justify-between text-xs text-gray-600">
-              <span className="flex items-center gap-1.5">
-                <Check size={12} className="text-verde" />
-                {formatDate(s.performedAt)}
-                {s.appointmentId && <span className="text-gray-400">· via agenda</span>}
+          {pkg.sessions.map((s, idx) => (
+            <div key={s.id} className="flex items-start justify-between text-xs text-gray-600">
+              <span className="flex items-start gap-1.5 min-w-0">
+                <Check size={12} className="text-verde mt-0.5 shrink-0" />
+                <span className="min-w-0">
+                  <span className="text-gray-500">Sessão {pkg.sessions.length - idx} · </span>
+                  {formatDate(s.performedAt)}
+                  {s.appointmentId && <span className="text-gray-400"> · via agenda</span>}
+                  {Array.isArray(s.procedures) && s.procedures.length > 0 && (
+                    <span className="block text-gray-400 truncate">
+                      {s.procedures.map((p) => p.procedureName).join(", ")}
+                    </span>
+                  )}
+                </span>
               </span>
               <button
                 onClick={() => onRemoveSession(pkg, s)}
                 disabled={busy}
-                className="text-gray-400 hover:text-red-500 transition disabled:opacity-40"
+                className="text-gray-400 hover:text-red-500 transition disabled:opacity-40 shrink-0 ml-2"
                 title="Desfazer sessão"
               >
                 <Trash2 size={13} />
@@ -131,6 +143,7 @@ export default function Sessoes() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("todos"); // todos | club | budget | pendentes
+  const [sessionModal, setSessionModal] = useState(null); // { pkg, selected: [names] }
 
   async function load() {
     try {
@@ -161,17 +174,28 @@ export default function Sessoes() {
     });
   }, [packages, filter, search]);
 
-  async function handleRegister(pkg) {
+  // Para pacote de orçamento com procedimentos inclusos, abre modal p/ escolher
+  // quais foram feitos na sessão. Club registra direto (1 procedimento por item).
+  function onRegisterClick(pkg) {
+    if (pkg.origin === "budget" && pkg.includedProcedures?.length > 0) {
+      setSessionModal({ pkg, selected: [] });
+    } else {
+      handleRegister(pkg, null);
+    }
+  }
+
+  async function handleRegister(pkg, procedures) {
     setBusy(true);
     try {
       if (pkg.origin === "budget") {
-        await api.post(`/budgets/items/${pkg.itemId}/sessions`, {});
+        await api.post(`/budgets/${pkg.sourceId}/sessions`, procedures ? { procedures } : {});
       } else {
         await api.post(`/club/members/${pkg.sourceId}/applications`, {
           planItemId: pkg.itemId,
         });
       }
       toast.success("Sessão registrada");
+      setSessionModal(null);
       await load();
     } catch (e) {
       toast.error(e.response?.data?.error || "Erro ao registrar sessão");
@@ -261,13 +285,65 @@ export default function Sessoes() {
                 key={`${pkg.origin}-${pkg.itemId}`}
                 pkg={pkg}
                 busy={busy}
-                onRegister={handleRegister}
+                onRegister={onRegisterClick}
                 onRemoveSession={handleRemoveSession}
               />
             ))}
           </div>
         )}
       </div>
+
+      {sessionModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setSessionModal(null)}>
+          <div className="bg-white rounded-2xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-verde-900 mb-1">Registrar sessão</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              {sessionModal.pkg.patient?.name} · {sessionModal.pkg.title}
+            </p>
+            <p className="text-xs font-medium text-gray-500 mb-2">
+              Quais procedimentos foram feitos nesta sessão?
+            </p>
+            <div className="flex flex-col gap-1.5 mb-5 max-h-64 overflow-y-auto">
+              {sessionModal.pkg.includedProcedures.map((name, i) => {
+                const checked = sessionModal.selected.includes(name);
+                return (
+                  <label key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-creme-200 cursor-pointer hover:bg-creme-50">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => setSessionModal((m) => ({
+                        ...m,
+                        selected: checked ? m.selected.filter((n) => n !== name) : [...m.selected, name],
+                      }))}
+                      className="accent-verde"
+                    />
+                    <span className="text-sm text-verde-900">{name}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setSessionModal(null)}
+                disabled={busy}
+                className="text-sm text-gray-600 px-4 py-2 rounded-xl hover:bg-creme-50 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleRegister(
+                  sessionModal.pkg,
+                  sessionModal.selected.map((name) => ({ procedureName: name })),
+                )}
+                disabled={busy}
+                className="text-sm font-semibold text-white bg-verde hover:bg-verde-700 px-4 py-2 rounded-xl transition disabled:opacity-50"
+              >
+                {busy ? "Registrando…" : "Registrar sessão"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }

@@ -17,25 +17,25 @@ function normalizeItem(item) {
   };
 }
 
-// Anexa saldo de sessões (contratado − realizado) por item do orçamento.
+// Anexa saldo de sessões do PACOTE (sessionCount − sessões realizadas).
+// Os procedimentos (items) são o escopo/inclusos, não a contagem de sessões.
 function withBalances(budget) {
-  const items = budget.items.map((item) => {
-    const done = item.sessions?.length || 0;
-    return {
-      ...item,
-      contracted: item.quantity,
-      done,
-      remaining: Math.max(item.quantity - done, 0),
-    };
-  });
-  return { ...budget, items };
+  const done = budget.sessions?.length || 0;
+  const contracted = budget.isPackage ? budget.sessionCount : 0;
+  return {
+    ...budget,
+    contracted,
+    done,
+    remaining: Math.max(contracted - done, 0),
+  };
 }
 
 export async function findByPatient(patientId, userId) {
   const budgets = await prisma.budget.findMany({
     where: { patientId, userId },
     include: {
-      items: { include: { sessions: { orderBy: { performedAt: "desc" } } } },
+      items: true,
+      sessions: { orderBy: { performedAt: "desc" } },
       transactions: true,
     },
     orderBy: { createdAt: "desc" },
@@ -50,59 +50,64 @@ export async function updateStatus(id, userId, status) {
   return prisma.budget.update({ where: { id }, data: { status } });
 }
 
-// Registra uma sessão realizada de um item. Só permitido em orçamento aprovado.
-export async function registerSession(budgetItemId, userId, data = {}) {
-  const item = await prisma.budgetItem.findFirst({
-    where: { id: budgetItemId, budget: { userId } },
-    include: { budget: true, sessions: true },
+// Registra uma sessão realizada do pacote. Uma sessão pode conter vários
+// procedimentos (data.procedures = [{ procedureId?, procedureName }]).
+export async function registerSession(budgetId, userId, data = {}) {
+  const budget = await prisma.budget.findFirst({
+    where: { id: budgetId, userId },
+    include: { sessions: true },
   });
-  if (!item) throw new Error("Item de orçamento não encontrado");
-  if (!item.budget.isPackage) {
+  if (!budget) throw new Error("Orçamento não encontrado");
+  if (!budget.isPackage) {
     throw new Error("Este orçamento não é um pacote de sessões");
   }
-  if (item.budget.status !== "aprovado") {
+  if (budget.status !== "aprovado") {
     throw new Error("O orçamento precisa estar aprovado para registrar sessões");
   }
-  if (item.sessions.length >= item.quantity) {
-    throw new Error("Todas as sessões contratadas deste item já foram realizadas");
+  if (budget.sessions.length >= budget.sessionCount) {
+    throw new Error("Todas as sessões contratadas do pacote já foram realizadas");
   }
+
+  const procedures = Array.isArray(data.procedures)
+    ? data.procedures
+        .filter((p) => p && p.procedureName)
+        .map((p) => ({ procedureId: p.procedureId || null, procedureName: p.procedureName }))
+    : null;
 
   const session = await prisma.budgetSession.create({
     data: {
-      budgetItemId,
+      budgetId,
       appointmentId: data.appointmentId || null,
       performedAt: data.performedAt ? new Date(data.performedAt) : new Date(),
+      procedures: procedures && procedures.length ? procedures : undefined,
       notes: data.notes || null,
     },
   });
 
-  // Se todos os itens do orçamento atingiram o total contratado, marca concluído.
-  await maybeCompleteBudget(item.budgetId);
+  await maybeCompleteBudget(budgetId);
   return session;
 }
 
 export async function removeSession(id, userId) {
   const session = await prisma.budgetSession.findFirst({
-    where: { id, budgetItem: { budget: { userId } } },
-    include: { budgetItem: true },
+    where: { id, budget: { userId } },
+    include: { budget: true },
   });
   if (!session) throw new Error("Sessão não encontrada");
   await prisma.budgetSession.delete({ where: { id } });
-  // Ao devolver saldo, se o orçamento estava concluído, volta pra aprovado.
-  const budget = await prisma.budget.findUnique({ where: { id: session.budgetItem.budgetId } });
-  if (budget?.status === "concluido") {
-    await prisma.budget.update({ where: { id: budget.id }, data: { status: "aprovado" } });
+  // Ao devolver saldo, se o pacote estava concluído, volta pra aprovado.
+  if (session.budget.status === "concluido") {
+    await prisma.budget.update({ where: { id: session.budgetId }, data: { status: "aprovado" } });
   }
   return { ok: true };
 }
 
 async function maybeCompleteBudget(budgetId) {
-  const items = await prisma.budgetItem.findMany({
-    where: { budgetId },
+  const budget = await prisma.budget.findUnique({
+    where: { id: budgetId },
     include: { _count: { select: { sessions: true } } },
   });
-  const allDone = items.length > 0 && items.every((i) => i._count.sessions >= i.quantity);
-  if (allDone) {
+  if (budget && budget._count.sessions >= budget.sessionCount) {
     await prisma.budget.update({ where: { id: budgetId }, data: { status: "concluido" } });
   }
 }
@@ -139,6 +144,7 @@ export async function create(data, userId) {
         observations: data.observations || null,
         status: BUDGET_STATUSES.includes(data.status) ? data.status : "rascunho",
         isPackage: Boolean(data.isPackage),
+        sessionCount: data.isPackage ? Math.max(Number(data.sessionCount) || 1, 1) : 1,
         idempotencyKey,
         patientId: data.patientId,
         userId,

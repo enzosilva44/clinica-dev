@@ -131,6 +131,7 @@ model Budget {
   observations   String?
   status         String        @default("rascunho") // rascunho | aprovado | concluido
   isPackage      Boolean       @default(false) // true = pacote de sessoes (aparece em /sessoes); false = avulso
+  sessionCount   Int           @default(1) // nº de sessões do pacote (uma sessão pode ter vários procedimentos)
   idempotencyKey String?       @unique
   patientId      String
   userId         String
@@ -139,6 +140,7 @@ model Budget {
   patient        Patient       @relation(fields: [patientId], references: [id])
   user           User          @relation(fields: [userId], references: [id])
   items          BudgetItem[]
+  sessions       BudgetSession[]
   transactions   Transaction[]
 }
 
@@ -153,23 +155,24 @@ model BudgetItem {
   budgetId      String
   createdAt     DateTime @default(now())
   budget        Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
-  sessions      BudgetSession[]
 }
 
-// Uma sessão realizada de um item de orçamento aprovado (pacote flexível).
-// Espelha ClubApplication (consumo do Club). appointmentId liga a sessão ao
-// agendamento que a consumiu (opcional: sessão pode ser registrada manualmente).
+// Uma sessão realizada de um pacote (orçamento com isPackage=true).
+// O pacote tem N sessões (Budget.sessionCount); cada sessão pode conter vários
+// procedimentos (campo procedures = snapshot do que foi feito naquele dia).
+// appointmentId liga a sessão ao agendamento que a consumiu (opcional).
 model BudgetSession {
-  id           String       @id @default(cuid())
-  budgetItemId String
+  id            String       @id @default(cuid())
+  budgetId      String
   appointmentId String?
-  performedAt  DateTime     @default(now())
-  notes        String?
-  createdAt    DateTime     @default(now())
-  budgetItem   BudgetItem   @relation(fields: [budgetItemId], references: [id], onDelete: Cascade)
-  appointment  Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  performedAt   DateTime     @default(now())
+  procedures    Json?        // [{ procedureId?, procedureName }] feitos nesta sessão
+  notes         String?
+  createdAt     DateTime     @default(now())
+  budget        Budget       @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
 
-  @@index([budgetItemId])
+  @@index([budgetId])
   @@index([appointmentId])
 }
 
@@ -195,7 +198,7 @@ model Appointment {
   // Vínculo opcional com um pacote de sessões (item 6/7). Ao concluir o
   // agendamento, consome 1 sessão do pacote correspondente.
   packageOrigin  String?      // "club" | "budget"
-  packageItemId  String?      // planItemId (club) ou budgetItemId (budget)
+  packageItemId  String?      // planItemId (club) ou budgetId (budget)
   packageMemberId String?     // memberId (só club)
   patient        Patient?     @relation(fields: [patientId], references: [id])
   user           User         @relation(fields: [userId], references: [id])

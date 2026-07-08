@@ -9,18 +9,19 @@ async function consumePackageSession(appt, userId) {
   if (!appt.packageOrigin || !appt.packageItemId) return;
 
   if (appt.packageOrigin === "budget") {
+    // packageItemId guarda o budgetId (o pacote é o próprio orçamento).
     const already = await prisma.budgetSession.findFirst({
-      where: { appointmentId: appt.id, budgetItemId: appt.packageItemId },
+      where: { appointmentId: appt.id, budgetId: appt.packageItemId },
     });
     if (already) return;
-    const item = await prisma.budgetItem.findFirst({
-      where: { id: appt.packageItemId, budget: { userId, status: "aprovado" } },
+    const budget = await prisma.budget.findFirst({
+      where: { id: appt.packageItemId, userId, status: "aprovado", isPackage: true },
       include: { _count: { select: { sessions: true } } },
     });
-    if (!item || item._count.sessions >= item.quantity) return;
+    if (!budget || budget._count.sessions >= budget.sessionCount) return;
     await prisma.budgetSession.create({
       data: {
-        budgetItemId: appt.packageItemId,
+        budgetId: appt.packageItemId,
         appointmentId: appt.id,
         performedAt: new Date(),
       },

@@ -62,6 +62,7 @@ export default function PatientDetails() {
     discount: 0,
     observations: "",
     isPackage: false,
+    sessionCount: 1,
     txPaymentMethod: "",
     txInstallments: "1",
     txDueDate: "",
@@ -286,6 +287,7 @@ export default function PatientDetails() {
         discount: Number(budgetForm.discount) || 0,
         observations: budgetForm.observations,
         isPackage: budgetForm.isPackage,
+        sessionCount: budgetForm.isPackage ? Math.max(Number(budgetForm.sessionCount) || 1, 1) : 1,
         idempotencyKey: budgetKeyRef.current,
         txPaymentMethod: budgetForm.txPaymentMethod || null,
         txInstallments: Number(budgetForm.txInstallments) > 1 ? Number(budgetForm.txInstallments) : undefined,
@@ -333,9 +335,9 @@ export default function PatientDetails() {
     }
   }
 
-  async function registerBudgetSession(itemId) {
+  async function registerBudgetSession(budgetId) {
     try {
-      await api.post(`/budgets/items/${itemId}/sessions`, {});
+      await api.post(`/budgets/${budgetId}/sessions`, {});
       toast.success("Sessão registrada");
       loadBudgets();
     } catch (e) {
@@ -1253,9 +1255,30 @@ export default function PatientDetails() {
                   </span>
                 </button>
 
+                {budgetForm.isPackage && (
+                  <div className="rounded-xl border border-verde bg-verde/5 p-4">
+                    <label className="text-xs font-semibold text-verde block mb-1.5">
+                      Número de sessões do pacote
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={budgetForm.sessionCount}
+                      onChange={(e) => setBudgetForm((current) => ({ ...current, sessionCount: e.target.value }))}
+                      className="w-32 border border-verde rounded-xl p-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-verde/20"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1.5">
+                      Quantas sessões o paciente terá. Cada sessão pode incluir vários procedimentos
+                      (os itens abaixo são o que está incluso no pacote).
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-verde">Itens do orçamento</h3>
+                    <h3 className="text-sm font-bold text-verde">
+                      {budgetForm.isPackage ? "Procedimentos inclusos no pacote" : "Itens do orçamento"}
+                    </h3>
                     <button
                       onClick={addBudgetItem}
                       className="border border-ambar hover:bg-creme-100 text-verde px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5"
@@ -1522,48 +1545,52 @@ export default function PatientDetails() {
                   </div>
 
                   <div className="divide-y divide-creme-100 border border-creme-100 rounded-xl overflow-hidden">
-                    {budget.items.map((item) => {
-                      const approved = budget.isPackage && ((budget.status || "rascunho") === "aprovado" || budget.status === "concluido");
-                      const done = item.done ?? 0;
-                      const contracted = item.contracted ?? item.quantity;
-                      const remaining = item.remaining ?? Math.max(contracted - done, 0);
-                      return (
-                        <div key={item.id} className="px-3 py-2.5 text-sm">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="font-medium text-verde truncate">{item.procedureName}</p>
-                              {item.observation && (
-                                <p className="text-xs text-gray-400 truncate">{item.observation}</p>
-                              )}
-                            </div>
-                            <span className="text-xs font-mono text-gray-500 shrink-0">
-                              {item.quantity} x {item.unitPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                            </span>
-                          </div>
-                          {approved && (
-                            <div className="flex items-center gap-2 mt-2">
-                              <div className="flex-1 h-1.5 rounded-full bg-creme-200 overflow-hidden">
-                                <div
-                                  className="h-full rounded-full bg-verde/70"
-                                  style={{ width: `${contracted ? Math.min((done / contracted) * 100, 100) : 0}%` }}
-                                />
-                              </div>
-                              <span className="text-[11px] text-gray-500 shrink-0">
-                                {done}/{contracted} sessões
-                              </span>
-                              <button
-                                onClick={() => registerBudgetSession(item.id)}
-                                disabled={remaining === 0}
-                                className="text-[11px] font-semibold text-verde hover:underline disabled:opacity-40 disabled:no-underline shrink-0"
-                              >
-                                {remaining === 0 ? "completo" : "+ sessão"}
-                              </button>
-                            </div>
+                    {budget.items.map((item) => (
+                      <div key={item.id} className="px-3 py-2.5 flex items-center justify-between gap-3 text-sm">
+                        <div className="min-w-0">
+                          <p className="font-medium text-verde truncate">{item.procedureName}</p>
+                          {item.observation && (
+                            <p className="text-xs text-gray-400 truncate">{item.observation}</p>
                           )}
                         </div>
-                      );
-                    })}
+                        <span className="text-xs font-mono text-gray-500 shrink-0">
+                          {item.quantity} x {item.unitPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </span>
+                      </div>
+                    ))}
                   </div>
+
+                  {/* Saldo de sessões do PACOTE (uma sessão pode ter vários procedimentos) */}
+                  {budget.isPackage && ((budget.status || "rascunho") === "aprovado" || budget.status === "concluido") && (() => {
+                    const done = budget.done ?? 0;
+                    const contracted = budget.contracted ?? budget.sessionCount ?? 0;
+                    const remaining = budget.remaining ?? Math.max(contracted - done, 0);
+                    return (
+                      <div className="mt-3 rounded-xl bg-verde/5 border border-verde/20 p-3">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 rounded-full bg-creme-200 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-verde/70"
+                              style={{ width: `${contracted ? Math.min((done / contracted) * 100, 100) : 0}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-semibold text-verde shrink-0">
+                            {done}/{contracted} sessões
+                          </span>
+                          <button
+                            onClick={() => registerBudgetSession(budget.id)}
+                            disabled={remaining === 0}
+                            className="text-xs font-semibold text-white bg-verde hover:bg-verde-700 px-2.5 py-1 rounded-lg transition disabled:opacity-40 shrink-0"
+                          >
+                            {remaining === 0 ? "completo" : "+ sessão"}
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-gray-500 mt-1.5">
+                          Controle detalhado em <a href="/sessoes" className="text-verde underline">Sessões</a>.
+                        </p>
+                      </div>
+                    );
+                  })()}
 
                   {budget.observations && (
                     <p className="text-sm text-gray-500 mt-3">{budget.observations}</p>

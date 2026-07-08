@@ -57,7 +57,7 @@ export async function updateStatus(req, res) {
 export async function registerSession(req, res) {
   try {
     return res.status(201).json(
-      await budgetService.registerSession(req.params.itemId, req.user.id, req.body)
+      await budgetService.registerSession(req.params.budgetId, req.user.id, req.body)
     );
   } catch (error) {
     return res.status(400).json({ error: sanitizeError(error) });
