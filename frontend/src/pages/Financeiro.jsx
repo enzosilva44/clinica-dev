@@ -14,6 +14,8 @@ import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
 import { fmtDateOnlyShort } from "../utils/date";
+import { useIsMobile } from "../hooks/useIsMobile";
+import FinanceiroMobile from "./financeiro/FinanceiroMobile";
 
 // ─── constantes ──────────────────────────────────────────────────────────────
 
@@ -675,6 +677,7 @@ function GuardianTab({ data, loading, onRefresh }) {
 
 export default function Financeiro() {
   const [tab, setTab] = useState("resumo");
+  const isMobile = useIsMobile();
 
   // dados
   const [summary, setSummary] = useState({ receitas: 0, despesas: 0, saldo: 0, pendentes: 0 });
@@ -788,6 +791,16 @@ export default function Financeiro() {
   useEffect(() => { if (tab === "extrato") loadExtrato(); }, [tab, loadExtrato]);
   useEffect(() => { if (tab === "guardiao" && !guardian) loadGuardian(); }, [tab, guardian, loadGuardian]);
 
+  // Mobile: a tela Resumo mostra recentes + guardião numa view só, então
+  // carregamos esses dados que no desktop dependem da aba selecionada.
+  useEffect(() => {
+    if (isMobile) {
+      loadLancamentos();
+      if (!guardian) loadGuardian();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile]);
+
   // ── criar / editar ─────────────────────────────────────────────────────────
 
   async function handleSave(form, editId) {
@@ -867,6 +880,36 @@ export default function Financeiro() {
     : 1;
 
   // ──────────────────────────────────────────────────────────────────────────
+
+  if (isMobile) {
+    const monthLabel = (() => {
+      const [y, m] = (month || "").split("-");
+      if (!y || !m) return "";
+      return new Date(Number(y), Number(m) - 1, 1)
+        .toLocaleDateString("pt-BR", { month: "short", year: "numeric" })
+        .replace(".", "")
+        .toUpperCase();
+    })();
+    return (
+      <MainLayout>
+        <FinanceiroMobile
+          summary={summary}
+          lancamentos={lancamentos}
+          guardian={guardian}
+          monthLabel={monthLabel}
+          fmt={fmt}
+          onNew={() => setModalData({})}
+        />
+        {modalData !== null && (
+          <TransactionModal
+            initial={modalData}
+            onClose={() => setModalData(null)}
+            onSave={handleSave}
+          />
+        )}
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

@@ -43,3 +43,32 @@ export async function remove(req, res) {
     return res.status(400).json({ error: sanitizeError(error) });
   }
 }
+
+export async function updateStatus(req, res) {
+  try {
+    return res.json(
+      await budgetService.updateStatus(req.params.id, req.user.id, req.body.status)
+    );
+  } catch (error) {
+    return res.status(400).json({ error: sanitizeError(error) });
+  }
+}
+
+export async function registerSession(req, res) {
+  try {
+    return res.status(201).json(
+      await budgetService.registerSession(req.params.itemId, req.user.id, req.body)
+    );
+  } catch (error) {
+    return res.status(400).json({ error: sanitizeError(error) });
+  }
+}
+
+export async function removeSession(req, res) {
+  try {
+    await budgetService.removeSession(req.params.id, req.user.id);
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(400).json({ error: sanitizeError(error) });
+  }
+}

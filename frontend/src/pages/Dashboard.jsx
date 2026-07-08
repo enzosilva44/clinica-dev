@@ -9,6 +9,8 @@ import { Card, Button } from "../components/ui";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useFeatures } from "../hooks/useFeatures";
+import { useIsMobile } from "../hooks/useIsMobile";
+import DashboardMobile from "./dashboard/DashboardMobile";
 
 const DAILY_QUOTES = [
   "Cada atendimento é uma oportunidade de transformar autoestima em confiança.",
@@ -108,6 +110,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate  = useNavigate();
   const features  = useFeatures();
+  const isMobile  = useIsMobile();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const dailyInsight = getDailyQuote();
@@ -167,6 +170,21 @@ export default function Dashboard() {
       sub: "análises e IA",
     },
   ];
+
+  if (isMobile) {
+    return (
+      <MainLayout>
+        <DashboardMobile
+          greeting={getGreeting()}
+          name={getDisplayName(user)}
+          user={user}
+          todaySchedule={todaySchedule}
+          birthdays={birthdays}
+          monthName={currentMonthName}
+        />
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

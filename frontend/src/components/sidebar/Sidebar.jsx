@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Calendar, Stethoscope,
   Package, Wallet, Star, FolderOpen, BarChart2,
-  Zap, LogOut, X, Receipt, ClipboardList, Images,
+  Zap, LogOut, X, Receipt, ClipboardList, Images, Layers,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LogoMark } from "../ui/Logo.jsx";
@@ -22,6 +22,7 @@ export default function Sidebar({ open = false, onClose }) {
     { to: "/financeiro", icon: Wallet,           label: "Financeiro",    show: features.financial },
     { to: "/faturamento",icon: Receipt,          label: "Faturamento",   show: features.faturamento },
     { to: "/clube",      icon: Star,             label: "Clube",         show: features.clube },
+    { to: "/sessoes",    icon: Layers,           label: "Sessões",       show: features.clube },
     { to: "/documents",  icon: FolderOpen,       label: "Documentos",    show: features.documents },
     { to: "/portfolio",  icon: Images,           label: "Portfólio",     show: features.portfolio },
     { to: "/anamnese-modelos", icon: ClipboardList, label: "Anamneses",   show: true },

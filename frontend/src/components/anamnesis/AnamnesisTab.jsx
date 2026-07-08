@@ -58,7 +58,8 @@ export default function AnamnesisTab({ patientId }) {
     } catch { /* silencioso no auto-save */ }
   }
 
-  async function finalize() {
+  // forSignature=true → documento entra pendente pra o paciente assinar.
+  async function finalize(forSignature = false) {
     if (!filling) return;
     setSaving(true);
     try {
@@ -69,8 +70,15 @@ export default function AnamnesisTab({ patientId }) {
         });
         responseId = res.data.id;
       }
-      await api.post(`/anamnesis/responses/${responseId}/finalize`, { answers: filling.answers });
-      toast.success("Anamnese finalizada! PDF anexado nos documentos do paciente.");
+      await api.post(`/anamnesis/responses/${responseId}/finalize`, {
+        answers: filling.answers,
+        forSignature,
+      });
+      toast.success(
+        forSignature
+          ? "Anamnese enviada para assinatura! Disponível nos documentos do paciente."
+          : "Anamnese finalizada! PDF anexado nos documentos do paciente."
+      );
       setFilling(null);
       load();
     } catch (err) {
@@ -134,11 +142,15 @@ export default function AnamnesisTab({ patientId }) {
           ))}
         </div>
 
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="flex flex-wrap justify-end gap-2 mt-6">
           <button onClick={() => setFilling(null)} className="text-sm text-gray-500 px-4 py-2 rounded-xl hover:bg-white transition">Cancelar</button>
-          <button onClick={finalize} disabled={saving}
+          <button onClick={() => finalize(false)} disabled={saving}
+            className="border border-verde text-verde hover:bg-verde/5 text-sm font-semibold px-5 py-2 rounded-xl transition disabled:opacity-50">
+            {saving ? "Finalizando…" : "Finalizar e arquivar"}
+          </button>
+          <button onClick={() => finalize(true)} disabled={saving}
             className="bg-verde hover:bg-verde-900 text-white text-sm font-semibold px-5 py-2 rounded-xl transition disabled:opacity-50">
-            {saving ? "Finalizando…" : "Finalizar e gerar PDF"}
+            {saving ? "Enviando…" : "Finalizar e enviar p/ assinatura"}
           </button>
         </div>
       </div>

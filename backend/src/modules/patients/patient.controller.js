@@ -41,6 +41,7 @@ import { sanitizeError } from "../../shared/errors/sanitizeError.js";
         page = 1,
         search = "",
         status = "active",
+        sortBy = "recent",
       } = req.query;
 
       const patients =
@@ -52,6 +53,8 @@ import { sanitizeError } from "../../shared/errors/sanitizeError.js";
           search,
 
           status,
+
+          sortBy,
         });
 
       return res.json(patients);

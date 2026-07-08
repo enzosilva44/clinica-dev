@@ -6,6 +6,8 @@ import { Card, Button } from "../components/ui";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
 import ImportPatientsModal from "../components/patients/ImportPatientsModal";
+import { useIsMobile } from "../hooks/useIsMobile";
+import PatientsMobile from "./patients/PatientsMobile";
 
 function initials(name) {
   if (!name) return "?";
@@ -43,6 +45,7 @@ function recencyColor(date) {
 
 export default function Patients() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -50,6 +53,7 @@ export default function Patients() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("active");
+  const [sortBy, setSortBy] = useState("name_asc");
   const [counts, setCounts] = useState({ active: null, removed: null });
   const [suggestions, setSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -71,7 +75,7 @@ export default function Patients() {
 
   async function loadPatients() {
     try {
-      const res = await api.get("/patients", { params: { page, search, status } });
+      const res = await api.get("/patients", { params: { page, search, status, sortBy } });
       setPatients(res.data.data);
       setTotalPages(res.data.totalPages);
       setTotal(res.data.total);
@@ -98,11 +102,37 @@ export default function Patients() {
     setLoading(true);
     const t = setTimeout(loadPatients, 400);
     return () => clearTimeout(t);
-  }, [page, search, status]);
+  }, [page, search, status, sortBy]);
 
   useEffect(() => {
     loadCounts();
   }, []);
+
+  if (isMobile) {
+    return (
+      <MainLayout>
+        {showImport && (
+          <ImportPatientsModal
+            onClose={() => setShowImport(false)}
+            onSuccess={() => { setPage(1); loadPatients(); loadCounts(); }}
+          />
+        )}
+        <PatientsMobile
+          patients={patients}
+          search={search}
+          setSearch={(v) => { setSearch(v); setPage(1); }}
+          status={status}
+          setStatus={(v) => { setStatus(v); setPage(1); }}
+          sortBy={sortBy}
+          setSortBy={(v) => { setSortBy(v); setPage(1); }}
+          total={total}
+          onOpenPatient={(id) => navigate(`/patients/${id}`)}
+          onCreate={() => navigate("/patients/create")}
+          onSuggestions={loadReturnSuggestions}
+        />
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -215,6 +245,17 @@ export default function Patients() {
             </button>
           ))}
         </div>
+        <select
+          value={sortBy}
+          onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+          className="border border-ambar rounded-xl px-3 py-2.5 text-sm bg-white text-verde focus:outline-none focus:ring-2 focus:ring-verde/20 cursor-pointer"
+          aria-label="Ordenar pacientes"
+        >
+          <option value="name_asc">Nome (A–Z)</option>
+          <option value="name_desc">Nome (Z–A)</option>
+          <option value="recent">Mais recentes</option>
+          <option value="oldest">Mais antigos</option>
+        </select>
       </div>
 
       {loading ? (

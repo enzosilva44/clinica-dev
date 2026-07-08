@@ -8,6 +8,8 @@ import { Card } from "../components/ui";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
 import { fmtDateOnly } from "../utils/date";
+import { useIsMobile } from "../hooks/useIsMobile";
+import PatientDetailsMobile from "./patients/PatientDetailsMobile";
 import ProcedureMapTab from "../components/procedure-map/ProcedureMapTab";
 import AnamnesisTab from "../components/anamnesis/AnamnesisTab";
 import SigningModal from "../components/documents/SigningModal";
@@ -30,6 +32,7 @@ export default function PatientDetails() {
   const [procedures, setProcedures] = useState([]);
 
   const [activeTab, setActiveTab] = useState("dashboard");
+  const isMobile = useIsMobile();
   const [clinicalSubTab, setClinicalSubTab] = useState("evolucao");
   const [aiSummaryAt, setAiSummaryAt] = useState(null);
 
@@ -317,6 +320,26 @@ export default function PatientDetails() {
     }
   }
 
+  async function updateBudgetStatus(budgetId, status) {
+    try {
+      await api.patch(`/budgets/${budgetId}/status`, { status });
+      toast.success(status === "aprovado" ? "Orçamento aprovado" : "Status atualizado");
+      loadBudgets();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Erro ao atualizar status");
+    }
+  }
+
+  async function registerBudgetSession(itemId) {
+    try {
+      await api.post(`/budgets/items/${itemId}/sessions`, {});
+      toast.success("Sessão registrada");
+      loadBudgets();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Erro ao registrar sessão");
+    }
+  }
+
   async function sendDocToPatient(docId) {
     try {
       const res = await api.post("/documents/send", { patientId: id, documentId: docId });
@@ -423,6 +446,20 @@ export default function PatientDetails() {
     return (
       <MainLayout>
         <Spinner />
+      </MainLayout>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <MainLayout>
+        <PatientDetailsMobile
+          id={id}
+          patient={patient}
+          patientStats={patientStats}
+          aiSummary={aiSummary}
+          onEdit={() => navigate(`/patients/${id}/edit`)}
+        />
       </MainLayout>
     );
   }
@@ -1403,13 +1440,38 @@ export default function PatientDetails() {
                 <div key={budget.id} className="bg-white border border-creme-200 rounded-xl p-4">
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div>
-                      <h3 className="font-semibold text-verde">{budget.title}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-verde">{budget.title}</h3>
+                        {(() => {
+                          const st = budget.status || "rascunho";
+                          const map = {
+                            rascunho: "bg-gray-100 text-gray-500",
+                            aprovado: "bg-emerald-100 text-emerald-700",
+                            concluido: "bg-verde/15 text-verde",
+                          };
+                          const label = { rascunho: "Rascunho", aprovado: "Aprovado", concluido: "Concluído" };
+                          return (
+                            <span className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${map[st]}`}>
+                              {label[st]}
+                            </span>
+                          );
+                        })()}
+                      </div>
                       <p className="text-xs font-mono text-gray-400 mt-0.5">
                         Criado em {new Date(budget.createdAt).toLocaleDateString("pt-BR")}
                         {budget.validUntil ? ` · válido até ${new Date(budget.validUntil).toLocaleDateString("pt-BR")}` : ""}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
+                      {(budget.status || "rascunho") === "rascunho" && (
+                        <button
+                          onClick={() => updateBudgetStatus(budget.id, "aprovado")}
+                          className="text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition"
+                          title="Aprovar orçamento (libera controle de sessões)"
+                        >
+                          Aprovar
+                        </button>
+                      )}
                       <span className="text-base font-bold font-mono text-verde">
                         {budget.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       </span>
@@ -1424,19 +1486,47 @@ export default function PatientDetails() {
                   </div>
 
                   <div className="divide-y divide-creme-100 border border-creme-100 rounded-xl overflow-hidden">
-                    {budget.items.map((item) => (
-                      <div key={item.id} className="px-3 py-2.5 flex items-center justify-between gap-3 text-sm">
-                        <div className="min-w-0">
-                          <p className="font-medium text-verde truncate">{item.procedureName}</p>
-                          {item.observation && (
-                            <p className="text-xs text-gray-400 truncate">{item.observation}</p>
+                    {budget.items.map((item) => {
+                      const approved = (budget.status || "rascunho") === "aprovado" || budget.status === "concluido";
+                      const done = item.done ?? 0;
+                      const contracted = item.contracted ?? item.quantity;
+                      const remaining = item.remaining ?? Math.max(contracted - done, 0);
+                      return (
+                        <div key={item.id} className="px-3 py-2.5 text-sm">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="font-medium text-verde truncate">{item.procedureName}</p>
+                              {item.observation && (
+                                <p className="text-xs text-gray-400 truncate">{item.observation}</p>
+                              )}
+                            </div>
+                            <span className="text-xs font-mono text-gray-500 shrink-0">
+                              {item.quantity} x {item.unitPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            </span>
+                          </div>
+                          {approved && contracted > 1 && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <div className="flex-1 h-1.5 rounded-full bg-creme-200 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-verde/70"
+                                  style={{ width: `${contracted ? Math.min((done / contracted) * 100, 100) : 0}%` }}
+                                />
+                              </div>
+                              <span className="text-[11px] text-gray-500 shrink-0">
+                                {done}/{contracted} sessões
+                              </span>
+                              <button
+                                onClick={() => registerBudgetSession(item.id)}
+                                disabled={remaining === 0}
+                                className="text-[11px] font-semibold text-verde hover:underline disabled:opacity-40 disabled:no-underline shrink-0"
+                              >
+                                {remaining === 0 ? "completo" : "+ sessão"}
+                              </button>
+                            </div>
                           )}
                         </div>
-                        <span className="text-xs font-mono text-gray-500 shrink-0">
-                          {item.quantity} x {item.unitPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {budget.observations && (

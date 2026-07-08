@@ -11,6 +11,7 @@ import PrivateRoute from "./PrivateRoute";
 import Products from "../pages/Products";
 import Financeiro from "../pages/Financeiro";
 import Clube from "../pages/Clube";
+import Sessoes from "../pages/Sessoes";
 import Documents from "../pages/Documents";
 import Analytics from "../pages/Relatorios";
 import Faturamento from "../pages/Faturamento";
@@ -24,6 +25,7 @@ import FeatureRoute from "./FeatureRoute";
 import Settings from "../pages/Settings";
 import TrocarSenha from "../pages/TrocarSenha";
 import AnamneseModelos from "../pages/AnamneseModelos";
+import Mais from "../pages/Mais";
 
 export default function AppRoutes() {
   return (
@@ -49,6 +51,7 @@ export default function AppRoutes() {
       <Route path="/procedures"        element={<PrivateRoute><Procedures /></PrivateRoute>} />
       <Route path="/financeiro"        element={<PrivateRoute><FeatureRoute feature="financial"><Financeiro /></FeatureRoute></PrivateRoute>} />
       <Route path="/clube"             element={<PrivateRoute><FeatureRoute feature="clube"><Clube /></FeatureRoute></PrivateRoute>} />
+      <Route path="/sessoes"           element={<PrivateRoute><FeatureRoute feature="clube"><Sessoes /></FeatureRoute></PrivateRoute>} />
       <Route path="/documents"         element={<PrivateRoute><FeatureRoute feature="documents"><Documents /></FeatureRoute></PrivateRoute>} />
       <Route path="/anamnese-modelos"  element={<PrivateRoute><AnamneseModelos /></PrivateRoute>} />
       <Route path="/portfolio"         element={<PrivateRoute><FeatureRoute feature="portfolio"><Portfolio /></FeatureRoute></PrivateRoute>} />
@@ -56,6 +59,7 @@ export default function AppRoutes() {
       <Route path="/faturamento"       element={<PrivateRoute><FeatureRoute feature="faturamento"><Faturamento /></FeatureRoute></PrivateRoute>} />
       <Route path="/automacoes"        element={<PrivateRoute><FeatureRoute feature="whatsapp"><Automacoes /></FeatureRoute></PrivateRoute>} />
       <Route path="/settings"          element={<PrivateRoute><Settings /></PrivateRoute>} />
+      <Route path="/mais"              element={<PrivateRoute><Mais /></PrivateRoute>} />
 
       {/* ── Redirects ── */}
       <Route path="/documentos" element={<Navigate to="/documents" replace />} />

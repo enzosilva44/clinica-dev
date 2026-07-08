@@ -14,6 +14,8 @@ import CalendarSidebar from "../components/calendar/CalendarSidebar";
 import "../components/calendar/calendar.css";
 import api from "../services/api";
 import { useFeatures } from "../hooks/useFeatures";
+import { useIsMobile } from "../hooks/useIsMobile";
+import AgendaMobile from "./agenda/AgendaMobile";
 
 const PROFESSIONALS = ["Dra Ana", "Dra Julia", "Dra Camila"];
 const PROFESSIONAL_COLORS = {
@@ -153,6 +155,89 @@ const STATUS_OPTIONS = [
 
 const PAYMENT_METHODS = ["Dinheiro", "PIX", "Cartão de crédito", "Cartão de débito", "Transferência"];
 
+const fmtBRL = (v) =>
+  Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+// Linha de procedimento com autocomplete (busca no catálogo) + qtd + preço editável.
+function ProcedureRow({ item, index, procedures, onSelect, onChange, onRemove }) {
+  const [query, setQuery] = useState(item.procedureName || "");
+  const [open, setOpen] = useState(false);
+
+  const options = query
+    ? procedures.filter(
+        (p) => !p.isDefault && p.name.toLowerCase().includes(query.toLowerCase())
+      )
+    : procedures.filter((p) => !p.isDefault);
+
+  const lineTotal = (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0);
+
+  return (
+    <div className="bg-white border border-creme-200 rounded-xl p-3">
+      <div className="flex items-start gap-2">
+        {/* autocomplete de procedimento */}
+        <div className="relative flex-1">
+          <input
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); onChange({ procedureName: e.target.value, procedureId: null }); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setTimeout(() => setOpen(false), 150)}
+            placeholder="Buscar procedimento…"
+            className="w-full border border-ambar rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+          />
+          {open && options.length > 0 && (
+            <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-creme-200 rounded-lg shadow-lg max-h-44 overflow-y-auto">
+              {options.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { onSelect(p); setQuery(p.name); setOpen(false); }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-creme-50 flex items-center justify-between gap-2"
+                >
+                  <span className="truncate">{p.name}{p.duration ? ` (${p.duration}min)` : ""}</span>
+                  {p.price != null && <span className="text-xs text-gray-400 shrink-0">{fmtBRL(p.price)}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="text-gray-300 hover:text-red-500 transition p-2 shrink-0"
+          aria-label="Remover procedimento"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+      <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-1.5">
+          <label className="text-[11px] text-gray-400">Qtd</label>
+          <input
+            type="number" min="1"
+            value={item.quantity}
+            onChange={(e) => onChange({ quantity: Math.max(1, Number(e.target.value) || 1) })}
+            className="w-14 border border-ambar rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-verde/20"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 flex-1">
+          <label className="text-[11px] text-gray-400">R$</label>
+          <input
+            type="number" min="0" step="0.01"
+            value={item.unitPrice}
+            onChange={(e) => onChange({ unitPrice: Number(e.target.value) || 0 })}
+            placeholder="0,00"
+            className="w-full border border-ambar rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+          />
+        </div>
+        <span className="text-sm font-semibold text-verde-900 shrink-0 min-w-[72px] text-right">
+          {fmtBRL(lineTotal)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function emptyForm() {
   return {
     title: "",
@@ -161,6 +246,9 @@ function emptyForm() {
     patientId: "",
     professional: "Dra Ana",
     procedureType: "",
+    // Lista de procedimentos do agendamento: { procedureId, procedureName, quantity, unitPrice }
+    procedures: [],
+    packageRef: "", // "origin:itemId:memberId" do pacote vinculado (opcional)
     notes: "",
     status: "SCHEDULED",
     selectedDate: "",
@@ -199,12 +287,14 @@ function getInitialScrollTime(date = new Date()) {
 export default function Agenda() {
   const features    = useFeatures();
   const navigate    = useNavigate();
+  const isMobile    = useIsMobile();
   const calendarRef = useRef(null);
   const idempotencyKeyRef = useRef(null);
   const [now, setNow] = useState(new Date());
   const [allEvents, setAllEvents] = useState([]);
   const [events, setEvents] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [patientPackages, setPatientPackages] = useState([]);
   const [procedures, setProcedures] = useState([]);
   const [cardFees, setCardFees] = useState([]);
   const [selectedProfessionals, setSelectedProfessionals] = useState([...PROFESSIONALS]);
@@ -243,6 +333,39 @@ export default function Agenda() {
     setPatientSearch(p.name);
     setShowPatientDrop(false);
   }
+
+  // ── Procedimentos do agendamento (múltiplos) ──
+  function addProcedure() {
+    setForm((prev) => ({
+      ...prev,
+      procedures: [...prev.procedures, { procedureId: null, procedureName: "", quantity: 1, unitPrice: 0 }],
+    }));
+  }
+
+  function removeProcedure(idx) {
+    setForm((prev) => ({ ...prev, procedures: prev.procedures.filter((_, i) => i !== idx) }));
+  }
+
+  function updateProcedure(idx, patch) {
+    setForm((prev) => ({
+      ...prev,
+      procedures: prev.procedures.map((it, i) => (i === idx ? { ...it, ...patch } : it)),
+    }));
+  }
+
+  // Ao escolher um procedimento do catálogo, preenche nome/id e o preço sugerido.
+  function selectProcedureForRow(idx, proc) {
+    updateProcedure(idx, {
+      procedureId: proc.id,
+      procedureName: proc.name,
+      unitPrice: proc.price ?? 0,
+    });
+  }
+
+  const proceduresTotal = form.procedures.reduce(
+    (s, i) => s + (Number(i.quantity) || 1) * (Number(i.unitPrice) || 0),
+    0
+  );
 
   function interpolate(body, vars) {
     return body.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? `{{${k}}}`);
@@ -287,6 +410,7 @@ export default function Agenda() {
             recurrenceRule: a.recurrenceRule ?? null,
             professional: a.professional,
             procedureType: a.procedureType,
+            procedures: a.procedures ?? [],
             notes: a.notes,
             status: a.status,
             statusColor,
@@ -294,6 +418,9 @@ export default function Agenda() {
             patientName: a.patient?.name ?? null,
             patientPhone: a.patient?.phone ?? null,
             patientId: a.patientId ?? null,
+            packageOrigin: a.packageOrigin ?? null,
+            packageItemId: a.packageItemId ?? null,
+            packageMemberId: a.packageMemberId ?? null,
             transaction: a.transaction ?? null,
           },
         };
@@ -385,13 +512,15 @@ export default function Agenda() {
     return () => clearInterval(timer);
   }, []);
 
-  // auto-preenche valor ao selecionar procedimento
+  // auto-preenche o valor financeiro com a SOMA dos procedimentos (continua editável).
   useEffect(() => {
-    if (!editing && form.procedureType) {
-      const proc = procedures.find((p) => p.name === form.procedureType);
-      if (proc?.price) setForm((prev) => ({ ...prev, txAmount: String(proc.price) }));
-    }
-  }, [form.procedureType]);
+    if (editing) return;
+    const total = form.procedures.reduce(
+      (s, i) => s + (Number(i.quantity) || 1) * (Number(i.unitPrice) || 0),
+      0
+    );
+    setForm((prev) => ({ ...prev, txAmount: total > 0 ? String(total) : "" }));
+  }, [form.procedures]);
 
   useEffect(() => {
     if (!editing && sendWhatsApp && form.patientId && form.selectedDate) {
@@ -399,6 +528,16 @@ export default function Agenda() {
       setWhatsappMessage(buildWhatsAppMessage(confirmTemplate, patientName, form.selectedDate));
     }
   }, [form.patientId, form.selectedDate]);
+
+  // Pacotes de sessão ativos do paciente selecionado (p/ vincular o agendamento).
+  useEffect(() => {
+    if (!form.patientId) { setPatientPackages([]); return; }
+    let cancelled = false;
+    api.get(`/packages/overview?patientId=${form.patientId}`)
+      .then(({ data }) => { if (!cancelled) setPatientPackages(data.filter((p) => p.remaining > 0)); })
+      .catch(() => { if (!cancelled) setPatientPackages([]); });
+    return () => { cancelled = true; };
+  }, [form.patientId]);
 
   useEffect(() => {
     let list = allEvents.filter((e) =>
@@ -461,6 +600,27 @@ export default function Agenda() {
       patientId: event.extendedProps.patientId || "",
       professional: event.extendedProps.professional || "",
       procedureType: event.extendedProps.procedureType || "",
+      procedures: (() => {
+        const list = event.extendedProps.procedures;
+        if (Array.isArray(list) && list.length > 0) {
+          return list.map((p) => ({
+            procedureId: p.procedureId || null,
+            procedureName: p.procedureName || "",
+            quantity: p.quantity || 1,
+            unitPrice: p.unitPrice ?? 0,
+          }));
+        }
+        // Fallback: agendamento antigo com procedureType único.
+        const pt = event.extendedProps.procedureType;
+        if (pt) {
+          const proc = procedures.find((p) => p.name === pt);
+          return [{ procedureId: proc?.id || null, procedureName: pt, quantity: 1, unitPrice: proc?.price ?? 0 }];
+        }
+        return [];
+      })(),
+      packageRef: event.extendedProps.packageOrigin
+        ? `${event.extendedProps.packageOrigin}:${event.extendedProps.packageItemId || ""}:${event.extendedProps.packageMemberId || ""}`
+        : "",
       notes: event.extendedProps.notes || "",
       status: event.extendedProps.status || "SCHEDULED",
       selectedDate: formatForInput(event.start),
@@ -495,6 +655,25 @@ export default function Agenda() {
         bloqueio: "Bloqueio", lembrete: "Lembrete", compromisso: "Compromisso",
       }[cat] || "Agendamento";
 
+      // Procedimentos normalizados p/ envio (só os com nome preenchido).
+      const proceduresPayload = form.procedures
+        .filter((i) => i.procedureName?.trim())
+        .map((i) => ({
+          procedureId: i.procedureId || null,
+          procedureName: i.procedureName.trim(),
+          quantity: Number(i.quantity) || 1,
+          unitPrice: Number(i.unitPrice) || 0,
+        }));
+      const mainProcedureType = proceduresPayload[0]?.procedureName || "";
+
+      // Vínculo de pacote (opcional): "origin:itemId:memberId".
+      const [pkgOrigin = "", pkgItemId = "", pkgMemberId = ""] = (form.packageRef || "").split(":");
+      const packageFields = isSimple ? {} : {
+        packageOrigin: pkgOrigin || null,
+        packageItemId: pkgItemId || null,
+        packageMemberId: pkgMemberId || null,
+      };
+
       if (editing) {
         await api.put(`/appointments/${editing.id}`, {
           title: form.title,
@@ -502,11 +681,13 @@ export default function Agenda() {
           startsAt: start,
           endsAt,
           professional: isSimple ? undefined : form.professional,
-          procedureType: isSimple ? undefined : form.procedureType,
+          procedureType: isSimple ? undefined : mainProcedureType,
+          procedures: isSimple ? undefined : proceduresPayload,
           notes: form.notes,
           status: isSimple ? undefined : form.status,
           category: cat,
           recurrenceRule: isRecorrente ? recurrenceRule : null,
+          ...packageFields,
         });
         toast.success(`${okMsg} atualizado`);
       } else {
@@ -520,10 +701,12 @@ export default function Agenda() {
           professional: isSimple ? undefined : form.professional,
           color: isSimple ? CATEGORY_COLORS[cat] : PROFESSIONAL_COLORS[form.professional],
           notes: form.notes,
-          procedureType: isSimple ? undefined : form.procedureType,
+          procedureType: isSimple ? undefined : mainProcedureType,
+          procedures: isSimple ? undefined : proceduresPayload,
           status: isSimple ? undefined : form.status,
           category: cat,
           recurrenceRule,
+          ...packageFields,
           idempotencyKey: idempotencyKeyRef.current,
           txAmount: isSimple ? undefined : (form.txAmount || undefined),
           txPaymentMethod: isSimple ? undefined : (form.txPaymentMethod || undefined),
@@ -655,6 +838,13 @@ export default function Agenda() {
 
   return (
     <MainLayout>
+      {isMobile ? (
+        <AgendaMobile
+          events={allEvents}
+          onNewAppointment={() => openCreate()}
+          onEventClick={openEdit}
+        />
+      ) : (
       <div className="flex gap-5 h-[calc(100vh-90px)]">
         {/* SIDEBAR */}
         <CalendarSidebar
@@ -772,8 +962,13 @@ export default function Agenda() {
               }}
               eventContent={(info) => {
                 const isMonth = info.view.type === "dayGridMonth";
-                const { patientName, procedureType, professional, professionalColor, statusColor } = info.event.extendedProps;
+                const { patientName, procedureType, procedures, professional, professionalColor, statusColor } = info.event.extendedProps;
                 const textColor = statusColor || info.event.backgroundColor || "#0A3326";
+                // Rótulo de procedimentos: 1º nome + "+N" se houver vários; senão o legado.
+                const procLabel =
+                  Array.isArray(procedures) && procedures.length > 0
+                    ? procedures[0].procedureName + (procedures.length > 1 ? ` +${procedures.length - 1}` : "")
+                    : procedureType;
                 if (isMonth) {
                   return (
                     <div className="px-1.5 py-0.5 w-full overflow-hidden">
@@ -798,9 +993,9 @@ export default function Agenda() {
                         {patientName}
                       </p>
                     )}
-                    {procedureType && (
+                    {procLabel && (
                       <p className="truncate leading-tight text-[10px] opacity-60" style={{ color: textColor }}>
-                        {procedureType}
+                        {procLabel}
                       </p>
                     )}
                     {professional && (
@@ -821,6 +1016,7 @@ export default function Agenda() {
           </Card>
         </div>
       </div>
+      )}
 
       {/* MODAL DE RETORNO */}
       {returnSuggestion && (
@@ -1068,19 +1264,87 @@ export default function Agenda() {
 
               {!isSimple && (
               <div>
-                <label className="text-xs font-medium text-gray-500 block mb-1.5">Procedimento</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-gray-500">
+                    Procedimentos{form.procedures.length > 0 ? ` (${form.procedures.length})` : ""}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addProcedure}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-verde hover:text-verde-900 transition"
+                  >
+                    <Plus size={14} /> Adicionar
+                  </button>
+                </div>
+
+                {form.procedures.length === 0 ? (
+                  <button
+                    type="button"
+                    onClick={addProcedure}
+                    className="w-full border border-dashed border-ambar rounded-xl p-3 text-sm text-gray-400 hover:bg-creme-50 transition flex items-center justify-center gap-1.5"
+                  >
+                    <Plus size={15} /> Adicionar procedimento
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    {form.procedures.map((item, idx) => (
+                      <ProcedureRow
+                        key={idx}
+                        item={item}
+                        index={idx}
+                        procedures={procedures}
+                        onSelect={(p) => selectProcedureForRow(idx, p)}
+                        onChange={(patch) => updateProcedure(idx, patch)}
+                        onRemove={() => removeProcedure(idx)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* resumo financeiro dos procedimentos */}
+                {form.procedures.length > 0 && (
+                  <div className="mt-2 bg-creme-50 border border-creme-200 rounded-xl px-3.5 py-2.5 space-y-1">
+                    {form.procedures.filter((i) => i.procedureName).map((i, idx) => (
+                      <div key={idx} className="flex justify-between text-[12px] text-gray-500">
+                        <span className="truncate pr-2">
+                          {i.procedureName}
+                          {Number(i.quantity) > 1 ? ` ×${i.quantity}` : ""}
+                        </span>
+                        <span className="shrink-0">{fmtBRL((Number(i.quantity) || 1) * (Number(i.unitPrice) || 0))}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between text-sm font-bold text-verde-900 pt-1.5 border-t border-creme-200">
+                      <span>Total</span>
+                      <span>{fmtBRL(proceduresTotal)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              )}
+
+              {!isSimple && patientPackages.length > 0 && (
+              <div>
+                <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                  Vincular a pacote de sessões
+                </label>
                 <select
-                  value={form.procedureType}
-                  onChange={f("procedureType")}
-                  className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                  value={form.packageRef}
+                  onChange={(e) => setForm((prev) => ({ ...prev, packageRef: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-creme-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-verde/30"
                 >
-                  <option value="">Selecione o procedimento</option>
-                  {procedures.filter((p) => !p.isDefault).map((p) => (
-                    <option key={p.id} value={p.name}>
-                      {p.name}{p.duration ? ` (${p.duration} min)` : ""}
+                  <option value="">Nenhum (avulso)</option>
+                  {patientPackages.map((p) => (
+                    <option
+                      key={`${p.origin}:${p.itemId}:${p.sourceId}`}
+                      value={`${p.origin}:${p.itemId}:${p.origin === "club" ? p.sourceId : ""}`}
+                    >
+                      {p.origin === "club" ? "Clube" : "Orçamento"} · {p.procedureName} ({p.remaining} restante{p.remaining > 1 ? "s" : ""})
                     </option>
                   ))}
                 </select>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  A sessão é descontada do pacote quando o agendamento for concluído.
+                </p>
               </div>
               )}
 
