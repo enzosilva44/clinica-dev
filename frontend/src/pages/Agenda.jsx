@@ -248,6 +248,7 @@ function emptyForm() {
     procedureType: "",
     // Lista de procedimentos do agendamento: { procedureId, procedureName, quantity, unitPrice }
     procedures: [],
+    inPackage: false, // "faz parte de um pacote?" (sim/nao)
     packageRef: "", // "origin:itemId:memberId" do pacote vinculado (opcional)
     notes: "",
     status: "SCHEDULED",
@@ -618,6 +619,7 @@ export default function Agenda() {
         }
         return [];
       })(),
+      inPackage: !!event.extendedProps.packageOrigin,
       packageRef: event.extendedProps.packageOrigin
         ? `${event.extendedProps.packageOrigin}:${event.extendedProps.packageItemId || ""}:${event.extendedProps.packageMemberId || ""}`
         : "",
@@ -1322,29 +1324,56 @@ export default function Agenda() {
               </div>
               )}
 
-              {!isSimple && patientPackages.length > 0 && (
+              {!isSimple && form.patientId && (
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">
-                  Vincular a pacote de sessões
+                  Faz parte de um pacote de sessões?
                 </label>
-                <select
-                  value={form.packageRef}
-                  onChange={(e) => setForm((prev) => ({ ...prev, packageRef: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-creme-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-verde/30"
-                >
-                  <option value="">Nenhum (avulso)</option>
-                  {patientPackages.map((p) => (
-                    <option
-                      key={`${p.origin}:${p.itemId}:${p.sourceId}`}
-                      value={`${p.origin}:${p.itemId}:${p.origin === "club" ? p.sourceId : ""}`}
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[{ v: false, l: "Não (avulso)" }, { v: true, l: "Sim" }].map(({ v, l }) => (
+                    <button
+                      key={String(v)}
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, inPackage: v, packageRef: v ? prev.packageRef : "" }))}
+                      className={`py-2 rounded-xl text-xs font-medium transition border ${
+                        form.inPackage === v
+                          ? "border-verde bg-verde text-white"
+                          : "border-ambar text-verde hover:bg-creme-100"
+                      }`}
                     >
-                      {p.origin === "club" ? "Clube" : "Orçamento"} · {p.procedureName} ({p.remaining} restante{p.remaining > 1 ? "s" : ""})
-                    </option>
+                      {l}
+                    </button>
                   ))}
-                </select>
-                <p className="text-[11px] text-gray-400 mt-1">
-                  A sessão é descontada do pacote quando o agendamento for concluído.
-                </p>
+                </div>
+
+                {form.inPackage && (
+                  patientPackages.length > 0 ? (
+                    <>
+                      <select
+                        value={form.packageRef}
+                        onChange={(e) => setForm((prev) => ({ ...prev, packageRef: e.target.value }))}
+                        className="w-full mt-2 px-3 py-2 rounded-xl border border-creme-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-verde/30"
+                      >
+                        <option value="">Selecione o pacote…</option>
+                        {patientPackages.map((p) => (
+                          <option
+                            key={`${p.origin}:${p.itemId}:${p.sourceId}`}
+                            value={`${p.origin}:${p.itemId}:${p.origin === "club" ? p.sourceId : ""}`}
+                          >
+                            {p.origin === "club" ? "Clube" : "Orçamento"} · {p.procedureName} ({p.remaining} restante{p.remaining > 1 ? "s" : ""})
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[11px] text-gray-400 mt-1">
+                        A sessão é descontada do pacote quando o agendamento for concluído.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-[11px] text-amber-600 mt-2">
+                      Este paciente não tem pacotes com saldo. Crie/aprove um orçamento marcado como pacote, ou uma assinatura do Clube.
+                    </p>
+                  )
+                )}
               </div>
               )}
 

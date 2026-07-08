@@ -130,6 +130,7 @@ model Budget {
   total          Float         @default(0)
   observations   String?
   status         String        @default("rascunho") // rascunho | aprovado | concluido
+  isPackage      Boolean       @default(false) // true = pacote de sessoes (aparece em /sessoes); false = avulso
   idempotencyKey String?       @unique
   patientId      String
   userId         String

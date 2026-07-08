@@ -61,6 +61,7 @@ export default function PatientDetails() {
     validUntil: "",
     discount: 0,
     observations: "",
+    isPackage: false,
     txPaymentMethod: "",
     txInstallments: "1",
     txDueDate: "",
@@ -209,6 +210,7 @@ export default function PatientDetails() {
       validUntil: "",
       discount: 0,
       observations: "",
+      isPackage: false,
       txPaymentMethod: "",
       txInstallments: "1",
       txDueDate: "",
@@ -283,6 +285,7 @@ export default function PatientDetails() {
         validUntil: budgetForm.validUntil || null,
         discount: Number(budgetForm.discount) || 0,
         observations: budgetForm.observations,
+        isPackage: budgetForm.isPackage,
         idempotencyKey: budgetKeyRef.current,
         txPaymentMethod: budgetForm.txPaymentMethod || null,
         txInstallments: Number(budgetForm.txInstallments) > 1 ? Number(budgetForm.txInstallments) : undefined,
@@ -1222,6 +1225,34 @@ export default function PatientDetails() {
                   </div>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => setBudgetForm((current) => ({ ...current, isPackage: !current.isPackage }))}
+                  className={`w-full flex items-center gap-3 rounded-xl p-3 border text-left transition ${
+                    budgetForm.isPackage
+                      ? "border-verde bg-verde/5"
+                      : "border-ambar hover:bg-creme-50"
+                  }`}
+                >
+                  <span
+                    className={`w-10 h-6 rounded-full flex items-center px-0.5 transition shrink-0 ${
+                      budgetForm.isPackage ? "bg-verde justify-end" : "bg-gray-300 justify-start"
+                    }`}
+                  >
+                    <span className="w-5 h-5 rounded-full bg-white shadow" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-verde">
+                      Este orçamento é um pacote de sessões?
+                    </span>
+                    <span className="block text-xs text-gray-500">
+                      {budgetForm.isPackage
+                        ? "Sim — após aprovado, aparecerá em Sessões para controlar contratadas/realizadas/restantes."
+                        : "Não — sessão única/avulsa. Não entra no controle de Sessões."}
+                    </span>
+                  </span>
+                </button>
+
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-bold text-verde">Itens do orçamento</h3>
@@ -1456,6 +1487,11 @@ export default function PatientDetails() {
                             </span>
                           );
                         })()}
+                        {budget.isPackage && (
+                          <span className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-verde/15 text-verde">
+                            Pacote
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs font-mono text-gray-400 mt-0.5">
                         Criado em {new Date(budget.createdAt).toLocaleDateString("pt-BR")}
@@ -1487,7 +1523,7 @@ export default function PatientDetails() {
 
                   <div className="divide-y divide-creme-100 border border-creme-100 rounded-xl overflow-hidden">
                     {budget.items.map((item) => {
-                      const approved = (budget.status || "rascunho") === "aprovado" || budget.status === "concluido";
+                      const approved = budget.isPackage && ((budget.status || "rascunho") === "aprovado" || budget.status === "concluido");
                       const done = item.done ?? 0;
                       const contracted = item.contracted ?? item.quantity;
                       const remaining = item.remaining ?? Math.max(contracted - done, 0);
@@ -1504,7 +1540,7 @@ export default function PatientDetails() {
                               {item.quantity} x {item.unitPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                             </span>
                           </div>
-                          {approved && contracted > 1 && (
+                          {approved && (
                             <div className="flex items-center gap-2 mt-2">
                               <div className="flex-1 h-1.5 rounded-full bg-creme-200 overflow-hidden">
                                 <div

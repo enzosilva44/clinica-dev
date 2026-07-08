@@ -11,7 +11,7 @@ export async function getOverview(userId, { patientId } = {}) {
   const memberWhere = { userId, status: "ativo" };
   if (patientId) memberWhere.patientId = patientId;
 
-  const budgetWhere = { userId, status: "aprovado" };
+  const budgetWhere = { userId, status: "aprovado", isPackage: true };
   if (patientId) budgetWhere.patientId = patientId;
 
   const [members, budgets] = await Promise.all([

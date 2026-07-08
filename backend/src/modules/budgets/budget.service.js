@@ -57,6 +57,9 @@ export async function registerSession(budgetItemId, userId, data = {}) {
     include: { budget: true, sessions: true },
   });
   if (!item) throw new Error("Item de orçamento não encontrado");
+  if (!item.budget.isPackage) {
+    throw new Error("Este orçamento não é um pacote de sessões");
+  }
   if (item.budget.status !== "aprovado") {
     throw new Error("O orçamento precisa estar aprovado para registrar sessões");
   }
@@ -135,6 +138,7 @@ export async function create(data, userId) {
         total,
         observations: data.observations || null,
         status: BUDGET_STATUSES.includes(data.status) ? data.status : "rascunho",
+        isPackage: Boolean(data.isPackage),
         idempotencyKey,
         patientId: data.patientId,
         userId,

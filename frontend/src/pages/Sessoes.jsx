@@ -64,6 +64,15 @@ function PackageCard({ pkg, onRegister, onRemoveSession, busy }) {
 
       <ProgressBar done={pkg.done} contracted={pkg.contracted} />
 
+      <div className="flex items-center justify-between text-[11px] text-gray-500">
+        <span>
+          <b className="text-verde-900">{pkg.contracted}</b> contratadas · <b className="text-verde-900">{pkg.done}</b> feitas · <b className="text-verde-900">{remaining}</b> restantes
+        </span>
+        {pkg.sessions.length > 0 && (
+          <span className="text-gray-400 shrink-0">última: {formatDate(pkg.sessions[0].performedAt)}</span>
+        )}
+      </div>
+
       <div className="flex items-center justify-between gap-2">
         <span className={`text-xs font-medium ${remaining === 0 ? "text-verde" : "text-gray-600"}`}>
           {remaining === 0 ? (
