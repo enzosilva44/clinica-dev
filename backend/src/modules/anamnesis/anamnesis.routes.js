@@ -138,6 +138,9 @@ router.post("/responses/:id/finalize", async (req, res) => {
 
     // Permite atualizar respostas no momento de finalizar
     const answers = req.body.answers ?? response.answers ?? {};
+    // forSignature=true → documento entra PENDENTE, pra ser assinado pelo paciente.
+    // Caso contrário mantém o comportamento antigo (arquiva já como assinado pelo profissional).
+    const forSignature = req.body.forSignature === true;
 
     const pdfBytes = await buildAnamnesisPdf({
       patientName: response.patient.name,
@@ -172,8 +175,9 @@ router.post("/responses/:id/finalize", async (req, res) => {
         documentId: doc.id,
         patientId: response.patientId,
         userId: req.user.id,
-        status: "signed",
-        signedFilePath: filePath,
+        ...(forSignature
+          ? { status: "pending" }
+          : { status: "signed", signedFilePath: filePath }),
       },
     });
 

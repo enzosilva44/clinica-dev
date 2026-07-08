@@ -50,6 +50,13 @@ export async function registerApplication(req, res) {
   } catch (e) { return res.status(400).json({ error: sanitizeError(e) }); }
 }
 
+export async function removeApplication(req, res) {
+  try {
+    await clubService.removeApplication(req.params.id, req.user.id);
+    return res.status(204).send();
+  } catch (e) { return res.status(400).json({ error: sanitizeError(e) }); }
+}
+
 // Alertas
 export async function getAlerts(req, res) {
   try {

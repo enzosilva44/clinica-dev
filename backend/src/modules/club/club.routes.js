@@ -19,6 +19,7 @@ router.patch("/members/:id/status", clubController.updateMemberStatus);
 
 // Aplicações
 router.post("/members/:memberId/applications", clubController.registerApplication);
+router.delete("/applications/:id", clubController.removeApplication);
 
 // Alertas
 router.get("/alerts", clubController.getAlerts);

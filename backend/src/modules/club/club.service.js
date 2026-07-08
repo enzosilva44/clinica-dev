@@ -65,11 +65,25 @@ export async function deletePlan(id, userId) {
 
 // ─── MEMBROS ─────────────────────────────────────────────────────────────────
 
+// Anexa saldo (contratado − realizado = restante) por item do plano a cada membro.
+function withBalances(member) {
+  const items = member.plan.items.map((item) => {
+    const done = member.applications.filter((a) => a.planItemId === item.id).length;
+    return {
+      ...item,
+      contracted: item.quantity,
+      done,
+      remaining: Math.max(item.quantity - done, 0),
+    };
+  });
+  return { ...member, plan: { ...member.plan, items } };
+}
+
 export async function findAllMembers(userId, filters = {}) {
   const where = { userId };
   if (filters.status) where.status = filters.status;
 
-  return prisma.clubMember.findMany({
+  const members = await prisma.clubMember.findMany({
     where,
     include: {
       patient: { select: { id: true, name: true, phone: true } },
@@ -78,6 +92,8 @@ export async function findAllMembers(userId, filters = {}) {
     },
     orderBy: { createdAt: "desc" },
   });
+
+  return members.map(withBalances);
 }
 
 export async function createMember(userId, data) {
@@ -139,11 +155,21 @@ export async function registerApplication(memberId, userId, data) {
     data: {
       memberId,
       planItemId: data.planItemId,
+      appointmentId: data.appointmentId || null,
       appliedAt,
       nextDueAt,
       notes: data.notes || null,
     },
   });
+}
+
+// Remove uma aplicação (devolve saldo). Valida ownership via member.
+export async function removeApplication(id, userId) {
+  const app = await prisma.clubApplication.findFirst({
+    where: { id, member: { userId } },
+  });
+  if (!app) throw new Error("Aplicação não encontrada");
+  return prisma.clubApplication.delete({ where: { id } });
 }
 
 // ─── ALERTAS ─────────────────────────────────────────────────────────────────

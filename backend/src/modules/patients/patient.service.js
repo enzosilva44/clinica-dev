@@ -54,15 +54,27 @@ export async function create(
   return patient;
 }
 
+// Mapeia a opção de ordenação escolhida na UI para o orderBy do Prisma.
+// Default "recent" preserva o comportamento antigo (mais recentes primeiro).
+const SORT_OPTIONS = {
+  recent:    { createdAt: "desc" },
+  oldest:    { createdAt: "asc" },
+  name_asc:  { name: "asc" },
+  name_desc: { name: "desc" },
+};
+
 export async function findAll({
   userId,
   page,
   search,
   status,
+  sortBy = "recent",
 }) {
   const limit = 10;
 
   const skip = (page - 1) * limit;
+
+  const orderBy = SORT_OPTIONS[sortBy] || SORT_OPTIONS.recent;
 
   const where = {
     userId,
@@ -113,9 +125,7 @@ export async function findAll({
           },
         },
 
-        orderBy: {
-          createdAt: "desc",
-        },
+        orderBy,
       }),
 
       prisma.patient.count({

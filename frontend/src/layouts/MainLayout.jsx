@@ -2,9 +2,22 @@ import { useState } from "react";
 import { Menu } from "lucide-react";
 import Sidebar from "../components/sidebar/Sidebar";
 import HelpChat from "../components/ai/HelpChat";
+import { useIsMobile } from "../hooks/useIsMobile";
+import MobileTabBar from "../components/mobile/MobileTabBar";
 
 export default function MainLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  // No mobile: sem sidebar/hambúrguer; navegação pela tab bar inferior.
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-creme-50 text-[#1F2937]">
+        <main className="min-h-screen pb-20">{children}</main>
+        <MobileTabBar />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-creme-50 text-[#1F2937]">

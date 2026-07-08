@@ -80,6 +80,7 @@ model User {
   anamnesisTemplates    AnamnesisTemplate[]
   anamnesisResponses    AnamnesisResponse[]
   cardFees              CardFee[]
+  portfolioCases        PortfolioCase[]
   clinic                Clinic?              @relation(fields: [clinicId], references: [id])
 }
 
@@ -117,6 +118,7 @@ model Patient {
   procedureMaps    ProcedureMap[]
   transactions     Transaction[]
   anamnesisResponses AnamnesisResponse[]
+  portfolioCases   PortfolioCase[]
 }
 
 model Budget {
@@ -127,6 +129,7 @@ model Budget {
   discount       Float         @default(0)
   total          Float         @default(0)
   observations   String?
+  status         String        @default("rascunho") // rascunho | aprovado | concluido
   idempotencyKey String?       @unique
   patientId      String
   userId         String
@@ -149,6 +152,24 @@ model BudgetItem {
   budgetId      String
   createdAt     DateTime @default(now())
   budget        Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  sessions      BudgetSession[]
+}
+
+// Uma sessão realizada de um item de orçamento aprovado (pacote flexível).
+// Espelha ClubApplication (consumo do Club). appointmentId liga a sessão ao
+// agendamento que a consumiu (opcional: sessão pode ser registrada manualmente).
+model BudgetSession {
+  id           String       @id @default(cuid())
+  budgetItemId String
+  appointmentId String?
+  performedAt  DateTime     @default(now())
+  notes        String?
+  createdAt    DateTime     @default(now())
+  budgetItem   BudgetItem   @relation(fields: [budgetItemId], references: [id], onDelete: Cascade)
+  appointment  Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([budgetItemId])
+  @@index([appointmentId])
 }
 
 model Appointment {
@@ -170,9 +191,34 @@ model Appointment {
   isAllDay       Boolean      @default(false)
   recurrenceRule String?      // RRULE (ex: FREQ=WEEKLY;INTERVAL=1) p/ compromissos recorrentes
   parentAppointmentId String?  // liga o retorno ao agendamento de origem
+  // Vínculo opcional com um pacote de sessões (item 6/7). Ao concluir o
+  // agendamento, consome 1 sessão do pacote correspondente.
+  packageOrigin  String?      // "club" | "budget"
+  packageItemId  String?      // planItemId (club) ou budgetItemId (budget)
+  packageMemberId String?     // memberId (só club)
   patient        Patient?     @relation(fields: [patientId], references: [id])
   user           User         @relation(fields: [userId], references: [id])
   transaction    Transaction?
+  procedures     AppointmentProcedure[]
+  budgetSessions   BudgetSession[]
+  clubApplications ClubApplication[]
+}
+
+// Um procedimento dentro de um agendamento (permite vários por atendimento).
+// Espelha o padrão de BudgetItem. procedureType (string) em Appointment segue
+// preenchido com o 1º procedimento p/ compatibilidade com dados/código antigos.
+model AppointmentProcedure {
+  id            String      @id @default(cuid())
+  appointmentId String
+  procedureId   String?     // nullable: procedimento pode ter sido removido do catálogo
+  procedureName String      // snapshot do nome (compat + histórico)
+  quantity      Int         @default(1)
+  unitPrice     Float       @default(0)
+  total         Float       @default(0)
+  createdAt     DateTime    @default(now())
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
 }
 
 model Evolution {
@@ -334,15 +380,19 @@ model ClubMember {
 }
 
 model ClubApplication {
-  id         String       @id @default(cuid())
-  memberId   String
-  planItemId String
-  appliedAt  DateTime
-  nextDueAt  DateTime
-  notes      String?
-  createdAt  DateTime     @default(now())
-  member     ClubMember   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  planItem   ClubPlanItem @relation(fields: [planItemId], references: [id])
+  id            String       @id @default(cuid())
+  memberId      String
+  planItemId    String
+  appointmentId String?
+  appliedAt     DateTime
+  nextDueAt     DateTime
+  notes         String?
+  createdAt     DateTime     @default(now())
+  member        ClubMember   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  planItem      ClubPlanItem @relation(fields: [planItemId], references: [id])
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([appointmentId])
 }
 
 model Transaction {
@@ -388,6 +438,26 @@ model PatientPhoto {
   createdAt DateTime @default(now())
   patient   Patient  @relation(fields: [patientId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
+}
+
+// Case salvo do portfólio (vitrine interna de antes/depois).
+// Guarda o par de fotos (referência a PatientPhoto) + metadados do case.
+model PortfolioCase {
+  id            String   @id @default(cuid())
+  title         String?
+  procedureName String?
+  caption       String?  // legenda/descrição do resultado
+  featured      Boolean  @default(false)
+  beforePhotoId String
+  afterPhotoId  String
+  patientId     String
+  userId        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Document {

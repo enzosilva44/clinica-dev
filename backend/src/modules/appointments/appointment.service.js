@@ -1,6 +1,96 @@
 import { prisma } from "../../config/prisma.js";
 import { createPending } from "../financial/transaction.service.js";
 
+const COMPLETED_STATUSES = ["COMPLETED", "FINISHED"];
+
+// Consome 1 sessão do pacote vinculado ao agendamento (ao concluir).
+// Idempotente: se já existe uma sessão criada por este appointment, não duplica.
+async function consumePackageSession(appt, userId) {
+  if (!appt.packageOrigin || !appt.packageItemId) return;
+
+  if (appt.packageOrigin === "budget") {
+    const already = await prisma.budgetSession.findFirst({
+      where: { appointmentId: appt.id, budgetItemId: appt.packageItemId },
+    });
+    if (already) return;
+    const item = await prisma.budgetItem.findFirst({
+      where: { id: appt.packageItemId, budget: { userId, status: "aprovado" } },
+      include: { _count: { select: { sessions: true } } },
+    });
+    if (!item || item._count.sessions >= item.quantity) return;
+    await prisma.budgetSession.create({
+      data: {
+        budgetItemId: appt.packageItemId,
+        appointmentId: appt.id,
+        performedAt: new Date(),
+      },
+    });
+  } else if (appt.packageOrigin === "club" && appt.packageMemberId) {
+    const already = await prisma.clubApplication.findFirst({
+      where: { appointmentId: appt.id, planItemId: appt.packageItemId },
+    });
+    if (already) return;
+    const member = await prisma.clubMember.findFirst({
+      where: { id: appt.packageMemberId, userId },
+      include: { plan: { include: { items: true } } },
+    });
+    const planItem = member?.plan.items.find((i) => i.id === appt.packageItemId);
+    if (!member || !planItem) return;
+    const done = await prisma.clubApplication.count({
+      where: { memberId: member.id, planItemId: planItem.id },
+    });
+    if (done >= planItem.quantity) return;
+    const appliedAt = new Date();
+    const nextDueAt = new Date(appliedAt);
+    nextDueAt.setMonth(nextDueAt.getMonth() + planItem.intervalMonths);
+    await prisma.clubApplication.create({
+      data: {
+        memberId: member.id,
+        planItemId: planItem.id,
+        appointmentId: appt.id,
+        appliedAt,
+        nextDueAt,
+      },
+    });
+  }
+}
+
+// Devolve a sessão que este agendamento havia consumido (ao cancelar/reabrir).
+async function releasePackageSession(appointmentId) {
+  await prisma.budgetSession.deleteMany({ where: { appointmentId } });
+  await prisma.clubApplication.deleteMany({ where: { appointmentId } });
+}
+
+// Normaliza a lista de procedimentos vinda do front em itens {procedureId, procedureName, quantity, unitPrice, total}.
+// Compatibilidade: se não vier `procedures` mas vier `procedureType` (formato antigo),
+// busca o preço pelo nome (como o código legado fazia) e devolve um único item.
+async function normalizeProcedures(data, userId) {
+  let items = Array.isArray(data.procedures) ? data.procedures : null;
+
+  if ((!items || items.length === 0) && data.procedureType) {
+    const proc = await prisma.procedure.findFirst({
+      where: { name: data.procedureType, userId },
+    });
+    items = [{ procedureName: data.procedureType, procedureId: proc?.id ?? null, quantity: 1, unitPrice: proc?.price ?? 0 }];
+  }
+
+  if (!items || items.length === 0) return [];
+
+  return items
+    .filter((i) => i && (i.procedureName || i.procedureId))
+    .map((i) => {
+      const quantity = Number(i.quantity) > 0 ? Number(i.quantity) : 1;
+      const unitPrice = Number(i.unitPrice) >= 0 ? Number(i.unitPrice) : 0;
+      return {
+        procedureId: i.procedureId || null,
+        procedureName: i.procedureName || "",
+        quantity,
+        unitPrice,
+        total: quantity * unitPrice,
+      };
+    });
+}
+
 export async function create(data, user) {
   const category = data.category || "consulta";
   // Lembrete e compromisso pessoal podem não ter paciente vinculado.
@@ -18,6 +108,11 @@ export async function create(data, user) {
   const startsAt = new Date(data.startsAt);
   const endsAt = new Date(data.endsAt);
   const idempotencyKey = data.idempotencyKey || null;
+
+  // Múltiplos procedimentos: normaliza a lista e deriva o procedureType (1º item) p/ compat.
+  const procItems = await normalizeProcedures(data, user.id);
+  const procedureType = procItems[0]?.procedureName || data.procedureType || null;
+  const proceduresTotal = procItems.reduce((s, i) => s + i.total, 0);
 
   // Se já existe um appointment com essa idempotencyKey, retorna ele (request repetida)
   if (idempotencyKey) {
@@ -37,7 +132,7 @@ export async function create(data, user) {
         startsAt,
         endsAt,
         professional: data.professional,
-        procedureType: data.procedureType,
+        procedureType,
         notes: data.notes,
         status: data.status || "SCHEDULED",
         color: data.color,
@@ -46,10 +141,14 @@ export async function create(data, user) {
         isAllDay: data.isAllDay ?? false,
         recurrenceRule: data.recurrenceRule || null,
         parentAppointmentId: data.parentAppointmentId || null,
+        packageOrigin: data.packageOrigin || null,
+        packageItemId: data.packageItemId || null,
+        packageMemberId: data.packageMemberId || null,
+        ...(procItems.length > 0 ? { procedures: { create: procItems } } : {}),
         ...(data.patientId ? { patient: { connect: { id: data.patientId } } } : {}),
         user: { connect: { id: user.id } },
       },
-      include: { patient: true },
+      include: { patient: true, procedures: true },
     });
   } catch (error) {
     // P2002 = violação de constraint única (race condition: outra request criou primeiro)
@@ -63,32 +162,44 @@ export async function create(data, user) {
     throw error;
   }
 
+  // Se já nasce concluído com vínculo de pacote, consome a sessão.
+  if (COMPLETED_STATUSES.includes(appointment.status)) {
+    await consumePackageSession(appointment, user.id);
+  }
+
   // Lembrete e compromisso pessoal não geram cobrança.
   if (!requiresPatient) {
     return appointment;
   }
 
-  // busca preço do procedimento para já preencher o valor + dados de retorno
-  let amount = 0;
+  // Valor sugerido = soma dos procedimentos do atendimento.
+  const amount = proceduresTotal;
+
+  // Sugestão de retorno: usa o 1º procedimento do atendimento que exija retorno.
   let suggestedReturn = null;
-  if (appointment.procedureType) {
-    const procedure = await prisma.procedure.findFirst({
-      where: { name: appointment.procedureType, userId: user.id },
+  if (category !== "retorno" && procItems.length > 0) {
+    const names = procItems.map((i) => i.procedureName).filter(Boolean);
+    const withReturn = await prisma.procedure.findFirst({
+      where: { name: { in: names }, userId: user.id, requiresReturn: true },
     });
-    if (procedure?.price) amount = procedure.price;
-    // Se o procedimento exige retorno, sugere uma data (data do agend. + returnDays)
-    if (procedure?.requiresReturn && category !== "retorno") {
-      const days = procedure.returnDays ?? 0;
+    if (withReturn) {
+      const days = withReturn.returnDays ?? 0;
       const returnDate = new Date(startsAt);
       returnDate.setDate(returnDate.getDate() + days);
-      suggestedReturn = { date: returnDate.toISOString(), days, procedureName: procedure.name };
+      suggestedReturn = { date: returnDate.toISOString(), days, procedureName: withReturn.name };
     }
   }
+
+  // Descrição financeira: lista os procedimentos (ex: "Botox +1") ou cai no título.
+  const description =
+    procItems.length > 0
+      ? procItems[0].procedureName + (procItems.length > 1 ? ` +${procItems.length - 1}` : "")
+      : appointment.procedureType || appointment.title;
 
   await createPending(user.id, {
     appointmentId: appointment.id,
     patientId: appointment.patientId,
-    description: appointment.procedureType || appointment.title,
+    description,
     amount: data.txAmount !== undefined ? Number(data.txAmount) : amount,
     paymentMethod: data.txPaymentMethod || null,
     installments: data.txInstallments ? Number(data.txInstallments) : 1,
@@ -109,6 +220,7 @@ export async function findAll(user) {
     include: {
       patient: true,
       transaction: true,
+      procedures: true,
     },
 
     orderBy: {
@@ -150,7 +262,7 @@ export async function getCalendar(user, { from, to, types } = {}) {
         category: { in: apptCategories },
         ...(hasRange ? { startsAt: range } : {}),
       },
-      include: { patient: true },
+      include: { patient: true, procedures: true },
       orderBy: { startsAt: "asc" },
     });
     for (const a of appointments) {
@@ -165,6 +277,7 @@ export async function getCalendar(user, { from, to, types } = {}) {
         isAllDay: a.isAllDay,
         color: a.color || CALENDAR_COLORS[a.category] || CALENDAR_COLORS.consulta,
         status: a.status,
+        procedures: a.procedures ?? [],
       });
     }
   }
@@ -222,6 +335,7 @@ export async function findById(id, user) {
 
     include: {
       patient: true,
+      procedures: true,
     },
   });
 
@@ -259,6 +373,14 @@ export async function update(
     );
   }
 
+  // Se o front mandou uma lista de procedimentos, substitui a atual (replace).
+  const editingProcedures = Array.isArray(data.procedures);
+  const procItems = editingProcedures ? await normalizeProcedures(data, userId) : null;
+  // procedureType derivado do 1º item quando a lista foi editada; senão mantém o que veio.
+  const procedureType = editingProcedures
+    ? (procItems[0]?.procedureName || null)
+    : data.procedureType;
+
   const updated = await prisma.appointment.update({
     where: { id: appointmentId },
     data: {
@@ -266,20 +388,35 @@ export async function update(
       startsAt: data.startsAt ? new Date(data.startsAt) : undefined,
       endsAt: data.endsAt ? new Date(data.endsAt) : undefined,
       professional: data.professional,
-      procedureType: data.procedureType,
+      procedureType,
       notes: data.notes,
       status: data.status,
       category: data.category,
       description: data.description,
       recurrenceRule: data.recurrenceRule,
+      packageOrigin: data.packageOrigin !== undefined ? (data.packageOrigin || null) : undefined,
+      packageItemId: data.packageItemId !== undefined ? (data.packageItemId || null) : undefined,
+      packageMemberId: data.packageMemberId !== undefined ? (data.packageMemberId || null) : undefined,
+      ...(editingProcedures
+        ? { procedures: { deleteMany: {}, create: procItems } }
+        : {}),
     },
-    include: { patient: true },
+    include: { patient: true, procedures: true },
   });
 
-  // Ao concluir, cria transação pendente no financeiro (se ainda não existir)
+  // Consumo de pacote: concluir cria a sessão; cancelar/reabrir devolve o saldo.
+  if (COMPLETED_STATUSES.includes(data.status)) {
+    await consumePackageSession(updated, userId);
+  } else if (data.status && !COMPLETED_STATUSES.includes(data.status)) {
+    await releasePackageSession(updated.id);
+  }
+
+  // Ao concluir, cria transação pendente no financeiro (se ainda não existir).
+  // createPending é idempotente por appointmentId (não duplica se já houver).
   if (data.status === "COMPLETED" || data.status === "FINISHED") {
-    let amount = 0;
-    if (updated.procedureType) {
+    // Soma os procedimentos do agendamento; fallback p/ preço-por-nome legado.
+    let amount = updated.procedures.reduce((s, p) => s + (p.total || 0), 0);
+    if (amount === 0 && updated.procedureType) {
       const procedure = await prisma.procedure.findFirst({
         where: { name: updated.procedureType, userId },
       });
