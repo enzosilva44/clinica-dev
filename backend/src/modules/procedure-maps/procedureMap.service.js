@@ -44,6 +44,7 @@ export async function create(patientId, userId, data) {
       title: data.title || null,
       date: data.date ? new Date(data.date) : new Date(),
       markers: data.markers ?? [],
+      products: data.products ?? [],
       ...pickExtras(data),
       patientId,
       userId,
@@ -61,6 +62,7 @@ export async function update(id, userId, data) {
       title: data.title ?? map.title,
       date: data.date ? new Date(data.date) : map.date,
       markers: data.markers ?? map.markers,
+      products: data.products ?? map.products,
       ...pickExtras(data, map),
     },
   });

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Plus, Users, Search, Sparkles, X, Upload } from "lucide-react";
+import { Plus, Users, Search, Sparkles, X, Upload, CalendarClock } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import { Card, Button } from "../components/ui";
 import Spinner from "../components/ui/Spinner";
@@ -162,8 +162,8 @@ export default function Patients() {
             onClick={loadReturnSuggestions}
             className="!bg-[#F3EEFB] !text-[#7C53C9] hover:!bg-[#E9DEF8] !shadow-none"
           >
-            <Sparkles size={15} className={loadingSuggestions ? "animate-pulse" : ""} />
-            {loadingSuggestions ? "Analisando…" : "Sugestões IA"}
+            <CalendarClock size={15} className={loadingSuggestions ? "animate-pulse" : ""} />
+            {loadingSuggestions ? "Carregando…" : "Retornos ativos"}
           </Button>
           <Button size="md" onClick={() => navigate("/patients/create")}>
             <Plus size={16} /> Novo paciente
@@ -176,12 +176,12 @@ export default function Patients() {
         <div className="relative bg-gradient-to-br from-verde-900 to-verde-950 rounded-2xl p-5 mb-6 text-white">
           <div className="flex items-center gap-2.5 mb-3.5">
             <div className="w-6.5 h-6.5 rounded-lg bg-[#7C53C9]/30 flex items-center justify-center shrink-0">
-              <Sparkles size={13} className="text-[#C9B2F0]" />
+              <CalendarClock size={13} className="text-[#C9B2F0]" />
             </div>
-            <span className="text-[13.5px] font-bold text-[#C9B2F0]">Sugestões de retorno</span>
+            <span className="text-[13.5px] font-bold text-[#C9B2F0]">Retornos ativos</span>
             {suggestions.length > 0 && (
               <span className="text-[11px] text-white/35 ml-auto">
-                {suggestions.length} paciente{suggestions.length !== 1 ? "s" : ""} valem um contato esta semana
+                {suggestions.length} paciente{suggestions.length !== 1 ? "s" : ""} com retorno vencido ou nos próximos 7 dias
               </span>
             )}
             <button onClick={() => setShowSuggestions(false)} className="text-white/40 hover:text-white transition shrink-0">
@@ -197,26 +197,55 @@ export default function Patients() {
             </div>
           ) : suggestions.length === 0 ? (
             <p className="text-sm text-white/50 text-center py-4">
-              Nenhum paciente para reativar no momento.
+              Nenhum retorno ativo no momento.
             </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {suggestions.map((s, i) => (
-                <div key={i} className="bg-white/5 border border-white/[.09] rounded-xl p-3.5">
-                  <p className="text-[13.5px] font-bold">{s.name}</p>
-                  <p className="text-[11.5px] text-white/55 leading-relaxed my-1.5 line-clamp-3">{s.suggestion}</p>
-                  <button
-                    onClick={() => {
-                      const p = patients.find((pt) => pt.name === s.name);
-                      if (p) navigate(`/patients/${p.id}`);
-                    }}
-                    className="bg-white/10 hover:bg-white/20 transition text-white text-[11.5px] font-semibold rounded-lg px-2.5 py-1.5"
-                  >
-                    Sugerir retorno
-                  </button>
-                </div>
-              ))}
-            </div>
+            <>
+              <p className="text-[10.5px] text-white/35 mb-3 leading-relaxed">
+                Critério: último procedimento concluído que exige retorno, com data de retorno (atendimento + dias de retorno do procedimento) já vencida ou nos próximos 7 dias, e o paciente ainda não voltou.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {suggestions.map((s, i) => (
+                  <div key={i} className="bg-white/5 border border-white/[.09] rounded-xl p-3.5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-[13.5px] font-bold truncate">{s.name}</p>
+                      <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full shrink-0 ${
+                        s.status === "atrasado" ? "bg-red-400/20 text-red-200" : "bg-amber-400/20 text-amber-100"
+                      }`}>
+                        {s.status === "atrasado" ? `${s.daysOverdue}d atraso` : "em breve"}
+                      </span>
+                    </div>
+                    <p className="text-[11.5px] font-semibold text-white/75 leading-snug mt-1">
+                      {s.procedureName}
+                    </p>
+                    {/* Explicação de por que ESTE paciente está no card */}
+                    <p className="text-[10.5px] text-white/45 leading-relaxed my-1.5">
+                      {s.lastVisit && (
+                        <>Fez {s.procedureName} em {new Date(s.lastVisit).toLocaleDateString("pt-BR")}. </>
+                      )}
+                      {s.returnDays > 0 && (
+                        <>Esse procedimento pede retorno em {s.returnDays} dia{s.returnDays > 1 ? "s" : ""}, </>
+                      )}
+                      {s.returnDate && (
+                        <>previsto para {new Date(s.returnDate).toLocaleDateString("pt-BR")}
+                          {s.status === "atrasado"
+                            ? ` — venceu há ${s.daysOverdue} dia${s.daysOverdue > 1 ? "s" : ""}`
+                            : s.daysOverdue === 0
+                            ? " — vence hoje"
+                            : ` — vence em ${Math.abs(s.daysOverdue)} dia${Math.abs(s.daysOverdue) !== 1 ? "s" : ""}`}. </>
+                      )}
+                      Ainda não voltou.
+                    </p>
+                    <button
+                      onClick={() => navigate(`/patients/${s.patientId}`)}
+                      className="bg-white/10 hover:bg-white/20 transition text-white text-[11.5px] font-semibold rounded-lg px-2.5 py-1.5"
+                    >
+                      Ver paciente
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}

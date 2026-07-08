@@ -130,75 +130,77 @@ ${notes ? `Observações do profissional: ${notes}` : ""}`,
   return response.content[0].text;
 }
 
+// Sugestões de RETORNO CLÍNICO — por REGRA (não IA):
+// Para cada paciente ativo, olha o último agendamento CONCLUÍDO cujo procedimento
+// exige retorno (Procedure.requiresReturn). A data de retorno = data do atendimento
+// + returnDays. Entra na lista quem está VENCIDO ou vence nos próximos 7 dias, e que
+// NÃO voltou (sem agendamento posterior à data de retorno). Atrasados primeiro.
 export async function generateReturnSuggestions(userId) {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 60); // pacientes sem agendamento há mais de 60 dias
+  const now = new Date();
+  const windowEnd = new Date(now.getTime() + 7 * 86400000); // próximos 7 dias
+
+  // Procedimentos que exigem retorno, indexados por nome (para casar com procedureType/AppointmentProcedure).
+  const procedures = await prisma.procedure.findMany({
+    where: { userId, requiresReturn: true },
+    select: { name: true, returnDays: true },
+  });
+  if (procedures.length === 0) return [];
+  const returnByName = new Map(procedures.map((p) => [p.name, p.returnDays ?? 0]));
 
   const patients = await prisma.patient.findMany({
     where: { userId, isActive: true },
     include: {
       appointments: {
+        where: { status: { in: ["COMPLETED", "FINISHED"] } },
         orderBy: { startsAt: "desc" },
-        take: 1,
-      },
-      evolutions: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
+        include: { procedures: true },
       },
     },
   });
 
-  const toReactivate = patients.filter((p) => {
-    const lastAppt = p.appointments[0];
-    if (!lastAppt) return true;
-    return new Date(lastAppt.startsAt) < cutoff;
-  });
+  const results = [];
+  for (const p of patients) {
+    // Percorre agendamentos concluídos do mais recente pro mais antigo;
+    // usa o 1º que tiver um procedimento que exige retorno.
+    for (const appt of p.appointments) {
+      const names = appt.procedures?.length
+        ? appt.procedures.map((x) => x.procedureName)
+        : (appt.procedureType ? [appt.procedureType] : []);
+      const match = names.find((n) => returnByName.has(n));
+      if (!match) continue;
 
-  if (toReactivate.length === 0) {
-    return [];
+      const returnDays = returnByName.get(match) || 0;
+      const returnDate = new Date(appt.startsAt);
+      returnDate.setDate(returnDate.getDate() + returnDays);
+
+      // Só interessa se vence até 7 dias (inclui vencidos).
+      if (returnDate > windowEnd) break; // retorno ainda distante — nada a sugerir p/ este paciente
+      // Já voltou? (algum agendamento posterior à data de retorno)
+      const returned = p.appointments.some((a) => new Date(a.startsAt) > returnDate);
+      if (returned) break;
+
+      const daysOverdue = Math.floor((now - returnDate) / 86400000);
+      results.push({
+        name: p.name,
+        patientId: p.id,
+        procedureName: match,
+        lastVisit: appt.startsAt,
+        returnDate: returnDate.toISOString(),
+        returnDays,
+        daysOverdue, // >0 = atrasado, <=0 = vence em breve
+        status: daysOverdue > 0 ? "atrasado" : "proximo",
+        suggestion:
+          daysOverdue > 0
+            ? `Retorno de ${match} venceu há ${daysOverdue} dia${daysOverdue > 1 ? "s" : ""} — vale um contato.`
+            : `Retorno de ${match} previsto para ${returnDate.toLocaleDateString("pt-BR")}.`,
+      });
+      break; // um retorno ativo por paciente basta
+    }
   }
 
-  const lista = toReactivate
-    .slice(0, 20) // máximo 20 por chamada
-    .map((p) => {
-      const lastAppt = p.appointments[0];
-      const lastEvol = p.evolutions[0];
-      return [
-        `- ${p.name}`,
-        lastAppt
-          ? `  Último agendamento: ${new Date(lastAppt.startsAt).toLocaleDateString("pt-BR")} (${lastAppt.procedureType || lastAppt.title})`
-          : "  Nunca agendou",
-        lastEvol
-          ? `  Último procedimento registrado: ${lastEvol.procedure || "não informado"}`
-          : "",
-      ]
-        .filter(Boolean)
-        .join("\n");
-    })
-    .join("\n\n");
-
-  const response = await createMessage({
-    model: MODEL,
-    max_tokens: 800,
-    system: [BASE_SYSTEM],
-    messages: [
-      {
-        role: "user",
-        content: `Com base na lista abaixo de pacientes sem agendamento recente, gere uma sugestão de reativação para cada um.
-Para cada paciente, retorne exatamente neste formato JSON (array):
-[{"name": "Nome", "suggestion": "mensagem curta de reativação personalizada (1 frase)"}]
-Seja específico usando o histórico de procedimento quando disponível. Retorne apenas o JSON, sem explicações.
-
-${lista}`,
-      },
-    ],
-  });
-
-  try {
-    return extractJson(response.content[0].text);
-  } catch {
-    return [];
-  }
+  // Atrasados primeiro, depois por proximidade da data.
+  results.sort((a, b) => b.daysOverdue - a.daysOverdue);
+  return results;
 }
 
 // ─── GUARDIÃO FINANCEIRO ────────────────────────────────────────────────────
@@ -345,6 +347,173 @@ Retorne APENAS um JSON com este formato exato (sem markdown, sem explicação):
 }
 
 Priorize: crítico = risco imediato de duplicidade ou receita perdida; alerta = atenção necessária; info = oportunidade de melhoria.
+
+DADOS:
+${JSON.stringify(findings, null, 2)}`,
+      },
+    ],
+  });
+
+  try {
+    return extractJson(response.content[0].text);
+  } catch {
+    return { alerts: [], score: 50, resumo: "Não foi possível processar a análise." };
+  }
+}
+
+// ─── GUARDIÃO DE PRODUTOS ───────────────────────────────────────────────────
+// Detecta inconsistências no uso de produtos: usados-mas-não-cadastrados,
+// baixas duplicadas p/ mesma sessão, estoque <=0 em uso, e produto vencido em uso.
+export async function analyzeProductHealth(userId) {
+  const now = new Date();
+
+  const [products, maps, stockRequests] = await Promise.all([
+    prisma.product.findMany({ where: { userId } }),
+    prisma.procedureMap.findMany({
+      where: { userId },
+      select: { id: true, title: true, date: true, products: true, productName: true, expiryDate: true, patient: { select: { name: true } } },
+      orderBy: { date: "desc" },
+      take: 200,
+    }),
+    prisma.stockRequest.findMany({
+      where: { userId },
+      include: { product: { select: { name: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    }),
+  ]);
+
+  // Índice de produtos cadastrados por nome normalizado.
+  const norm = (s) => (s || "").trim().toLowerCase();
+  const byName = new Map();
+  for (const p of products) byName.set(norm(p.name), p);
+
+  // Coleta produtos usados nos mapas (lista nova `products` + legado `productName`).
+  const usedInMaps = []; // { mapId, mapTitle, patient, date, productName, lotNumber, expiryDate }
+  for (const m of maps) {
+    const list = Array.isArray(m.products) && m.products.length > 0
+      ? m.products
+      : (m.productName ? [{ productName: m.productName, expiryDate: m.expiryDate }] : []);
+    for (const item of list) {
+      if (!item?.productName) continue;
+      usedInMaps.push({
+        mapId: m.id,
+        mapTitle: m.title || "Mapa sem título",
+        patient: m.patient?.name ?? "—",
+        date: m.date,
+        productName: item.productName,
+        lotNumber: item.lotNumber ?? null,
+        expiryDate: item.expiryDate ?? m.expiryDate ?? null,
+      });
+    }
+  }
+
+  // Regra 1: produto usado em mapa que NÃO está cadastrado no estoque.
+  const naoCadastrados = [];
+  const seenMissing = new Set();
+  for (const u of usedInMaps) {
+    if (byName.has(norm(u.productName))) continue;
+    const key = norm(u.productName);
+    if (seenMissing.has(key)) continue;
+    seenMissing.add(key);
+    naoCadastrados.push({ produto: u.productName, exemploPaciente: u.patient, exemploMapa: u.mapTitle });
+  }
+
+  // Regra 2: baixas (StockRequest tipo saída) duplicadas p/ mesmo produto + mesmo
+  // motivo/sessão. Agrupa por productId+reason; 2+ pendentes = suspeita de duplicidade.
+  const baixaGroups = {};
+  for (const r of stockRequests) {
+    const isSaida = (r.type || "").toLowerCase().includes("sa") || (r.type || "").toLowerCase() === "out" || r.quantity < 0 || (r.type || "").toLowerCase().includes("baixa");
+    if (!isSaida) continue;
+    const key = `${r.productId}::${norm(r.reason)}`;
+    (baixaGroups[key] ??= []).push(r);
+  }
+  const baixasDuplicadas = Object.values(baixaGroups)
+    .filter((g) => g.length > 1 && norm(g[0].reason) !== "")
+    .map((g) => ({
+      produto: g[0].product?.name ?? "—",
+      motivoSessao: g[0].reason,
+      quantidadeSolicitacoes: g.length,
+      total: g.reduce((s, r) => s + Math.abs(Number(r.quantity) || 0), 0),
+    }));
+
+  // Regra 3: produto com estoque <=0 que aparece usado em mapa recente (60 dias).
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 86400000);
+  const estoqueZeradoEmUso = [];
+  const seenZero = new Set();
+  for (const u of usedInMaps) {
+    if (u.date && new Date(u.date) < sixtyDaysAgo) continue;
+    const p = byName.get(norm(u.productName));
+    if (!p) continue; // não cadastrado já é a regra 1
+    if (p.stock != null && p.stock <= 0 && !seenZero.has(p.id)) {
+      seenZero.add(p.id);
+      estoqueZeradoEmUso.push({ produto: p.name, estoque: p.stock, exemploPaciente: u.patient });
+    }
+  }
+
+  // Regra 4: produto usado com validade (lote) já vencida.
+  const vencidosEmUso = [];
+  for (const u of usedInMaps) {
+    if (!u.expiryDate) continue;
+    const exp = new Date(u.expiryDate);
+    if (isNaN(exp) || exp >= now) continue;
+    vencidosEmUso.push({
+      produto: u.productName,
+      lote: u.lotNumber,
+      validade: exp.toLocaleDateString("pt-BR"),
+      paciente: u.patient,
+      mapa: u.mapTitle,
+    });
+  }
+
+  const findings = {
+    resumo: {
+      produtosCadastrados: products.length,
+      mapasAnalisados: maps.length,
+      naoCadastrados: naoCadastrados.length,
+      baixasDuplicadas: baixasDuplicadas.length,
+      estoqueZeradoEmUso: estoqueZeradoEmUso.length,
+      vencidosEmUso: vencidosEmUso.length,
+    },
+    naoCadastrados,
+    baixasDuplicadas,
+    estoqueZeradoEmUso,
+    vencidosEmUso,
+  };
+
+  const totalProblems =
+    naoCadastrados.length + baixasDuplicadas.length + estoqueZeradoEmUso.length + vencidosEmUso.length;
+
+  if (totalProblems === 0) {
+    return { alerts: [], score: 100, resumo: "Nenhuma inconsistência detectada no uso de produtos." };
+  }
+
+  const response = await createMessage({
+    model: MODEL,
+    max_tokens: 1500,
+    system: [BASE_SYSTEM],
+    messages: [
+      {
+        role: "user",
+        content: `Você é o Guardião de Produtos do Iasoclin. Analise os dados abaixo e gere alertas sobre inconsistências no uso de produtos (insumos) da clínica.
+
+Retorne APENAS um JSON com este formato exato (sem markdown, sem explicação):
+{
+  "score": <número 0-100 indicando consistência do controle de produtos>,
+  "resumo": "<frase resumindo o estado geral>",
+  "alerts": [
+    {
+      "severity": "critico" | "alerta" | "info",
+      "tipo": "<categoria curta do problema>",
+      "titulo": "<título claro>",
+      "descricao": "<explicação do problema e seu impacto>",
+      "produtos": ["nomes afetados"],
+      "acaoSugerida": "<o que fazer para resolver>"
+    }
+  ]
+}
+
+Priorize: crítico = produto vencido em uso ou baixa duplicada na mesma sessão (risco clínico/estoque); alerta = produto usado não cadastrado ou estoque zerado em uso; info = oportunidade de organização.
 
 DADOS:
 ${JSON.stringify(findings, null, 2)}`,

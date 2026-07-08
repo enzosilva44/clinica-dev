@@ -45,6 +45,9 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
   const [backgroundPhotoId, setBackgroundPhotoId] = useState(null);
   const [baseImage, setBaseImage] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  // Lista de N produtos do mapa: { id, productId?, productName, lotNumber?, expiryDate?, dilutionVolume?, vialQuantity?, vialUnit? }
+  const [products, setProducts] = useState([]);
+  const [stockProducts, setStockProducts] = useState([]); // catálogo do estoque (opção "selecionar dos existentes")
   const [selectedMuscleId, setSelectedMuscleId] = useState(null);
   const [showMuscles, setShowMuscles] = useState(false);
   const skipAutoSave = useRef(true);
@@ -104,6 +107,34 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
       vialUnit,
       clinicalNotes:   map.clinicalNotes   ?? "",
     });
+
+    // Lista de produtos: usa map.products se existir; senão MIGRA o produto único
+    // legado (productName/lote/validade) como 1º item — nada se perde.
+    let prodList = Array.isArray(map.products) ? map.products : [];
+    if (prodList.length === 0 && map.productName) {
+      prodList = [{
+        id: crypto.randomUUID(),
+        productId: null,
+        productName: map.productName,
+        lotNumber: map.lotNumber ?? "",
+        expiryDate: map.expiryDate ? map.expiryDate.slice(0, 10) : "",
+        dilutionVolume: map.dilutionVolume ?? "",
+        vialQuantity,
+        vialUnit,
+      }];
+    } else {
+      prodList = prodList.map((p) => ({
+        id: p.id || crypto.randomUUID(),
+        productId: p.productId ?? null,
+        productName: p.productName ?? "",
+        lotNumber: p.lotNumber ?? "",
+        expiryDate: p.expiryDate ? String(p.expiryDate).slice(0, 10) : "",
+        dilutionVolume: p.dilutionVolume ?? "",
+        vialQuantity: p.vialQuantity ?? "",
+        vialUnit: p.vialUnit ?? "U",
+      }));
+    }
+    setProducts(prodList);
   }
 
   async function createMap() {
@@ -144,9 +175,22 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
   async function handleSave() {
     setSaving(true);
     try {
+      const cleanProducts = products
+        .filter((p) => p.productName?.trim())
+        .map((p) => ({
+          id: p.id,
+          productId: p.productId || null,
+          productName: p.productName.trim(),
+          lotNumber: p.lotNumber || null,
+          expiryDate: p.expiryDate || null,
+          dilutionVolume: p.dilutionVolume !== "" ? parseFloat(p.dilutionVolume) : null,
+          vialQuantity: p.vialQuantity || null,
+          vialUnit: p.vialUnit || null,
+        }));
       await api.put(`/procedure-maps/${selectedId}`, {
         title: titleInput.trim() || null,
         markers,
+        products: cleanProducts,
         backgroundPhotoId,
         baseImage,
         ...formData,
@@ -154,9 +198,11 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
         dilutionDate:   formData.dilutionDate   || null,
         expiryDate:     formData.expiryDate     || null,
         applicationDate: formData.applicationDate || null,
+        // productName legado = 1º produto da lista, p/ retrocompat de dados/impressão
+        productName: cleanProducts[0]?.productName || formData.productName || null,
       });
       setMaps((prev) =>
-        prev.map((m) => m.id === selectedId ? { ...m, ...formData, markers, backgroundPhotoId, baseImage, title: titleInput.trim() || null } : m)
+        prev.map((m) => m.id === selectedId ? { ...m, ...formData, products: cleanProducts, markers, backgroundPhotoId, baseImage, title: titleInput.trim() || null } : m)
       );
       toast.success("Salvo");
     } catch {
@@ -212,6 +258,34 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     updateMarkers([]);
   }
 
+  // ── Produtos do mapa (N produtos) ──
+  function addProduct() {
+    setProducts((prev) => [...prev, {
+      id: crypto.randomUUID(), productId: null, productName: "",
+      lotNumber: "", expiryDate: "", dilutionVolume: "", vialQuantity: "", vialUnit: "U",
+    }]);
+  }
+  function removeProduct(id) {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+    // Desvincula marcadores que apontavam p/ esse produto
+    updateMarkers((prev) => prev.map((m) => m.productId === id ? { ...m, productId: null } : m));
+  }
+  function updateProduct(id, patch) {
+    setProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...patch } : p));
+  }
+  // Ao escolher do estoque, auto-preenche nome/lote/validade do produto cadastrado.
+  function selectStockProduct(id, stockId) {
+    const s = stockProducts.find((p) => p.id === stockId);
+    if (!s) { updateProduct(id, { productId: null }); return; }
+    updateProduct(id, {
+      productId: s.id,
+      productName: s.name,
+      lotNumber: s.lotNumber ?? "",
+      expiryDate: s.expiryDate ? String(s.expiryDate).slice(0, 10) : "",
+      vialUnit: s.unit || "U",
+    });
+  }
+
   async function handleBgChange(photoId) {
     setBackgroundPhotoId(photoId);
     try {
@@ -240,6 +314,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
   useEffect(() => {
     loadMaps();
     api.get(`/photos/patient/${patientId}`).then((r) => setPatientPhotos(r.data)).catch(() => {});
+    // Catálogo do estoque p/ o seletor de produtos (silencioso: pode não ter a feature)
+    api.get("/products").then((r) => setStockProducts(r.data || [])).catch(() => setStockProducts([]));
   }, [patientId]);
 
   const totalPoints = markers.filter((m) => !m.type || m.type === "point").length;
@@ -460,69 +536,98 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
           )}
 
           <div className={choosingImage ? "hidden" : "p-5"}>
-            {/* ── PRODUCT FORM ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">Produto Utilizado *</label>
-                <input
-                  value={formData.productName}
-                  onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                  placeholder="Ex: Botulift, Dysport, Xeomin…"
-                  className="w-full border border-ambar rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-verde"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">Data da Aplicação</label>
-                <input type="date" value={formData.applicationDate}
-                  onChange={(e) => setFormData({ ...formData, applicationDate: e.target.value })}
-                  className="w-full border border-ambar rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-verde" />
-              </div>
+            {/* ── DATA DA APLICAÇÃO ── */}
+            <div className="mb-4">
+              <label className="text-xs font-medium text-gray-600 mb-1 block">Data da Aplicação</label>
+              <input type="date" value={formData.applicationDate}
+                onChange={(e) => setFormData({ ...formData, applicationDate: e.target.value })}
+                className="w-full sm:w-64 border border-ambar rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-verde" />
             </div>
 
-            {/* Product data */}
+            {/* ── PRODUTOS UTILIZADOS (N produtos) ── */}
             <div className="bg-white border border-creme-200 rounded-xl p-4 mb-5">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Dados do Produto</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Data de Diluição</label>
-                  <input type="date" value={formData.dilutionDate}
-                    onChange={(e) => setFormData({ ...formData, dilutionDate: e.target.value })}
-                    className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Volume da Diluição (ml)</label>
-                  <input type="number" min="0" step="0.1" value={formData.dilutionVolume}
-                    onChange={(e) => setFormData({ ...formData, dilutionVolume: e.target.value })}
-                    placeholder="Ex: 2"
-                    className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Número do Lote</label>
-                  <input value={formData.lotNumber}
-                    onChange={(e) => setFormData({ ...formData, lotNumber: e.target.value })}
-                    placeholder="Ex: 007"
-                    className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Data de Validade</label>
-                  <input type="date" value={formData.expiryDate}
-                    onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                    className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="text-xs text-gray-500 mb-1 block">Apresentação do Frasco</label>
-                  <div className="flex gap-2">
-                    <input type="number" min="0" step="any" value={formData.vialQuantity}
-                      onChange={(e) => setFormData({ ...formData, vialQuantity: e.target.value })}
-                      placeholder="Qtd. (ex: 100)"
-                      className="flex-1 min-w-0 border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
-                    <select value={formData.vialUnit}
-                      onChange={(e) => setFormData({ ...formData, vialUnit: e.target.value })}
-                      className="w-20 shrink-0 border border-ambar rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-verde">
-                      {VIAL_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-                    </select>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Produtos utilizados</p>
+                <button type="button" onClick={addProduct}
+                  className="text-xs font-medium text-verde border border-ambar rounded-lg px-2.5 py-1.5 hover:bg-creme-50 transition flex items-center gap-1">
+                  <Plus size={12} /> Adicionar produto
+                </button>
+              </div>
+
+              {products.length === 0 && (
+                <p className="text-xs text-gray-400">Nenhum produto. Adicione um produto usado neste mapa.</p>
+              )}
+
+              <div className="space-y-3">
+                {products.map((p, idx) => (
+                  <div key={p.id} className="border border-creme-200 rounded-xl p-3 bg-creme-50/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-semibold text-verde">Produto {idx + 1}</span>
+                      <button type="button" onClick={() => removeProduct(p.id)}
+                        className="text-gray-400 hover:text-red-500 transition" title="Remover produto">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {/* Selecionar do estoque (opcional) */}
+                      {stockProducts.length > 0 && (
+                        <div className="sm:col-span-2">
+                          <label className="text-[11px] text-gray-500 mb-1 block">Selecionar do estoque (opcional)</label>
+                          <select value={p.productId || ""}
+                            onChange={(e) => selectStockProduct(p.id, e.target.value)}
+                            className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-verde">
+                            <option value="">— digitar manualmente —</option>
+                            {stockProducts.map((s) => (
+                              <option key={s.id} value={s.id}>{s.name}{s.lotNumber ? ` (lote ${s.lotNumber})` : ""}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      {/* Nome (campo aberto — sempre editável) */}
+                      <div className="sm:col-span-2">
+                        <label className="text-[11px] text-gray-500 mb-1 block">Produto *</label>
+                        <input value={p.productName}
+                          onChange={(e) => updateProduct(p.id, { productName: e.target.value, productId: null })}
+                          placeholder="Ex: Botulift, Dysport, Xeomin…"
+                          className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-gray-500 mb-1 block">Número do Lote</label>
+                        <input value={p.lotNumber}
+                          onChange={(e) => updateProduct(p.id, { lotNumber: e.target.value })}
+                          placeholder="Ex: 007"
+                          className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-gray-500 mb-1 block">Data de Validade</label>
+                        <input type="date" value={p.expiryDate}
+                          onChange={(e) => updateProduct(p.id, { expiryDate: e.target.value })}
+                          className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-gray-500 mb-1 block">Volume da Diluição (ml)</label>
+                        <input type="number" min="0" step="0.1" value={p.dilutionVolume}
+                          onChange={(e) => updateProduct(p.id, { dilutionVolume: e.target.value })}
+                          placeholder="Ex: 2"
+                          className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-gray-500 mb-1 block">Apresentação do Frasco</label>
+                        <div className="flex gap-2">
+                          <input type="number" min="0" step="any" value={p.vialQuantity}
+                            onChange={(e) => updateProduct(p.id, { vialQuantity: e.target.value })}
+                            placeholder="Qtd."
+                            className="flex-1 min-w-0 border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
+                          <select value={p.vialUnit}
+                            onChange={(e) => updateProduct(p.id, { vialUnit: e.target.value })}
+                            className="w-16 shrink-0 border border-ambar rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-verde">
+                            {VIAL_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -633,23 +738,50 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                     const qty = parseFloat(m.units) || 0;
                     const color = vividColor(m.color);
                     return (
-                      <div key={m.id ?? i} className="flex items-center justify-between gap-2 py-1 border-b border-creme-100 last:border-0">
-                        <div className="flex items-center gap-2 min-w-0">
-                          {/* ícone tipo: traço ou ponto */}
-                          {isLine
-                            ? <div className="w-4 h-1 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                            : <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                          }
-                          <span className="text-[10px] font-semibold uppercase tracking-wide shrink-0"
-                            style={{ color }}>
-                            {isLine ? "Traço" : "Ponto"}
-                          </span>
-                          <span className="text-sm text-verde truncate">{name}</span>
+                      <div key={m.id ?? i} className="py-1 border-b border-creme-100 last:border-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {/* ícone tipo: traço ou ponto */}
+                            {isLine
+                              ? <div className="w-4 h-1 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                              : <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                            }
+                            <span className="text-[10px] font-semibold uppercase tracking-wide shrink-0"
+                              style={{ color }}>
+                              {isLine ? "Traço" : "Ponto"}
+                            </span>
+                            <span className="text-sm text-verde truncate">{name}</span>
+                          </div>
+                          {qty > 0 && (
+                            <span className="text-xs font-bold font-mono shrink-0 px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: color }}>
+                              {fmtNum(qty)}{m.unit ?? "U"}
+                            </span>
+                          )}
                         </div>
-                        {qty > 0 && (
-                          <span className="text-xs font-bold font-mono shrink-0 px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: color }}>
-                            {fmtNum(qty)}{m.unit ?? "U"}
-                          </span>
+                        {/* Qual produto foi aplicado neste ponto (quando há +de 1 produto) */}
+                        {products.length > 1 && (
+                          <div className="flex items-center gap-1.5 mt-1 pl-6 no-print">
+                            <span className="text-[10px] text-gray-400">produto:</span>
+                            <select
+                              value={m.productId || ""}
+                              onChange={(e) => {
+                                const pid = e.target.value || null;
+                                updateMarkers((prev) => prev.map((mk) => (mk.id ?? "") === (m.id ?? "") ? { ...mk, productId: pid } : mk));
+                              }}
+                              className="text-[11px] border border-creme-200 rounded px-1.5 py-0.5 bg-white focus:outline-none focus:border-verde max-w-[180px]"
+                            >
+                              <option value="">—</option>
+                              {products.filter((p) => p.productName?.trim()).map((p) => (
+                                <option key={p.id} value={p.id}>{p.productName}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        {/* Impressão: mostra o produto escolhido em texto */}
+                        {m.productId && (
+                          <p className="hidden print:block text-[10px] text-gray-500 pl-6">
+                            Produto: {products.find((p) => p.id === m.productId)?.productName || "—"}
+                          </p>
                         )}
                       </div>
                     );
@@ -677,11 +809,15 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                       )) : <p className="text-3xl font-black font-mono text-verde">0</p>}
                     </div>
                   </div>
-                  {formData.productName && (
+                  {products.filter((p) => p.productName?.trim()).length > 0 && (
                     <div className="text-right">
-                      <p className="text-xs text-gray-400">Produto</p>
-                      <p className="text-sm font-semibold text-verde">{formData.productName}</p>
-                      {formData.vialQuantity && <p className="text-xs text-gray-400">{formData.vialQuantity}{formData.vialUnit}</p>}
+                      <p className="text-xs text-gray-400">{products.length > 1 ? "Produtos" : "Produto"}</p>
+                      {products.filter((p) => p.productName?.trim()).map((p) => (
+                        <p key={p.id} className="text-sm font-semibold text-verde">
+                          {p.productName}
+                          {p.vialQuantity && <span className="text-xs font-normal text-gray-400"> · {p.vialQuantity}{p.vialUnit}</span>}
+                        </p>
+                      ))}
                     </div>
                   )}
                 </div>

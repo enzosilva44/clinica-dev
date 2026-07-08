@@ -1,4 +1,4 @@
-import { Search, Sparkles, Plus } from "lucide-react";
+import { Search, CalendarClock, Plus } from "lucide-react";
 
 // UI mobile de Pacientes — fiel ao protótipo Iasoclin Mobile.
 // Recebe dados/handlers por props do componente pai (Patients.jsx); não
@@ -72,7 +72,7 @@ export default function PatientsMobile({
           className="rounded-[10px] px-3 py-2 text-xs font-bold inline-flex items-center gap-1.5"
           style={{ background: "#F3EEFB", border: "1px solid #DCCBF5", color: "#7C53C9" }}
         >
-          <Sparkles size={13} /> Sugestões IA
+          <CalendarClock size={13} /> Retornos ativos
         </button>
       </div>
 

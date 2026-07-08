@@ -7,6 +7,7 @@ import {
   chatHelp,
   chatReports,
   analyzeFinancialHealth,
+  analyzeProductHealth,
   generateDailyInsight,
 } from "./ai.service.js";
 
@@ -99,6 +100,16 @@ router.get("/financial-health", async (req, res) => {
     res.json(result);
   } catch (error) {
     sendAiError(res, error, "financial-health");
+  }
+});
+
+// 5b. Guardião de Produtos
+router.get("/product-health", async (req, res) => {
+  try {
+    const result = await analyzeProductHealth(req.user.id);
+    res.json(result);
+  } catch (error) {
+    sendAiError(res, error, "product-health");
   }
 });
 

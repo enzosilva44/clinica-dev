@@ -3,6 +3,7 @@ import {
   Plus, Pencil, Trash2, X, Package,
   ArrowDownCircle, ArrowUpCircle, CheckCircle2, XCircle,
   Clock, Filter, AlertTriangle, CalendarClock,
+  Sparkles, ShieldCheck, RefreshCw, Info,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
@@ -61,7 +62,146 @@ const TABS = [
   { id: "estoque",       label: "Estoque" },
   { id: "solicitacoes",  label: "Solicitações" },
   { id: "extrato",       label: "Extrato" },
+  { id: "guardiao",      label: "Guardião IA" },
 ];
+
+// ─── Guardião de Produtos (IA) ────────────────────────────────────────────────
+const PROD_SEVERITY = {
+  critico: { bg: "bg-erro/5 border-erro/25", badge: "bg-erro/15 text-erro", icon: AlertTriangle, iconColor: "text-erro", label: "Crítico" },
+  alerta:  { bg: "bg-atencao/5 border-atencao/25", badge: "bg-atencao/15 text-atencao-700", icon: AlertTriangle, iconColor: "text-atencao", label: "Alerta" },
+  info:    { bg: "bg-info/5 border-info/25", badge: "bg-info/15 text-info", icon: Info, iconColor: "text-info", label: "Info" },
+};
+
+function ScoreRing({ score }) {
+  const color = score >= 80 ? "#3A9B6F" : score >= 50 ? "#C4895A" : "#E2574C";
+  const r = 36, circ = 2 * Math.PI * r, offset = circ * (1 - score / 100);
+  return (
+    <div className="relative w-24 h-24 shrink-0">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
+        <circle cx="44" cy="44" r={r} fill="none" stroke="#EFE7DA" strokeWidth="8" />
+        <circle cx="44" cy="44" r={r} fill="none" stroke={color} strokeWidth="8"
+          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+          style={{ transition: "stroke-dashoffset 0.8s ease" }} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-black font-mono" style={{ color }}>{score}</span>
+        <span className="text-[10px] text-gray-400 font-medium">score</span>
+      </div>
+    </div>
+  );
+}
+
+function ProductGuardianTab({ data, loading, onRefresh }) {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-verde flex items-center justify-center animate-pulse">
+          <Sparkles size={20} className="text-ambar" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-semibold text-verde-900">Analisando uso de produtos…</p>
+          <p className="text-xs text-gray-400 mt-1">A IA está verificando inconsistências</p>
+        </div>
+      </div>
+    );
+  }
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-5">
+        <div className="w-16 h-16 rounded-2xl bg-creme-100 flex items-center justify-center">
+          <ShieldCheck size={28} className="text-ambar" />
+        </div>
+        <div className="text-center">
+          <p className="text-base font-bold text-verde-900">Guardião de Produtos</p>
+          <p className="text-sm text-gray-400 mt-1 max-w-sm">
+            A IA verifica produtos usados mas não cadastrados, baixas duplicadas na mesma sessão,
+            estoque zerado em uso e produtos vencidos aplicados.
+          </p>
+        </div>
+        <button onClick={onRefresh}
+          className="bg-verde hover:bg-verde-900 text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition">
+          <Sparkles size={15} /> Analisar agora
+        </button>
+      </div>
+    );
+  }
+
+  const criticos = data.alerts?.filter((a) => a.severity === "critico") ?? [];
+  const alertas = data.alerts?.filter((a) => a.severity === "alerta") ?? [];
+  const infos = data.alerts?.filter((a) => a.severity === "info") ?? [];
+  const allAlerts = [...criticos, ...alertas, ...infos];
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-white border border-creme-200 rounded-2xl p-5 flex items-center gap-5">
+        <ScoreRing score={data.score ?? 0} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <ShieldCheck size={16} className="text-verde shrink-0" />
+            <p className="text-sm font-bold text-verde-900">Consistência de Produtos</p>
+          </div>
+          <p className="text-sm text-gray-600 leading-relaxed">{data.resumo}</p>
+          <div className="flex items-center gap-3 mt-3 flex-wrap">
+            {criticos.length > 0 && <span className="text-xs bg-erro/15 text-erro font-semibold px-2.5 py-1 rounded-full">{criticos.length} crítico{criticos.length > 1 ? "s" : ""}</span>}
+            {alertas.length > 0 && <span className="text-xs bg-atencao/15 text-atencao-700 font-semibold px-2.5 py-1 rounded-full">{alertas.length} alerta{alertas.length > 1 ? "s" : ""}</span>}
+            {infos.length > 0 && <span className="text-xs bg-info/15 text-info font-semibold px-2.5 py-1 rounded-full">{infos.length} info</span>}
+            {allAlerts.length === 0 && <span className="text-xs bg-sucesso/15 text-sucesso font-semibold px-2.5 py-1 rounded-full">Tudo ok</span>}
+          </div>
+        </div>
+        <button onClick={onRefresh}
+          className="shrink-0 w-9 h-9 rounded-xl border border-creme-200 hover:bg-creme-50 flex items-center justify-center transition text-gray-400 hover:text-verde"
+          title="Reanalisar">
+          <RefreshCw size={15} />
+        </button>
+      </div>
+
+      {allAlerts.length === 0 ? (
+        <div className="bg-sucesso/5 border border-sucesso/25 rounded-2xl p-6 flex items-center gap-4">
+          <ShieldCheck size={32} className="text-sucesso shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-sucesso">Nenhuma inconsistência encontrada</p>
+            <p className="text-xs text-sucesso/80 mt-0.5">Os produtos usados nos mapas estão consistentes com o estoque.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {allAlerts.map((alert, i) => {
+            const cfg = PROD_SEVERITY[alert.severity] ?? PROD_SEVERITY.info;
+            const Icon = cfg.icon;
+            return (
+              <div key={i} className={`border rounded-2xl p-5 ${cfg.bg}`}>
+                <div className="flex items-start gap-3">
+                  <Icon size={18} className={`${cfg.iconColor} shrink-0 mt-0.5`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${cfg.badge}`}>{cfg.label}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">{alert.tipo}</span>
+                    </div>
+                    <p className="text-sm font-bold text-gray-800 mb-1">{alert.titulo}</p>
+                    <p className="text-xs text-gray-600 leading-relaxed mb-2">{alert.descricao}</p>
+                    {alert.produtos?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {alert.produtos.map((p, j) => (
+                          <span key={j} className="text-[11px] bg-white/70 border border-gray-200 px-2 py-0.5 rounded-full text-gray-600 font-medium">{p}</span>
+                        ))}
+                      </div>
+                    )}
+                    {alert.acaoSugerida && (
+                      <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-gray-200/60">
+                        <CheckCircle2 size={12} className="text-gray-400 mt-0.5 shrink-0" />
+                        <p className="text-[11px] text-gray-500 leading-relaxed">{alert.acaoSugerida}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── main ────────────────────────────────────────────────────────────────────
 
@@ -144,9 +284,25 @@ export default function Products() {
     }
   }, [movProductFilter, movStart, movEnd]);
 
+  // ── Guardião de Produtos (IA) ──
+  const [guardian, setGuardian] = useState(null);
+  const [guardianLoading, setGuardianLoading] = useState(false);
+  const loadGuardian = useCallback(async () => {
+    setGuardianLoading(true);
+    try {
+      const r = await api.get("/ai/product-health");
+      setGuardian(r.data);
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Erro ao analisar produtos");
+    } finally {
+      setGuardianLoading(false);
+    }
+  }, []);
+
   useEffect(() => { loadProducts(); }, [loadProducts]);
   useEffect(() => { if (tab === "solicitacoes") loadRequests(); }, [tab, loadRequests]);
   useEffect(() => { if (tab === "extrato") loadMovements(); }, [tab, loadMovements]);
+  useEffect(() => { if (tab === "guardiao" && !guardian) loadGuardian(); }, [tab, guardian, loadGuardian]);
 
   // ── produto CRUD ────────────────────────────────────────────────────────────
 
@@ -638,6 +794,11 @@ export default function Products() {
             </div>
           )}
         </>
+      )}
+
+      {/* ── TAB: GUARDIÃO IA ─────────────────────────────────────────────────── */}
+      {tab === "guardiao" && (
+        <ProductGuardianTab data={guardian} loading={guardianLoading} onRefresh={loadGuardian} />
       )}
 
       {/* ── MODAL: SOLICITAR MOVIMENTAÇÃO ──────────────────────────────────── */}

@@ -322,6 +322,7 @@ model ProcedureMap {
   title             String?
   date              DateTime  @default(now())
   markers           Json      @default("[]")
+  products          Json      @default("[]") // [{id, productId?, productName, lotNumber?, expiryDate?, dilutionDate?, dilutionVolume?, vialQuantity?, vialUnit?}] — marker.productId aponta p/ um destes
   patientId         String
   userId            String
   createdAt         DateTime  @default(now())
