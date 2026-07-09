@@ -549,26 +549,11 @@ export default function FaceMap({
               </p>
             )}
 
-            {/* Opções de desenho (Paint): cor + espessura — só nos modos caneta/reta */}
-            {isDrawTool && (
-              <div className="flex flex-wrap items-center gap-2 mb-2 bg-white border border-creme-200 rounded-xl p-2">
-                <div className="flex items-center gap-1">
-                  {DRAW_COLORS.map((c) => (
-                    <button key={c} type="button" title="Cor" onClick={() => setDrawColor(c)}
-                      className={`w-5 h-5 rounded-full border transition ${drawColor === c ? "ring-2 ring-verde ring-offset-1 scale-110" : "border-creme-200"}`}
-                      style={{ backgroundColor: c }} />
-                  ))}
-                </div>
-                <div className="w-px h-5 bg-creme-200" />
-                <div className="flex items-center gap-1.5">
-                  {STROKE_WIDTHS.map((w) => (
-                    <button key={w} type="button" title={`Espessura ${w}`} onClick={() => setDrawWidth(w)}
-                      className={`flex items-center justify-center w-7 h-7 rounded-lg border transition ${drawWidth === w ? "border-verde bg-verde-50" : "border-creme-200 hover:bg-creme-50"}`}>
-                      <span className="rounded-full bg-gray-700" style={{ width: w + 2, height: w + 2 }} />
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {/* Dica nos modos caneta/reta: cor/espessura ficam no card ao soltar */}
+            {isDrawTool && !pendingDraw && (
+              <p className="text-xs text-gray-400 mb-2 flex items-center gap-1.5">
+                <Pencil size={12} /> Arraste sobre a imagem para desenhar — ao soltar, preencha o card e confirme.
+              </p>
             )}
 
             {/* Photo background bar */}
@@ -893,6 +878,14 @@ export default function FaceMap({
                 strokeLinecap="round" strokeLinejoin="round" opacity="0.85"
                 style={{ pointerEvents: "none" }}
               />
+            )}
+
+            {/* desenho pendente (aguardando confirmação no card) — tracejado,
+                atualiza ao vivo se a cor/espessura mudarem no card */}
+            {pendingDraw && (
+              <path d={pendingDraw.d} fill="none" stroke={drawColor} strokeWidth={drawWidth}
+                strokeLinecap="round" strokeLinejoin="round" opacity="0.9"
+                strokeDasharray="6,3" style={{ pointerEvents: "none" }} />
             )}
 
             {/* ── SAVED LINE MARKERS ── */}
