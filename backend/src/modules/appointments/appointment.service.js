@@ -1,7 +1,41 @@
 import { prisma } from "../../config/prisma.js";
 import { createPending } from "../financial/transaction.service.js";
+import * as stockRequestService from "../products/stockRequest.service.js";
 
 const COMPLETED_STATUSES = ["COMPLETED", "FINISHED"];
+
+// Baixa de estoque ao concluir agendamento: 1 StockRequest pendente por material
+// dos procedimentos do agendamento. Idempotente via marcador no `reason`
+// (StockRequest não tem coluna appointmentId própria).
+async function requestStockForAppointment(appt, userId) {
+  const marker = `[appt:${appt.id}]`;
+  const already = await prisma.stockRequest.findFirst({
+    where: { userId, reason: { contains: marker } },
+  });
+  if (already) return;
+
+  const procedureIds = (appt.procedures || [])
+    .map((p) => p.procedureId)
+    .filter(Boolean);
+  if (procedureIds.length === 0) return;
+
+  const procedures = await prisma.procedure.findMany({
+    where: { id: { in: procedureIds }, userId },
+    include: { products: { include: { product: true } } },
+  });
+
+  for (const proc of procedures) {
+    for (const pp of proc.products) {
+      if (!pp.productId || !pp.quantity) continue;
+      await stockRequestService.create(userId, {
+        type: "saida",
+        productId: pp.productId,
+        quantity: pp.quantity,
+        reason: `Agendamento concluído — ${appt.title} ${marker}`,
+      }).catch(() => null);
+    }
+  }
+}
 
 // Consome 1 sessão do pacote vinculado ao agendamento (ao concluir).
 // Idempotente: se já existe uma sessão criada por este appointment, não duplica.
@@ -166,6 +200,7 @@ export async function create(data, user) {
   // Se já nasce concluído com vínculo de pacote, consome a sessão.
   if (COMPLETED_STATUSES.includes(appointment.status)) {
     await consumePackageSession(appointment, user.id);
+    await requestStockForAppointment(appointment, user.id);
   }
 
   // Lembrete e compromisso pessoal não geram cobrança.
@@ -431,6 +466,8 @@ export async function update(
       description: updated.procedureType || updated.title,
       amount,
     });
+
+    await requestStockForAppointment(updated, userId);
   }
 
   return updated;

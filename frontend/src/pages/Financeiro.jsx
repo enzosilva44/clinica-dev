@@ -242,6 +242,18 @@ function TransactionModal({ initial, onClose, onSave }) {
     setShowPatientDrop(false);
   }
 
+  function selectAppointment(appointmentId) {
+    const appt = patientAppointments.find((a) => a.id === appointmentId);
+    setForm((prev) => ({
+      ...prev,
+      appointmentId,
+      description: !prev.description.trim() && appt ? (appt.title || appt.procedureType || prev.description) : prev.description,
+      amount: !prev.amount && appt?.procedures?.length
+        ? String(appt.procedures.reduce((s, p) => s + (p.total || 0), 0))
+        : prev.amount,
+    }));
+  }
+
   function clearPatient() {
     setForm((prev) => ({ ...prev, patientId: "", appointmentId: "", budgetId: "" }));
     setSelectedPatientName("");
@@ -372,7 +384,7 @@ function TransactionModal({ initial, onClose, onSave }) {
                   <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1">
                     <CalendarDays size={11} /> Agendamento
                   </label>
-                  <select value={form.appointmentId || ""} onChange={(e) => setForm((p) => ({ ...p, appointmentId: e.target.value, budgetId: "" }))} className={INPUT}>
+                  <select value={form.appointmentId || ""} onChange={(e) => selectAppointment(e.target.value)} className={INPUT}>
                     <option value="">Nenhum</option>
                     {patientAppointments.map((a) => (
                       <option key={a.id} value={a.id}>
@@ -387,7 +399,7 @@ function TransactionModal({ initial, onClose, onSave }) {
                   <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1">
                     <FileText size={11} /> Orçamento
                   </label>
-                  <select value={form.budgetId || ""} onChange={(e) => setForm((p) => ({ ...p, budgetId: e.target.value, appointmentId: "" }))} className={INPUT}>
+                  <select value={form.budgetId || ""} onChange={(e) => setForm((p) => ({ ...p, budgetId: e.target.value }))} className={INPUT}>
                     <option value="">Nenhum</option>
                     {patientBudgets.map((b) => (
                       <option key={b.id} value={b.id}>
