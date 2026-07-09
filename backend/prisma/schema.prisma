@@ -72,6 +72,7 @@ model User {
   patientPhotos         PatientPhoto[]
   procedures            Procedure[]
   procedureMaps         ProcedureMap[]
+  protocols             Protocol[]
   products              Product[]
   productMovements      ProductMovement[]
   stockRequests         StockRequest[]
@@ -152,6 +153,9 @@ model BudgetItem {
   unitPrice     Float    @default(0)
   total         Float    @default(0)
   observation   String?
+  // Agrupa itens em cards de sessão (0-based). null = orçamento antigo/avulso
+  // sem detalhamento por sessão (a overview de Sessões segue funcionando igual).
+  sessionIndex  Int?
   budgetId      String
   createdAt     DateTime @default(now())
   budget        Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
@@ -174,6 +178,74 @@ model BudgetSession {
 
   @@index([budgetId])
   @@index([appointmentId])
+}
+
+// Protocolo = template reutilizável de pacote (Lote 6). Montado em /sessoes:
+// define N SESSÕES; cada sessão tem seus procedimentos, e cada procedimento
+// seus produtos (materiais) e valor. Ao vender, é selecionado dentro do
+// Orçamento e o pré-preenche (título + as sessões viram cards de itens). NÃO
+// dá baixa de estoque nem cria financeiro por si — é só um molde. A baixa
+// acontece via Evolução; o financeiro, ao criar o orçamento.
+// Valor: soma dos procedimentos de todas as sessões; se useFixedPrice, fixedPrice.
+model Protocol {
+  id            String            @id @default(cuid())
+  name          String
+  description   String?
+  useFixedPrice Boolean           @default(false) // true = usa fixedPrice; false = soma dos procedimentos
+  fixedPrice    Float?            // preço fechado do pacote (quando useFixedPrice)
+  isActive      Boolean           @default(true)
+  userId        String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  user          User              @relation(fields: [userId], references: [id])
+  sessions      ProtocolSession[]
+
+  @@index([userId])
+}
+
+// Uma sessão do protocolo (card). O nº de sessões do pacote = nº de
+// ProtocolSession. Cada sessão agrupa os procedimentos previstos para aquele dia.
+model ProtocolSession {
+  id         String              @id @default(cuid())
+  protocolId String
+  position   Int                 @default(0) // ordem/índice da sessão (0-based)
+  label      String?             // rótulo opcional (ex.: "Sessão de manutenção")
+  createdAt  DateTime            @default(now())
+  protocol   Protocol            @relation(fields: [protocolId], references: [id], onDelete: Cascade)
+  procedures ProtocolProcedure[]
+
+  @@index([protocolId])
+}
+
+// Um procedimento dentro de uma sessão do protocolo (snapshot nome + preço editável).
+model ProtocolProcedure {
+  id            String            @id @default(cuid())
+  sessionId     String
+  procedureId   String?           // referência ao catálogo (nullable p/ histórico)
+  procedureName String            // snapshot do nome
+  unitPrice     Float             @default(0) // preço puxado do procedimento, editável
+  quantity      Int               @default(1)
+  position      Int               @default(0) // ordem de exibição dentro da sessão
+  createdAt     DateTime          @default(now())
+  session       ProtocolSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  products      ProtocolProduct[]
+
+  @@index([sessionId])
+}
+
+// Um produto/material planejado para um procedimento do protocolo. Serve de
+// referência/estimativa (o clínico ajusta o gasto real na Evolução, que é onde
+// a baixa de estoque efetivamente ocorre).
+model ProtocolProduct {
+  id                  String            @id @default(cuid())
+  protocolProcedureId String
+  productId           String?           // nullable: material avulso/custom
+  customName          String?           // nome livre quando não é produto do catálogo
+  quantity            Float             @default(1)
+  createdAt           DateTime          @default(now())
+  protocolProcedure   ProtocolProcedure @relation(fields: [protocolProcedureId], references: [id], onDelete: Cascade)
+
+  @@index([protocolProcedureId])
 }
 
 model Appointment {

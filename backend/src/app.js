@@ -26,6 +26,7 @@ import profileRoutes from "./modules/profile/profile.routes.js";
 import anamnesisRoutes from "./modules/anamnesis/anamnesis.routes.js";
 import portfolioRoutes from "./modules/portfolio/portfolio.routes.js";
 import packagesRoutes from "./modules/packages/packages.routes.js";
+import protocolRoutes from "./modules/protocols/protocol.routes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -51,6 +52,7 @@ app.use("/ai", authMiddleware, requireFeature("aiAssistant"), aiRoutes);
 app.use("/documents", documentRoutes);
 app.use("/budgets", budgetRoutes);
 app.use("/packages", packagesRoutes);
+app.use("/protocols", protocolRoutes);
 app.use("/reports", authMiddleware, requireFeature("analytics"), reportsRoutes);
 app.use("/photos", photoRoutes);
 app.use("/portfolio", authMiddleware, requireFeature("portfolio"), portfolioRoutes);

@@ -7,6 +7,11 @@ function normalizeItem(item) {
   const quantity = Math.max(Number(item.quantity) || 1, 1);
   const unitPrice = Math.max(Number(item.unitPrice) || 0, 0);
 
+  const sessionIndex =
+    item.sessionIndex === null || item.sessionIndex === undefined
+      ? null
+      : Math.max(Number(item.sessionIndex), 0);
+
   return {
     procedureId: item.procedureId || null,
     procedureName: item.procedureName,
@@ -14,6 +19,7 @@ function normalizeItem(item) {
     unitPrice,
     total: quantity * unitPrice,
     observation: item.observation || null,
+    sessionIndex: Number.isNaN(sessionIndex) ? null : sessionIndex,
   };
 }
 

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Layers, Search, Star, FileText, Plus, Trash2, Check } from "lucide-react";
+import { Layers, Search, Star, FileText, Plus, Trash2, Check, Package } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import { Card, Button } from "../components/ui";
+import ProtocolsTab from "../components/sessions/ProtocolsTab";
 import api from "../services/api";
 import toast from "react-hot-toast";
 
@@ -138,6 +139,7 @@ function PackageCard({ pkg, onRegister, onRemoveSession, busy }) {
 }
 
 export default function Sessoes() {
+  const [tab, setTab] = useState("pacotes"); // pacotes | protocolos
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -240,6 +242,30 @@ export default function Sessoes() {
           concluir o agendamento vinculado ou ao registrar aqui.
         </p>
 
+        {/* Abas: pacotes ativos × protocolos (templates reutilizáveis) */}
+        <div className="flex gap-1.5 mb-5 border-b border-creme-200">
+          {[
+            { key: "pacotes", label: "Pacotes ativos", icon: Layers },
+            { key: "protocolos", label: "Protocolos", icon: Package },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 -mb-px border-b-2 transition ${
+                tab === t.key
+                  ? "border-verde text-verde-900"
+                  : "border-transparent text-gray-500 hover:text-verde"
+              }`}
+            >
+              <t.icon size={15} /> {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "protocolos" ? (
+          <ProtocolsTab />
+        ) : (
+        <>
         <div className="flex flex-col sm:flex-row gap-3 mb-5">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -291,9 +317,11 @@ export default function Sessoes() {
             ))}
           </div>
         )}
+        </>
+        )}
       </div>
 
-      {sessionModal && (
+      {tab === "pacotes" && sessionModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setSessionModal(null)}>
           <div className="bg-white rounded-2xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-verde-900 mb-1">Registrar sessão</h2>

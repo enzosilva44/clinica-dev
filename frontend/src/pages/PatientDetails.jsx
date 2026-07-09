@@ -37,6 +37,7 @@ export default function PatientDetails() {
     useState([]);
 
   const [procedures, setProcedures] = useState([]);
+  const [protocols, setProtocols] = useState([]);
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const isMobile = useIsMobile();
@@ -83,6 +84,7 @@ export default function PatientDetails() {
         quantity: 1,
         unitPrice: 0,
         observation: "",
+        sessionIndex: null,
       },
     ],
   }));
@@ -173,6 +175,65 @@ export default function PatientDetails() {
     }
   }
 
+  async function loadProtocols() {
+    try {
+      const response = await api.get("/protocols");
+      setProtocols(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  // Pré-preenche o orçamento a partir de um protocolo (Lote 6). Cada sessão do
+  // protocolo vira um card de sessão no orçamento (BudgetItem.sessionIndex),
+  // SOMANDO às sessões já presentes. O protocolo é só um molde: vira snapshot
+  // no orçamento (sem vínculo — pode mudar/ser removido depois). Tudo editável.
+  function applyProtocol(protocolId) {
+    const proto = protocols.find((p) => p.id === protocolId);
+    if (!proto || !(proto.sessions || []).length) return;
+
+    setBudgetForm((current) => {
+      // Descarta itens vazios; itens avulsos preenchidos entram na sessão 0.
+      const baseItems = current.items
+        .filter((it) => it.procedureName?.trim() || (it.sessionIndex !== null && it.sessionIndex !== undefined))
+        .map((it) =>
+          it.procedureName?.trim() && (it.sessionIndex === null || it.sessionIndex === undefined)
+            ? { ...it, sessionIndex: 0 }
+            : it,
+        );
+      const existing = sessionIndexes(baseItems);
+      const offset = existing.length ? Math.max(...existing) + 1 : 0;
+
+      const newItems = [];
+      proto.sessions.forEach((sess, sIdx) => {
+        (sess.procedures || []).forEach((pp) => {
+          newItems.push({
+            procedureId: pp.procedureId || "",
+            procedureName: pp.procedureName,
+            quantity: pp.quantity || 1,
+            unitPrice: pp.unitPrice || 0,
+            observation: sess.label || "",
+            sessionIndex: offset + sIdx,
+          });
+        });
+      });
+
+      // Preço fechado do protocolo → desconto sobre a soma das sessões dele.
+      const sum = newItems.reduce((s, it) => s + (it.quantity || 1) * (it.unitPrice || 0), 0);
+      const addedDiscount = proto.useFixedPrice ? Math.max(sum - (Number(proto.fixedPrice) || 0), 0) : 0;
+
+      return {
+        ...current,
+        title: current.title?.trim() ? current.title : proto.name,
+        observations: current.observations || proto.description || "",
+        isPackage: true,
+        discount: (Number(current.discount) || 0) + addedDiscount,
+        items: [...baseItems, ...newItems],
+      };
+    });
+    toast.success(`Protocolo "${proto.name}" aplicado`);
+  }
+
   async function loadPatientStats() {
     try {
       const response = await api.get(`/patients/${id}/stats`);
@@ -236,6 +297,7 @@ export default function PatientDetails() {
           quantity: 1,
           unitPrice: 0,
           observation: "",
+          sessionIndex: null,
         },
       ],
     });
@@ -260,7 +322,7 @@ export default function PatientDetails() {
     });
   }
 
-  function addBudgetItem() {
+  function addBudgetItem(sessionIndex = null) {
     setBudgetForm((current) => ({
       ...current,
       items: [
@@ -271,6 +333,7 @@ export default function PatientDetails() {
           quantity: 1,
           unitPrice: 0,
           observation: "",
+          sessionIndex,
         },
       ],
     }));
@@ -285,11 +348,53 @@ export default function PatientDetails() {
     }));
   }
 
+  // Índices de sessão distintos presentes nos itens (ordenados). Base para os cards.
+  function sessionIndexes(items) {
+    return [...new Set(items.map((it) => it.sessionIndex).filter((v) => v !== null && v !== undefined))]
+      .sort((a, b) => a - b);
+  }
+
+  // Adiciona uma nova sessão (card) ao pacote, já com 1 procedimento vazio.
+  function addBudgetSession() {
+    setBudgetForm((current) => {
+      const existing = sessionIndexes(current.items);
+      const nextIdx = existing.length ? Math.max(...existing) + 1 : 0;
+      return {
+        ...current,
+        items: [
+          ...current.items.filter((it) => it.procedureName || it.sessionIndex !== null),
+          { procedureId: "", procedureName: "", quantity: 1, unitPrice: 0, observation: "", sessionIndex: nextIdx },
+        ],
+      };
+    });
+  }
+
+  // Remove uma sessão inteira (todos os itens daquele índice) e reindexa.
+  function removeBudgetSession(sessionIndex) {
+    setBudgetForm((current) => {
+      const kept = current.items.filter((it) => it.sessionIndex !== sessionIndex);
+      // Reindexa as sessões restantes para não deixar buracos.
+      const remaining = sessionIndexes(kept);
+      const remap = new Map(remaining.map((old, i) => [old, i]));
+      const items = kept.map((it) =>
+        it.sessionIndex === null || it.sessionIndex === undefined
+          ? it
+          : { ...it, sessionIndex: remap.get(it.sessionIndex) },
+      );
+      return { ...current, items: items.length ? items : [{ procedureId: "", procedureName: "", quantity: 1, unitPrice: 0, observation: "", sessionIndex: 0 }] };
+    });
+  }
+
   async function createBudget() {
     if (savingBudget) return;
     const validItems = budgetForm.items.filter((item) => item.procedureName);
     if (!budgetForm.title.trim()) return toast.error("Informe o título do orçamento");
     if (validItems.length === 0) return toast.error("Adicione ao menos um procedimento");
+
+    // Pacote: nº de sessões = nº de cards de sessão distintos entre os itens.
+    // Fallback 1 (pacote sem cards = sessão única com vários procedimentos).
+    const sessionCards = sessionIndexes(validItems).length;
+    const sessionCount = budgetForm.isPackage ? Math.max(sessionCards, 1) : 1;
 
     setSavingBudget(true);
     try {
@@ -300,7 +405,7 @@ export default function PatientDetails() {
         discount: Number(budgetForm.discount) || 0,
         observations: budgetForm.observations,
         isPackage: budgetForm.isPackage,
-        sessionCount: budgetForm.isPackage ? Math.max(Number(budgetForm.sessionCount) || 1, 1) : 1,
+        sessionCount,
         idempotencyKey: budgetKeyRef.current,
         txPaymentMethod: budgetForm.txPaymentMethod || null,
         txSettlementType: isCardMethod(budgetForm.txPaymentMethod) ? (budgetForm.txSettlementType || null) : null,
@@ -313,6 +418,7 @@ export default function PatientDetails() {
           quantity: Number(item.quantity) || 1,
           unitPrice: Number(item.unitPrice) || 0,
           observation: item.observation,
+          sessionIndex: item.sessionIndex ?? null,
         })),
       });
       // Renova a chave para o próximo orçamento
@@ -517,6 +623,7 @@ export default function PatientDetails() {
     loadEvolutions();
     loadAppointments();
     loadProcedures();
+    loadProtocols();
     loadPatientStats();
     loadPatientDocs();
     loadAllDocs();
@@ -1353,9 +1460,96 @@ export default function PatientDetails() {
             ), 0);
             const discount = Number(budgetForm.discount) || 0;
             const total = Math.max(subtotal - discount, 0);
+            const cards = sessionIndexes(budgetForm.items); // índices de sessão presentes
+            const avulsoItems = budgetForm.items // itens sem sessão (fluxo não-pacote / legado)
+              .map((item, index) => ({ item, index }))
+              .filter(({ item }) => item.sessionIndex === null || item.sessionIndex === undefined);
+
+            // Uma linha de item (procedimento + qtd + preço + total + remover + obs).
+            const renderItemRow = (item, index) => {
+              const itemTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+              return (
+                <div key={index} className="border border-creme-200 rounded-xl p-4 bg-creme-50 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-[1.5fr_0.65fr_0.8fr_0.8fr_auto] gap-3 items-end">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1.5">Procedimento</label>
+                      <SearchableSelect
+                        value={item.procedureId}
+                        onChange={(v) => handleBudgetProcedureSelect(index, v)}
+                        placeholder="Buscar procedimento..."
+                        options={procedures.map((proc) => ({ value: proc.id, label: proc.name }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1.5">Qtd</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => updateBudgetItem(index, { quantity: e.target.value })}
+                        className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1.5">Preço un.</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.unitPrice}
+                        onChange={(e) => updateBudgetItem(index, { unitPrice: e.target.value })}
+                        className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1.5">Total</label>
+                      <div className="w-full border border-creme-200 bg-white rounded-xl p-3 text-sm font-mono text-gray-500">
+                        {itemTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeBudgetItem(index)}
+                      className="h-11 px-4 border border-red-200 rounded-xl hover:bg-red-50 text-red-400 transition flex items-center justify-center"
+                      title="Remover item"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 block mb-1.5">Observação do item</label>
+                    <input
+                      value={item.observation}
+                      onChange={(e) => updateBudgetItem(index, { observation: e.target.value })}
+                      placeholder="Ex: Sessão única, retorno gratuito..."
+                      className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                    />
+                  </div>
+                </div>
+              );
+            };
 
             return (
               <div className="bg-white border border-creme-200 rounded-xl p-5 mb-6 space-y-5">
+                {protocols.length > 0 && (
+                  <div className="rounded-xl bg-creme-50 border border-creme-200 p-3.5">
+                    <label className="text-xs font-semibold text-verde block mb-1.5">
+                      Começar a partir de um protocolo
+                    </label>
+                    <SearchableSelect
+                      value=""
+                      onChange={(id) => id && applyProtocol(id)}
+                      options={protocols.map((p) => ({
+                        value: p.id,
+                        label: `${p.name} · ${p.sessionCount} sessão${p.sessionCount > 1 ? "es" : ""} · ${(Number(p.total) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`,
+                      }))}
+                      placeholder="Selecione um protocolo (opcional)…"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1.5">
+                      Pré-preenche título, procedimentos e nº de sessões. Você ainda pode editar tudo abaixo.
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-medium text-gray-500 block mb-1.5">Título do orçamento *</label>
@@ -1379,7 +1573,16 @@ export default function PatientDetails() {
 
                 <button
                   type="button"
-                  onClick={() => setBudgetForm((current) => ({ ...current, isPackage: !current.isPackage }))}
+                  onClick={() => setBudgetForm((current) => {
+                    const next = !current.isPackage;
+                    // Ao virar pacote, os itens avulsos entram na sessão 1 (índice 0).
+                    // Ao voltar p/ avulso, todos os itens perdem o vínculo de sessão.
+                    const items = current.items.map((it) => ({
+                      ...it,
+                      sessionIndex: next ? (it.sessionIndex ?? 0) : null,
+                    }));
+                    return { ...current, isPackage: next, items };
+                  })}
                   className={`w-full flex items-center gap-3 rounded-xl p-3 border text-left transition ${
                     budgetForm.isPackage
                       ? "border-verde bg-verde/5"
@@ -1405,104 +1608,75 @@ export default function PatientDetails() {
                   </span>
                 </button>
 
-                {budgetForm.isPackage && (
-                  <div className="rounded-xl border border-verde bg-verde/5 p-4">
-                    <label className="text-xs font-semibold text-verde block mb-1.5">
-                      Número de sessões do pacote
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={budgetForm.sessionCount}
-                      onChange={(e) => setBudgetForm((current) => ({ ...current, sessionCount: e.target.value }))}
-                      className="w-32 border border-verde rounded-xl p-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-verde/20"
-                    />
-                    <p className="text-[11px] text-gray-500 mt-1.5">
-                      Quantas sessões o paciente terá. Cada sessão pode incluir vários procedimentos
-                      (os itens abaixo são o que está incluso no pacote).
-                    </p>
-                  </div>
-                )}
-
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-bold text-verde">
-                      {budgetForm.isPackage ? "Procedimentos inclusos no pacote" : "Itens do orçamento"}
+                      {budgetForm.isPackage ? "Sessões do pacote" : "Itens do orçamento"}
                     </h3>
                     <button
-                      onClick={addBudgetItem}
+                      onClick={() => (budgetForm.isPackage ? addBudgetSession() : addBudgetItem(null))}
                       className="border border-ambar hover:bg-creme-100 text-verde px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5"
                     >
                       <Plus size={13} />
-                      Adicionar item
+                      {budgetForm.isPackage ? "Adicionar sessão" : "Adicionar item"}
                     </button>
                   </div>
 
-                  <div className="space-y-3">
-                    {budgetForm.items.map((item, index) => {
-                      const itemTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
-
-                      return (
-                        <div key={index} className="border border-creme-200 rounded-xl p-4 bg-creme-50 space-y-3">
-                          <div className="grid grid-cols-1 md:grid-cols-[1.5fr_0.65fr_0.8fr_0.8fr_auto] gap-3 items-end">
-                            <div>
-                              <label className="text-xs font-medium text-gray-500 block mb-1.5">Procedimento</label>
-                              <SearchableSelect
-                                value={item.procedureId}
-                                onChange={(v) => handleBudgetProcedureSelect(index, v)}
-                                placeholder="Buscar procedimento..."
-                                options={procedures.map((proc) => ({ value: proc.id, label: proc.name }))}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-medium text-gray-500 block mb-1.5">Qtd</label>
-                              <input
-                                type="number"
-                                min="1"
-                                value={item.quantity}
-                                onChange={(e) => updateBudgetItem(index, { quantity: e.target.value })}
-                                className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-medium text-gray-500 block mb-1.5">Preço un.</label>
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={item.unitPrice}
-                                onChange={(e) => updateBudgetItem(index, { unitPrice: e.target.value })}
-                                className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-medium text-gray-500 block mb-1.5">Total</label>
-                              <div className="w-full border border-creme-200 bg-white rounded-xl p-3 text-sm font-mono text-gray-500">
-                                {itemTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  {budgetForm.isPackage ? (
+                    <div className="space-y-4">
+                      {cards.length === 0 && (
+                        <p className="text-xs text-gray-400 py-4 text-center">
+                          Nenhuma sessão ainda. Clique em "Adicionar sessão" ou aplique um protocolo acima.
+                        </p>
+                      )}
+                      {cards.map((sIdx) => {
+                        const rows = budgetForm.items
+                          .map((item, index) => ({ item, index }))
+                          .filter(({ item }) => item.sessionIndex === sIdx);
+                        const sessTotal = rows.reduce(
+                          (acc, { item }) => acc + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
+                          0,
+                        );
+                        return (
+                          <div key={sIdx} className="rounded-xl border-2 border-creme-200 p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-verde text-white text-xs font-bold">
+                                  {sIdx + 1}
+                                </span>
+                                <span className="text-sm font-semibold text-verde-900">Sessão {sIdx + 1}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-verde-900">
+                                  {sessTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                </span>
+                                <button
+                                  onClick={() => removeBudgetSession(sIdx)}
+                                  className="text-gray-400 hover:text-red-500 p-1"
+                                  title="Remover sessão"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
                               </div>
                             </div>
+                            <div className="space-y-3">
+                              {rows.map(({ item, index }) => renderItemRow(item, index))}
+                            </div>
                             <button
-                              onClick={() => removeBudgetItem(index)}
-                              className="h-11 px-4 border border-red-200 rounded-xl hover:bg-red-50 text-red-400 transition flex items-center justify-center"
-                              title="Remover item"
+                              onClick={() => addBudgetItem(sIdx)}
+                              className="inline-flex items-center gap-1.5 text-xs font-medium text-verde hover:underline mt-3"
                             >
-                              <Trash2 size={15} />
+                              <Plus size={13} /> Adicionar procedimento à sessão
                             </button>
                           </div>
-
-                          <div>
-                            <label className="text-xs font-medium text-gray-500 block mb-1.5">Observação do item</label>
-                            <input
-                              value={item.observation}
-                              onChange={(e) => updateBudgetItem(index, { observation: e.target.value })}
-                              placeholder="Ex: Sessão única, retorno gratuito..."
-                              className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {avulsoItems.map(({ item, index }) => renderItemRow(item, index))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 space-y-3">
