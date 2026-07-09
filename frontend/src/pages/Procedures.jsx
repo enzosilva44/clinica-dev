@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pencil, Trash2, Copy, Plus, X, Stethoscope } from "lucide-react";
+import { Pencil, Trash2, Copy, Plus, X, Stethoscope, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
@@ -9,6 +9,8 @@ import api from "../services/api";
 export default function Procedures() {
   const [procedures, setProcedures] = useState([]);
   const [originFilter, setOriginFilter] = useState("todos"); // todos | padrao | meus
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("name_asc");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -174,11 +176,19 @@ export default function Procedures() {
   }, []);
 
   const hasDefaults = procedures.some((p) => p.isDefault);
-  const visibleProcedures = procedures.filter((p) => {
-    if (originFilter === "padrao") return p.isDefault;
-    if (originFilter === "meus") return !p.isDefault;
-    return true;
-  });
+  const q = search.trim().toLowerCase();
+  const visibleProcedures = procedures
+    .filter((p) => {
+      if (originFilter === "padrao") return p.isDefault;
+      if (originFilter === "meus") return !p.isDefault;
+      return true;
+    })
+    .filter((p) => !q || (p.name || "").toLowerCase().includes(q))
+    .sort((a, b) =>
+      sortBy === "name_desc"
+        ? (b.name || "").localeCompare(a.name || "", "pt-BR")
+        : (a.name || "").localeCompare(b.name || "", "pt-BR")
+    );
 
   const FILTER_TABS = [
     { key: "todos",  label: "Todos" },
@@ -224,6 +234,30 @@ export default function Procedures() {
         </div>
       </div>
 
+      {/* BUSCA + ORDEM */}
+      {procedures.length > 0 && (
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar procedimento por nome…"
+              className="w-full pl-10 pr-4 py-2.5 border border-ambar rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-verde/20"
+            />
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="border border-ambar rounded-xl px-3 py-2.5 text-sm bg-white text-verde focus:outline-none focus:ring-2 focus:ring-verde/20 cursor-pointer"
+            aria-label="Ordenar procedimentos"
+          >
+            <option value="name_asc">Nome (A–Z)</option>
+            <option value="name_desc">Nome (Z–A)</option>
+          </select>
+        </div>
+      )}
+
       {/* CONTENT */}
       {loading ? (
         <Spinner />
@@ -235,6 +269,13 @@ export default function Procedures() {
           <Button size="lg" onClick={() => { resetForm(); setShowModal(true); }}>
             <Plus size={18} /> Novo procedimento
           </Button>
+        </div>
+      ) : visibleProcedures.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center text-gray-400">
+          <Search size={40} className="mb-3 opacity-30" />
+          <p className="text-sm">
+            Nenhum resultado para <span className="font-medium text-verde">"{search}"</span>
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4.5">

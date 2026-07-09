@@ -21,6 +21,14 @@ export async function create(req, res) {
   } catch (e) { return res.status(400).json({ error: sanitizeError(e) }); }
 }
 
+export async function createRetorno(req, res) {
+  try {
+    return res.status(201).json(
+      await mapService.createRetorno(req.params.id, req.user.id, req.body)
+    );
+  } catch (e) { return res.status(400).json({ error: sanitizeError(e) }); }
+}
+
 export async function update(req, res) {
   try {
     return res.json(await mapService.update(req.params.id, req.user.id, req.body));

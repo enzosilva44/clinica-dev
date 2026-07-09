@@ -27,6 +27,33 @@ const MARKER_COLORS = [
   { label: "Vermelho", value: "#FF1744" }, // vermelho vibrante
 ];
 
+// Paleta fixa para a LEGENDA de produtos: cada produto do mapa ganha uma cor
+// (por posição) e um número, exibidos no marcador e na legenda impressa.
+export const PRODUCT_LEGEND_COLORS = [
+  "#00704A", // verde institucional
+  "#B026FF", // roxo
+  "#00B0FF", // azul
+  "#FF6D00", // laranja
+  "#FF2D95", // rosa
+  "#C4895A", // âmbar
+  "#E2574C", // vermelho
+  "#3A9B6F", // verde claro
+];
+
+// Mapa productId -> { index (1-based), color } com base na ordem da lista.
+export function buildProductLegend(products = []) {
+  const legend = {};
+  (products || []).forEach((p, i) => {
+    if (!p?.id) return;
+    legend[p.id] = {
+      index: i + 1,
+      color: PRODUCT_LEGEND_COLORS[i % PRODUCT_LEGEND_COLORS.length],
+      name: p.productName || `Produto ${i + 1}`,
+    };
+  });
+  return legend;
+}
+
 function photoUrl(id) {
   const token = localStorage.getItem("token");
   return `${API_BASE}/photos/${id}/file?token=${encodeURIComponent(token ?? "")}`;
@@ -43,6 +70,8 @@ export default function FaceMap({
   patientId,
   selectedMuscle = null,
   compact = false,
+  productLegend = null,
+  showInherited = true,
 }) {
   const svgRef = useRef(null);
 
@@ -166,8 +195,11 @@ export default function FaceMap({
 
   function switchTool(t) { setTool(t); setLinePoints([]); setPendingMarker(null); }
 
-  const pointMarkers = markers.filter((m) => !m.type || m.type === "point");
-  const lineMarkers  = markers.filter((m) => m.type === "line");
+  // Marcadores herdados (inherited) vêm de um mapa de retorno: aparecem como
+  // "fantasma" (referência) e podem ser ocultados via toggle; nunca são apagados.
+  const visibleMarkers = showInherited ? markers : markers.filter((m) => !m.inherited);
+  const pointMarkers = visibleMarkers.filter((m) => !m.type || m.type === "point");
+  const lineMarkers  = visibleMarkers.filter((m) => m.type === "line");
 
   // Soma total de unidades, agrupado por tipo de unidade (U, ml, mg, etc.)
   const totalsByUnit = markers.reduce((acc, m) => {
@@ -695,20 +727,39 @@ export default function FaceMap({
 
             {/* ── SAVED POINT MARKERS ── */}
             {pointMarkers.map((m) => {
-              const r = hoveredId === m.id ? 6.5 : 5;
+              const ghost = !!m.inherited;
+              const r = (hoveredId === m.id ? 6.5 : 5) * (ghost ? 0.85 : 1);
               const color = vividColor(m.color);
+              const leg = productLegend && m.productId ? productLegend[m.productId] : null;
               return (
-                <g key={m.id} className="marker-dot" style={{ cursor: readOnly ? "default" : tool === "erase" ? "pointer" : "default" }}
+                <g key={m.id} className="marker-dot"
+                  style={{ cursor: readOnly || ghost ? "default" : tool === "erase" ? "pointer" : "default", opacity: ghost ? 0.4 : 1 }}
                   onMouseEnter={() => setHoveredId(m.id)}
                   onMouseLeave={() => setHoveredId(null)}
-                  onClick={(e) => { e.stopPropagation(); if (!readOnly && tool === "erase") removeMarker(m.id); }}
+                  onClick={(e) => { e.stopPropagation(); if (!readOnly && !ghost && tool === "erase") removeMarker(m.id); }}
                 >
-                  {/* anel escuro externo — destaca a cor neon sobre qualquer fundo */}
-                  <circle cx={m.x} cy={m.y} r={r + 1.5} fill="#1A1A1A" opacity="0.35" />
-                  {/* borda branca */}
-                  <circle cx={m.x} cy={m.y} r={r} fill={color} stroke="white" strokeWidth="2" />
-                  {/* brilho central */}
-                  <circle cx={m.x - r * 0.3} cy={m.y - r * 0.3} r={r * 0.3} fill="white" opacity="0.55" />
+                  {ghost ? (
+                    // ponto fantasma (aplicação anterior): tracejado, sem brilho
+                    <circle cx={m.x} cy={m.y} r={r} fill={color} stroke="white" strokeWidth="1.4"
+                      strokeDasharray="2,1.5" fillOpacity="0.55" />
+                  ) : (
+                    <>
+                      {/* anel escuro externo — destaca a cor neon sobre qualquer fundo */}
+                      <circle cx={m.x} cy={m.y} r={r + 1.5} fill="#1A1A1A" opacity="0.35" />
+                      {/* borda branca */}
+                      <circle cx={m.x} cy={m.y} r={r} fill={color} stroke="white" strokeWidth="2" />
+                      {/* brilho central */}
+                      <circle cx={m.x - r * 0.3} cy={m.y - r * 0.3} r={r * 0.3} fill="white" opacity="0.55" />
+                    </>
+                  )}
+                  {/* badge numérico do produto (legenda) */}
+                  {leg && (
+                    <g style={{ pointerEvents: "none" }}>
+                      <circle cx={m.x + r + 1} cy={m.y - r - 1} r={4.6} fill={leg.color} stroke="white" strokeWidth="1.2" />
+                      <text x={m.x + r + 1} y={m.y - r + 1.6} fontSize="6.5" fill="white" fontWeight="bold"
+                        fontFamily="sans-serif" textAnchor="middle">{leg.index}</text>
+                    </g>
+                  )}
                   {m.units > 0 ? (
                     <text x={m.x + 8} y={m.y - 5}
                       fontSize="11" fill={color} fontWeight="bold" fontFamily="sans-serif"

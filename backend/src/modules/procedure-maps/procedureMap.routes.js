@@ -8,6 +8,7 @@ router.use(authMiddleware);
 router.get("/patient/:patientId", mapController.findByPatient);
 router.get("/:id", mapController.findById);
 router.post("/patient/:patientId", mapController.create);
+router.post("/:id/retorno", mapController.createRetorno);
 router.put("/:id", mapController.update);
 router.delete("/:id", mapController.remove);
 

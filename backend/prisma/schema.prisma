@@ -278,6 +278,7 @@ model Appointment {
   procedures     AppointmentProcedure[]
   budgetSessions   BudgetSession[]
   clubApplications ClubApplication[]
+  procedureMaps    ProcedureMap[]
 }
 
 // Um procedimento dentro de um agendamento (permite vários por atendimento).
@@ -411,8 +412,18 @@ model ProcedureMap {
   vialPresentation  String?
   vialQuantity      String?
   vialUnit          String?
-  patient           Patient   @relation(fields: [patientId], references: [id])
-  user              User      @relation(fields: [userId], references: [id])
+  // Vínculo opcional com o agendamento que originou este mapa (item 11).
+  appointmentId     String?
+  // Mapa de origem quando este é um "retorno" que replica pontos p/ sobrepontos.
+  parentMapId       String?
+  patient           Patient        @relation(fields: [patientId], references: [id])
+  user              User           @relation(fields: [userId], references: [id])
+  appointment       Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  parentMap         ProcedureMap?  @relation("MapRetornos", fields: [parentMapId], references: [id], onDelete: SetNull)
+  retornos          ProcedureMap[] @relation("MapRetornos")
+
+  @@index([appointmentId])
+  @@index([parentMapId])
 }
 
 model ClubPlan {

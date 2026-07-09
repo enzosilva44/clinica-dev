@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Map, Trash2, Edit2, Check, X, Printer, RotateCcw, Save, ImageIcon, User, ClipboardList, Pencil } from "lucide-react";
+import { Plus, Map, Trash2, Edit2, Check, X, Printer, RotateCcw, Save, ImageIcon, User, ClipboardList, Pencil, Repeat, Eye, EyeOff, CalendarClock } from "lucide-react";
 
 const PRESET_IMAGES = [
   { value: "/face-1.png",       label: "Rosto Padrão",     desc: "Vista frontal neutra" },
@@ -10,7 +10,7 @@ const PRESET_IMAGES = [
 ];
 import toast from "react-hot-toast";
 import api from "../../services/api";
-import FaceMap from "./FaceMap";
+import FaceMap, { buildProductLegend } from "./FaceMap";
 import Spinner from "../ui/Spinner";
 import SearchableSelect from "../ui/SearchableSelect";
 import { FACIAL_MUSCLES, GLUTEAL_MUSCLES, TAG_COLORS, TAG_LABELS, vividColor } from "../../data/faceMuscles";
@@ -60,6 +60,10 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
   const [titleInput, setTitleInput] = useState("");
   const [choosingImage, setChoosingImage] = useState(false);
   const [patientPhotos, setPatientPhotos] = useState([]);
+  const [appointments, setAppointments] = useState([]); // agendamentos do paciente (vínculo opcional)
+  const [appointmentId, setAppointmentId] = useState(""); // vínculo do mapa aberto
+  const [showInherited, setShowInherited] = useState(true); // mostrar pontos da aplicação anterior
+  const [creatingRetorno, setCreatingRetorno] = useState(false);
   const printRef = useRef(null);
 
   async function loadMaps() {
@@ -85,6 +89,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     setTitleInput(map.title ?? "");
     setEditingTitle(false);
     setSelectedMuscleId(null);
+    setAppointmentId(map.appointmentId ?? "");
+    setShowInherited(true);
     // Retrocompat: mapas antigos usavam vialPresentation (ex: "100U").
     // Separamos número e unidade ao carregar.
     let vialQuantity = map.vialQuantity ?? "";
@@ -317,7 +323,35 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     api.get(`/photos/patient/${patientId}`).then((r) => setPatientPhotos(r.data)).catch(() => {});
     // Catálogo do estoque p/ o seletor de produtos (silencioso: pode não ter a feature)
     api.get("/products").then((r) => setStockProducts(r.data || [])).catch(() => setStockProducts([]));
+    // Agendamentos do paciente p/ vincular o mapa ao atendimento (opcional)
+    api.get(`/appointments/patient/${patientId}`).then((r) => setAppointments(r.data || [])).catch(() => setAppointments([]));
   }, [patientId]);
+
+  // Vincula/desvincula o mapa aberto a um agendamento (persiste imediatamente).
+  async function linkAppointment(apptId) {
+    setAppointmentId(apptId);
+    if (!selectedId) return;
+    try {
+      await api.put(`/procedure-maps/${selectedId}`, { appointmentId: apptId || null });
+      setMaps((prev) => prev.map((m) => m.id === selectedId ? { ...m, appointmentId: apptId || null } : m));
+    } catch { toast.error("Erro ao vincular atendimento"); }
+  }
+
+  // Cria um novo mapa de RETORNO replicando os pontos como referência (fantasma).
+  async function createRetorno() {
+    if (!selectedId) return;
+    setCreatingRetorno(true);
+    try {
+      const res = await api.post(`/procedure-maps/${selectedId}/retorno`, {});
+      setMaps((prev) => [res.data, ...prev]);
+      openMap(res.data);
+      toast.success("Mapa de retorno criado — marque os sobrepontos");
+    } catch {
+      toast.error("Erro ao criar retorno");
+    } finally {
+      setCreatingRetorno(false);
+    }
+  }
 
   const totalPoints = markers.filter((m) => !m.type || m.type === "point").length;
 
@@ -332,6 +366,13 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
   }, {});
   const totalUnitEntries = Object.entries(totalsByUnit);
   const fmtNum = (n) => (Number.isInteger(n) ? n : n.toFixed(1));
+
+  // Legenda visual de produtos: cor + número por produto (só faz sentido com >1).
+  const namedProducts = products.filter((p) => p.productName?.trim());
+  const productLegend = namedProducts.length > 1 ? buildProductLegend(namedProducts) : null;
+  const legendEntries = productLegend
+    ? namedProducts.map((p) => ({ ...productLegend[p.id], product: p }))
+    : [];
 
   // Grupo de músculos correspondente à imagem atual (faciais ou glúteos)
   const activeMuscles = muscleGroupForImage(baseImage);
@@ -462,6 +503,11 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-ambar text-gray-600 hover:bg-creme-100 transition">
                 <ImageIcon size={13} /> Imagem
               </button>
+              <button onClick={createRetorno} disabled={creatingRetorno || !selectedId}
+                title="Cria um novo mapa replicando estes pontos como referência, para marcar sobrepontos no retorno"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-verde text-verde hover:bg-verde-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                <Repeat size={13} /> {creatingRetorno ? "Criando…" : "Novo retorno"}
+              </button>
               <button onClick={undoMarkers} disabled={history.length === 0}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-ambar text-gray-600 hover:bg-creme-100 transition disabled:opacity-40 disabled:cursor-not-allowed">
                 <RotateCcw size={13} /> Desfazer
@@ -537,13 +583,38 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
           )}
 
           <div className={choosingImage ? "hidden" : "p-5"}>
-            {/* ── DATA DA APLICAÇÃO ── */}
-            <div className="mb-4">
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Data da Aplicação</label>
-              <input type="date" value={formData.applicationDate}
-                onChange={(e) => setFormData({ ...formData, applicationDate: e.target.value })}
-                className="w-full sm:w-64 border border-ambar rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-verde" />
+            {/* ── DATA DA APLICAÇÃO + VÍNCULO COM ATENDIMENTO ── */}
+            <div className="flex flex-wrap gap-4 mb-4">
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Data da Aplicação</label>
+                <input type="date" value={formData.applicationDate}
+                  onChange={(e) => setFormData({ ...formData, applicationDate: e.target.value })}
+                  className="w-full sm:w-64 border border-ambar rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-verde" />
+              </div>
+              <div className="min-w-55">
+                <label className="text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
+                  <CalendarClock size={12} /> Vincular ao atendimento (opcional)
+                </label>
+                <SearchableSelect
+                  value={appointmentId}
+                  onChange={linkAppointment}
+                  placeholder="— sem vínculo —"
+                  options={appointments.map((a) => ({
+                    value: a.id,
+                    label: `${new Date(a.startsAt).toLocaleDateString("pt-BR")} · ${a.title || a.procedureType || "Atendimento"}`,
+                  }))}
+                />
+              </div>
             </div>
+
+            {/* Toggle: mostrar/ocultar pontos da aplicação anterior (retorno) */}
+            {markers.some((m) => m.inherited) && (
+              <button type="button" onClick={() => setShowInherited((v) => !v)}
+                className="no-print mb-4 flex items-center gap-1.5 text-xs font-medium text-verde border border-verde rounded-lg px-3 py-1.5 hover:bg-verde-50 transition">
+                {showInherited ? <EyeOff size={13} /> : <Eye size={13} />}
+                {showInherited ? "Ocultar aplicação anterior" : "Mostrar aplicação anterior"}
+              </button>
+            )}
 
             {/* ── PRODUTOS UTILIZADOS (N produtos) ── */}
             <div className="bg-white border border-creme-200 rounded-xl p-4 mb-5">
@@ -669,8 +740,27 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                     procedures={procedures}
                     patientId={patientId}
                     selectedMuscle={selectedMuscle}
+                    productLegend={productLegend}
+                    showInherited={showInherited}
                     compact
                   />
+
+                  {/* LEGENDA DE PRODUTOS — cor + número por produto (na tela e na impressão) */}
+                  {legendEntries.length > 0 && (
+                    <div className="mt-3 border border-creme-200 rounded-xl p-3 bg-creme-50/50">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">Legenda de produtos</p>
+                      <div className="flex flex-col gap-1.5">
+                        {legendEntries.map((e) => (
+                          <div key={e.product.id} className="flex items-center gap-2 text-xs">
+                            <span className="w-4 h-4 shrink-0 rounded-full flex items-center justify-center text-white font-bold"
+                              style={{ backgroundColor: e.color, fontSize: 9 }}>{e.index}</span>
+                            <span className="font-semibold text-verde">{e.product.productName}</span>
+                            {e.product.lotNumber && <span className="text-gray-400">· lote {e.product.lotNumber}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="mt-2 text-center text-xs text-gray-500">
                     <span className="font-semibold text-verde">{totalPoints} ponto{totalPoints !== 1 ? "s" : ""}</span>
                     {totalUnitEntries.map(([unit, total]) => (

@@ -3,7 +3,7 @@ import {
   Plus, Pencil, Trash2, X, Package,
   ArrowDownCircle, ArrowUpCircle, CheckCircle2, XCircle,
   Clock, Filter, AlertTriangle, CalendarClock,
-  Sparkles, ShieldCheck, RefreshCw, Info,
+  Sparkles, ShieldCheck, RefreshCw, Info, Search,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
@@ -211,6 +211,8 @@ export default function Products() {
   // produtos
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("name_asc");
 
   // modal produto
   const [showModal, setShowModal] = useState(false);
@@ -424,6 +426,16 @@ export default function Products() {
 
   const pendingCount = requests.filter((r) => r.status === "pending").length;
 
+  // busca + ordenação (client-side) da lista de estoque
+  const q = search.trim().toLowerCase();
+  const visibleProducts = products
+    .filter((p) => !q || (p.name || "").toLowerCase().includes(q))
+    .sort((a, b) =>
+      sortBy === "name_desc"
+        ? (b.name || "").localeCompare(a.name || "", "pt-BR")
+        : (a.name || "").localeCompare(b.name || "", "pt-BR")
+    );
+
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
@@ -480,6 +492,30 @@ export default function Products() {
             ))}
           </div>
 
+          {/* busca + ordem */}
+          {products.length > 0 && (
+            <div className="flex flex-col md:flex-row gap-3 mb-6">
+              <div className="relative flex-1">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar produto por nome…"
+                  className="w-full pl-10 pr-4 py-2.5 border border-ambar rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-verde/20"
+                />
+              </div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="border border-ambar rounded-xl px-3 py-2.5 text-sm bg-white text-verde focus:outline-none focus:ring-2 focus:ring-verde/20 cursor-pointer"
+                aria-label="Ordenar produtos"
+              >
+                <option value="name_asc">Nome (A–Z)</option>
+                <option value="name_desc">Nome (Z–A)</option>
+              </select>
+            </div>
+          )}
+
           {loading ? (
             <Spinner />
           ) : products.length === 0 ? (
@@ -491,9 +527,16 @@ export default function Products() {
                 <Plus size={18} /> Novo produto
               </Button>
             </div>
+          ) : visibleProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center text-gray-400">
+              <Search size={40} className="mb-3 opacity-30" />
+              <p className="text-sm">
+                Nenhum resultado para <span className="font-medium text-verde">"{search}"</span>
+              </p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {products.map((product) => {
+              {visibleProducts.map((product) => {
                 const st = stockStatus(product);
                 const styles = STATUS_STYLES[st];
                 const exp = expiryStatus(product.expiryDate);

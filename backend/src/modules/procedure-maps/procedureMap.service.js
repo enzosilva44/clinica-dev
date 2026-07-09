@@ -45,6 +45,8 @@ export async function create(patientId, userId, data) {
       date: data.date ? new Date(data.date) : new Date(),
       markers: data.markers ?? [],
       products: data.products ?? [],
+      appointmentId: data.appointmentId || null,
+      parentMapId: data.parentMapId || null,
       ...pickExtras(data),
       patientId,
       userId,
@@ -63,7 +65,39 @@ export async function update(id, userId, data) {
       date: data.date ? new Date(data.date) : map.date,
       markers: data.markers ?? map.markers,
       products: data.products ?? map.products,
+      // appointmentId é opcional; só atualiza se veio no payload (undefined = mantém)
+      ...(data.appointmentId !== undefined ? { appointmentId: data.appointmentId || null } : {}),
       ...pickExtras(data, map),
+    },
+  });
+}
+
+// Cria um mapa de RETORNO replicando os pontos/produtos do mapa de origem.
+// Os marcadores copiados ganham novos ids e a flag `inherited` para aparecerem
+// como "fantasma" (referência) no front, permitindo marcar sobrepontos por cima.
+export async function createRetorno(parentId, userId, data = {}) {
+  const parent = await prisma.procedureMap.findFirst({ where: { id: parentId, userId } });
+  if (!parent) throw new Error("Mapa não encontrado");
+
+  const srcMarkers = Array.isArray(parent.markers) ? parent.markers : [];
+  const inheritedMarkers = srcMarkers.map((m) => ({
+    ...m,
+    id: `inh_${Math.random().toString(36).slice(2, 10)}`,
+    inherited: true,
+  }));
+
+  return prisma.procedureMap.create({
+    data: {
+      title: data.title?.trim() || `${parent.title || "Mapa"} — Retorno`,
+      date: new Date(),
+      markers: inheritedMarkers,
+      products: parent.products ?? [],
+      baseImage: parent.baseImage,
+      backgroundPhotoId: parent.backgroundPhotoId,
+      parentMapId: parent.id,
+      appointmentId: data.appointmentId || null,
+      patientId: parent.patientId,
+      userId,
     },
   });
 }
