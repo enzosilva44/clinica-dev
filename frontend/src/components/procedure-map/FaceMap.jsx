@@ -18,15 +18,6 @@ const IMAGE_RATIOS = {
   "/corpo-musculo.png": 1122 / 1402, // ≈ 0.80 (glúteos)
 };
 
-const MARKER_COLORS = [
-  { label: "Verde",    value: "#00E676" }, // verde neon
-  { label: "Roxo",     value: "#B026FF" }, // roxo elétrico
-  { label: "Azul",     value: "#00B0FF" }, // azul ciano vivo
-  { label: "Rosa",     value: "#FF2D95" }, // magenta/pink fluorescente
-  { label: "Laranja",  value: "#FF6D00" }, // laranja intenso
-  { label: "Vermelho", value: "#FF1744" }, // vermelho vibrante
-];
-
 // Paleta ampliada p/ o modo desenho (Paint): cores da caneta/traço.
 const DRAW_COLORS = [
   "#00704A", "#00E676", "#00B0FF", "#2962FF", "#B026FF", "#FF2D95",
@@ -149,10 +140,10 @@ export default function FaceMap({
   const [pendingMarker, setPendingMarker] = useState(null);
   const [pendingUnits, setPendingUnits] = useState("");
   const [pendingUnit, setPendingUnit] = useState("U");
-  const [form, setForm] = useState({ procedure: "", dose: "", notes: "", label: "", color: "#00704A", unit: "U" });
+  const [form, setForm] = useState({ procedure: "", dose: "", notes: "", label: "", color: "#00704A", unit: "U", width: 5 });
   const [hoveredId, setHoveredId] = useState(null);
   const [linePoints, setLinePoints] = useState([]);
-  const [lineForm, setLineForm] = useState({ label: "", notes: "", color: "#00704A", units: "", unit: "U" });
+  const [lineForm, setLineForm] = useState({ label: "", notes: "", color: "#00704A", units: "", unit: "U", width: 3.5 });
   const [mousePos, setMousePos] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
@@ -162,9 +153,12 @@ export default function FaceMap({
   const [drawColor, setDrawColor] = useState("#00704A");
   const [drawWidth, setDrawWidth] = useState(2.5);
   const [drawing, setDrawing] = useState(null); // { mode, points:[{x,y}] } em construção
+  // Desenho recém-concluído aguardando confirmação no card (quantidade/técnica/obs).
+  const [pendingDraw, setPendingDraw] = useState(null); // { mode, d, mid:{x,y} }
+  const [drawForm, setDrawForm] = useState({ label: "", notes: "", units: "", unit: "U" });
   useEffect(() => {
     const fn = (e) => {
-      if (e.key === "Escape") { setLinePoints([]); setPendingMarker(null); setShowPhotoPicker(false); }
+      if (e.key === "Escape") { setLinePoints([]); setPendingMarker(null); setShowPhotoPicker(false); setPendingDraw(null); setDrawing(null); }
     };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
@@ -200,7 +194,7 @@ export default function FaceMap({
       if (selectedMuscle) {
         setPendingUnits(String(selectedMuscle.defaultUnits ?? ""));
       }
-      setForm({ procedure: "", dose: "", notes: "", label: "", color: selectedMuscle?.color ?? "#00704A", unit: "U" });
+      setForm((f) => ({ procedure: "", dose: "", notes: "", label: "", color: selectedMuscle?.color ?? f.color ?? "#00704A", unit: "U", width: f.width ?? 5 }));
     } else if (tool === "line") {
       setLinePoints((prev) => [...prev, { x, y }]);
     }
@@ -221,7 +215,7 @@ export default function FaceMap({
   // ── desenho por arrasto (caneta livre / traço reto) ──
   const isDrawTool = tool === "pen" || tool === "straight";
   function handleDrawDown(e) {
-    if (readOnly || !isDrawTool) return;
+    if (readOnly || !isDrawTool || pendingDraw) return;
     const p = getSvgCoords(e);
     setDrawing({ mode: tool, points: [p] });
   }
@@ -230,16 +224,32 @@ export default function FaceMap({
     const pts = drawing.points;
     if (pts.length >= 2) {
       const d = pts.map((pt, i) => `${i === 0 ? "M" : "L"} ${pt.x} ${pt.y}`).join(" ");
-      onChange((prev) => [...prev, {
-        id: crypto.randomUUID(),
-        type: "draw",
-        mode: drawing.mode,
-        d,
-        color: drawColor,
-        strokeWidth: drawWidth,
-      }]);
+      const mid = pts[Math.floor(pts.length / 2)];
+      // Abre o card p/ preencher quantidade/técnica/obs — igual ponto e traço.
+      setPendingDraw({ mode: drawing.mode, d, mid });
+      setDrawForm({ label: "", notes: "", units: "", unit: "U" });
     }
     setDrawing(null);
+  }
+
+  function confirmDraw() {
+    if (!pendingDraw) return;
+    const units = parseFloat(drawForm.units) || 0;
+    onChange((prev) => [...prev, {
+      id: crypto.randomUUID(),
+      type: "draw",
+      mode: pendingDraw.mode,
+      d: pendingDraw.d,
+      x: pendingDraw.mid.x,
+      y: pendingDraw.mid.y,
+      color: drawColor,
+      strokeWidth: drawWidth,
+      label: drawForm.label,
+      notes: drawForm.notes,
+      units,
+      unit: drawForm.unit,
+    }]);
+    setPendingDraw(null);
   }
 
   function confirmMarker() {
@@ -272,7 +282,7 @@ export default function FaceMap({
     };
     onChange((prev) => [...prev, marker]);
     setLinePoints([]);
-    setLineForm({ label: "", notes: "", color: "#00704A", units: "", unit: "U" });
+    setLineForm((f) => ({ label: "", notes: "", color: f.color, units: "", unit: "U", width: f.width }));
   }
 
   function removeMarker(id) { onChange((prev) => prev.filter((m) => m.id !== id)); }
@@ -281,7 +291,7 @@ export default function FaceMap({
     return { left: `${(x / SVG_W) * 100}%`, top: `${(y / svgH) * 100}%` };
   }
 
-  function switchTool(t) { setTool(t); setLinePoints([]); setPendingMarker(null); setDrawing(null); }
+  function switchTool(t) { setTool(t); setLinePoints([]); setPendingMarker(null); setDrawing(null); setPendingDraw(null); }
 
   // Marcadores herdados (inherited) vêm de um mapa de retorno: aparecem como
   // "fantasma" (referência) e podem ser ocultados via toggle; nunca são apagados.
@@ -367,7 +377,8 @@ export default function FaceMap({
                   placeholder="Técnica utilizada (ex: Retroinjeção, Bolus)" className="w-full border border-ambar rounded-lg p-2 text-sm" />
                 <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   placeholder="Observação" className="w-full border border-ambar rounded-lg p-2 text-sm" />
-                <ColorPicker color={form.color} onChange={(c) => setForm({ ...form, color: c })} />
+                <StylePicker color={form.color} onColor={(c) => setForm({ ...form, color: c })}
+                  width={form.width} onWidth={(w) => setForm({ ...form, width: w })} />
               </>
             )}
             <button onClick={confirmMarker}
@@ -447,13 +458,52 @@ export default function FaceMap({
                 </div>
                 <input value={lineForm.notes} onChange={(e) => setLineForm({ ...lineForm, notes: e.target.value })}
                   placeholder="Observação" className="w-full border border-ambar rounded-lg p-2 text-sm" />
-                <ColorPicker color={lineForm.color} onChange={(c) => setLineForm({ ...lineForm, color: c })} />
+                <StylePicker color={lineForm.color} onColor={(c) => setLineForm({ ...lineForm, color: c })}
+                  width={lineForm.width} onWidth={(w) => setLineForm({ ...lineForm, width: w })} />
               </>
             )}
             <button onClick={confirmLine} disabled={linePoints.length < 2}
               className="w-full text-white py-2 rounded-xl text-sm font-medium disabled:opacity-40 transition"
               style={{ backgroundColor: selectedMuscle?.color ?? "#00704A" }}>
               Confirmar traço
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DRAW FORM (caneta / reta) — mesmo card do ponto e do traço */}
+      {pendingDraw && (
+        <div className="bg-white border-2 rounded-2xl p-4 mb-4 shadow-sm" style={{ borderColor: drawColor }}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold text-verde">
+              {pendingDraw.mode === "straight" ? "Reta desenhada" : "Desenho à mão livre"}
+            </p>
+            <button onClick={() => setPendingDraw(null)}><X size={16} className="text-gray-400" /></button>
+          </div>
+          <div className="space-y-2.5">
+            <input value={drawForm.label} onChange={(e) => setDrawForm({ ...drawForm, label: e.target.value })}
+              placeholder="Técnica utilizada (ex: Retroinjeção, Bolus)" className="w-full border border-ambar rounded-lg p-2 text-sm" />
+            <div className="flex gap-2">
+              <input value={drawForm.units} onChange={(e) => setDrawForm({ ...drawForm, units: e.target.value })}
+                type="number" min="0" step="0.5"
+                placeholder="Quantidade" className="flex-1 border border-ambar rounded-lg p-2 text-sm" />
+              <select value={drawForm.unit} onChange={(e) => setDrawForm({ ...drawForm, unit: e.target.value })}
+                className="border border-ambar rounded-lg p-2 text-sm bg-white">
+                <option value="U">U</option>
+                <option value="ml">ml</option>
+                <option value="mg">mg</option>
+                <option value="un">un</option>
+                <option value="fios">fios</option>
+                <option value="seringas">ser.</option>
+              </select>
+            </div>
+            <input value={drawForm.notes} onChange={(e) => setDrawForm({ ...drawForm, notes: e.target.value })}
+              placeholder="Observação" className="w-full border border-ambar rounded-lg p-2 text-sm" />
+            <StylePicker color={drawColor} onColor={setDrawColor} width={drawWidth} onWidth={setDrawWidth} />
+            <button onClick={confirmDraw}
+              className="w-full text-white py-2 rounded-xl text-sm font-medium transition"
+              style={{ backgroundColor: drawColor }}>
+              Confirmar {pendingDraw.mode === "straight" ? "reta" : "desenho"}
             </button>
           </div>
         </div>
@@ -814,16 +864,24 @@ export default function FaceMap({
             {/* ── SAVED DRAWINGS (modo Paint: caneta livre / traço reto) ── */}
             {drawMarkers.map((m) => {
               const ghost = !!m.inherited;
+              const color = m.color || "#00704A";
+              const txt = m.units > 0 ? `${m.units}${m.unit ?? "U"}` : (m.label || "");
               return (
-                <path key={m.id} d={m.d} fill="none"
-                  stroke={m.color || "#00704A"} strokeWidth={m.strokeWidth || 2.5}
-                  strokeLinecap="round" strokeLinejoin="round"
-                  opacity={ghost ? 0.4 : 1}
-                  strokeDasharray={ghost ? "4,3" : undefined}
-                  className="marker-dot"
+                <g key={m.id} className="marker-dot"
                   style={{ cursor: readOnly || ghost ? "default" : tool === "erase" ? "pointer" : "default" }}
+                  onMouseEnter={() => setHoveredId(m.id)}
+                  onMouseLeave={() => setHoveredId(null)}
                   onClick={(e) => { e.stopPropagation(); if (!readOnly && !ghost && tool === "erase") removeMarker(m.id); }}
-                />
+                >
+                  <path d={m.d} fill="none" stroke={color} strokeWidth={m.strokeWidth || 2.5}
+                    strokeLinecap="round" strokeLinejoin="round"
+                    opacity={ghost ? 0.4 : 1} strokeDasharray={ghost ? "4,3" : undefined} />
+                  {txt && m.x != null && (
+                    <text x={m.x + 5} y={m.y - 5} fontSize="11" fill={color} fontWeight="bold"
+                      fontFamily="sans-serif" stroke="white" strokeWidth="0.6" paintOrder="stroke"
+                      style={{ pointerEvents: "none" }}>{txt}</text>
+                  )}
+                </g>
               );
             })}
 
@@ -849,10 +907,10 @@ export default function FaceMap({
                   onClick={(e) => { e.stopPropagation(); if (!readOnly && tool === "erase") removeMarker(m.id); }}
                 >
                   {/* contorno escuro por baixo — destaca a cor neon */}
-                  <polyline points={pts} fill="none" stroke="#1A1A1A" strokeWidth="5.5"
+                  <polyline points={pts} fill="none" stroke="#1A1A1A" strokeWidth={(m.width || 3.5) + 2}
                     strokeLinecap="round" strokeLinejoin="round" opacity="0.3" />
                   {/* traço colorido */}
-                  <polyline points={pts} fill="none" stroke={color} strokeWidth="3.5"
+                  <polyline points={pts} fill="none" stroke={color} strokeWidth={m.width || 3.5}
                     strokeLinecap="round" strokeLinejoin="round" />
                   {m.units > 0 && (
                     <text x={mid.x + 5} y={mid.y - 5}
@@ -877,7 +935,8 @@ export default function FaceMap({
             {/* ── SAVED POINT MARKERS ── */}
             {pointMarkers.map((m) => {
               const ghost = !!m.inherited;
-              const r = (hoveredId === m.id ? 6.5 : 5) * (ghost ? 0.85 : 1);
+              const baseR = m.width || 5; // espessura controla o tamanho do ponto
+              const r = (hoveredId === m.id ? baseR + 1.5 : baseR) * (ghost ? 0.85 : 1);
               const color = vividColor(m.color);
               const leg = productLegend && m.productId ? productLegend[m.productId] : null;
               // Forma pela geração: atual = círculo, retornos anteriores = estrela/quadrado/triângulo.
@@ -1055,17 +1114,35 @@ export default function FaceMap({
   );
 }
 
-function ColorPicker({ color, onChange }) {
+// Seletor unificado de cor (paleta ampliada) + espessura — mesmo padrão da
+// caneta, usado por ponto e traço. `width`/`onWidth` são opcionais (omitidos
+// quando o controle de espessura não faz sentido, ex.: marcador de músculo).
+function StylePicker({ color, onColor, width, onWidth }) {
   return (
-    <div>
-      <p className="text-xs text-gray-500 mb-1.5">Cor</p>
-      <div className="flex gap-2">
-        {MARKER_COLORS.map((c) => (
-          <button key={c.value} type="button" title={c.label} onClick={() => onChange(c.value)}
-            className={`w-6 h-6 rounded-full border-2 transition ${color === c.value ? "border-verde scale-110" : "border-transparent"}`}
-            style={{ backgroundColor: c.value }} />
-        ))}
+    <div className="space-y-2">
+      <div>
+        <p className="text-xs text-gray-500 mb-1.5">Cor</p>
+        <div className="flex flex-wrap gap-1.5">
+          {DRAW_COLORS.map((c) => (
+            <button key={c} type="button" title="Cor" onClick={() => onColor(c)}
+              className={`w-6 h-6 rounded-full border transition ${color === c ? "ring-2 ring-verde ring-offset-1 scale-110" : "border-creme-200"}`}
+              style={{ backgroundColor: c }} />
+          ))}
+        </div>
       </div>
+      {onWidth && (
+        <div>
+          <p className="text-xs text-gray-500 mb-1.5">Espessura</p>
+          <div className="flex items-center gap-1.5">
+            {STROKE_WIDTHS.map((w) => (
+              <button key={w} type="button" title={`Espessura ${w}`} onClick={() => onWidth(w)}
+                className={`flex items-center justify-center w-7 h-7 rounded-lg border transition ${width === w ? "border-verde bg-verde-50" : "border-creme-200 hover:bg-creme-50"}`}>
+                <span className="rounded-full bg-gray-700" style={{ width: w + 2, height: w + 2 }} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
