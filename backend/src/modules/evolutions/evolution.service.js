@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma.js";
+import * as stockRequestService from "../products/stockRequest.service.js";
 
 export async function create(
   data,
@@ -37,6 +38,18 @@ export async function create(
         procedureRelation: true,
       },
     });
+
+  const stockItems = (data.materialsUsed || []).filter(
+    (m) => m.productId && Number(m.quantity) > 0
+  );
+  for (const item of stockItems) {
+    await stockRequestService.create(userId, {
+      type: "saida",
+      productId: item.productId,
+      quantity: item.quantity,
+      reason: `Evolução — ${patient.name}${data.procedure ? ` (${data.procedure})` : ""}`,
+    }).catch(() => null);
+  }
 
   return evolution;
 }

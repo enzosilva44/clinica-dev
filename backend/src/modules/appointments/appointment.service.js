@@ -351,6 +351,7 @@ export async function findByPatient(patientId, userId) {
   return prisma.appointment.findMany({
     where: { patientId, userId },
     orderBy: { startsAt: "desc" },
+    include: { procedures: true },
   });
 }
 

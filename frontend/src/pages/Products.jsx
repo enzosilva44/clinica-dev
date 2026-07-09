@@ -8,7 +8,7 @@ import {
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
-import { Button } from "../components/ui";
+import { Button, SearchableSelect } from "../components/ui";
 import api from "../services/api";
 import { fmtDateOnly } from "../utils/date";
 
@@ -690,16 +690,13 @@ export default function Products() {
           <div className="flex flex-wrap gap-3 mb-5 items-end">
             <div>
               <label className="text-xs text-gray-500 block mb-1">Produto</label>
-              <select
+              <SearchableSelect
                 value={movProductFilter}
-                onChange={(e) => setMovProductFilter(e.target.value)}
-                className="border border-creme-200 rounded-xl px-3 py-2 text-sm bg-white min-w-[180px]"
-              >
-                <option value="">Todos os produtos</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+                onChange={setMovProductFilter}
+                placeholder="Todos os produtos"
+                className="min-w-[180px]"
+                options={products.map((p) => ({ value: p.id, label: p.name }))}
+              />
             </div>
             <div>
               <label className="text-xs text-gray-500 block mb-1">De</label>

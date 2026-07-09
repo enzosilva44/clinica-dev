@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { Sparkles, Cake, CalendarDays, ClipboardList, TrendingUp, TrendingDown, Users, FileText, Download, Trash2, Eye, Send, Plus, PartyPopper, Check, AlertTriangle } from "lucide-react";
 import { getAlertLevel } from "../components/patient/alertLevels";
 import MainLayout from "../layouts/MainLayout";
-import { Card } from "../components/ui";
+import { Card, SearchableSelect } from "../components/ui";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
 import { fmtDateOnly } from "../utils/date";
@@ -46,10 +46,10 @@ export default function PatientDetails() {
   const [showEvolutionForm, setShowEvolutionForm] = useState(false);
 
   const [selectedProcedureId, setSelectedProcedureId] = useState("");
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState("");
   const [procedure, setProcedure] = useState("");
   const [evolutionName, setEvolutionName] = useState("");
   const [description, setDescription] = useState("");
-  const [materials, setMaterials] = useState("");
   const [materialsUsed, setMaterialsUsed] = useState([]);
   const [aiSummary, setAiSummary] = useState("");
   const [loadingSummary, setLoadingSummary] = useState(false);
@@ -114,9 +114,13 @@ export default function PatientDetails() {
     if (!procedure) return;
     setLoadingDraft(true);
     try {
+      const dose = materialsUsed
+        .filter((m) => m.name)
+        .map((m) => `${m.name} — ${m.quantity || 0}${m.unit ? ` ${m.unit}` : " un"}`)
+        .join(", ");
       const res = await api.post("/ai/evolution-draft", {
         procedureName: procedure,
-        dose: materials,
+        dose,
         notes: description,
         patientName: patient?.name,
       });
@@ -409,42 +413,94 @@ export default function PatientDetails() {
     if (!proc) {
       setProcedure("");
       setDescription("");
-      setMaterials("");
       setMaterialsUsed([]);
       return;
     }
     setProcedure(proc.name);
     setDescription(proc.description || "");
-    const items = (proc.products || []).map((pp) => ({
+    setMaterialsUsed(materialsFromProcedure(proc));
+  }
+
+  function materialsFromProcedure(proc) {
+    return (proc.products || []).map((pp) => ({
       name: pp.product?.name || pp.customName || "Material",
       quantity: pp.quantity ?? 1,
-      unit: pp.product?.unit || "",
+      unit: pp.product?.unit || "un",
+      productId: pp.product?.id || null,
     }));
+  }
+
+  function handleAppointmentSelect(apptId) {
+    setSelectedAppointmentId(apptId);
+    const appt = appointments.find((a) => a.id === apptId);
+    if (!appt) {
+      setSelectedProcedureId("");
+      setProcedure("");
+      setMaterialsUsed([]);
+      return;
+    }
+    const apptProcedures = appt.procedures || [];
+    const matchedProcedures = apptProcedures
+      .map((ap) => procedures.find((p) => p.id === ap.procedureId))
+      .filter(Boolean);
+
+    setProcedure(apptProcedures.map((ap) => ap.procedureName).join(", "));
+    setSelectedProcedureId(matchedProcedures[0]?.id || "");
+    setDescription(matchedProcedures[0]?.description || "");
+
+    const items = matchedProcedures.flatMap(materialsFromProcedure);
     setMaterialsUsed(items);
-    setMaterials(
-      items.map((m) => `${m.name}${m.quantity ? ` (${m.quantity}${m.unit ? " " + m.unit : ""})` : ""}`).join(", ")
+  }
+
+  function updateMaterialQuantity(index, quantity) {
+    setMaterialsUsed((prev) =>
+      prev.map((m, i) => (i === index ? { ...m, quantity } : m))
     );
   }
 
+  function updateMaterialName(index, name) {
+    setMaterialsUsed((prev) =>
+      prev.map((m, i) => (i === index ? { ...m, name, productId: null } : m))
+    );
+  }
+
+  function updateMaterialUnit(index, unit) {
+    setMaterialsUsed((prev) =>
+      prev.map((m, i) => (i === index ? { ...m, unit } : m))
+    );
+  }
+
+  function removeMaterial(index) {
+    setMaterialsUsed((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function addMaterial() {
+    setMaterialsUsed((prev) => [...prev, { name: "", quantity: 1, unit: "un", productId: null }]);
+  }
+
   function resetEvolutionForm() {
+    setSelectedAppointmentId("");
     setSelectedProcedureId("");
     setProcedure("");
     setEvolutionName("");
     setDescription("");
-    setMaterials("");
     setMaterialsUsed([]);
   }
 
   async function createEvolution() {
     try {
+      const cleanMaterials = materialsUsed.filter((m) => m.name);
+      const materialsText = cleanMaterials
+        .map((m) => `${m.name} — ${m.quantity || 0}${m.unit ? ` ${m.unit}` : " un"}`)
+        .join(", ");
       await api.post("/evolutions", {
         patientId: id,
         name: evolutionName || undefined,
         procedure,
         description,
-        materials,
+        materials: materialsText,
         procedureId: selectedProcedureId || undefined,
-        materialsUsed: materialsUsed.length > 0 ? materialsUsed : undefined,
+        materialsUsed: cleanMaterials.length > 0 ? cleanMaterials : undefined,
       });
       resetEvolutionForm();
       setShowEvolutionForm(false);
@@ -890,21 +946,41 @@ export default function PatientDetails() {
           {/* FORM */}
           {showEvolutionForm && (
             <div className="bg-white border border-creme-200 rounded-xl p-5 mb-6 space-y-4">
-              {/* Procedimento */}
+              {/* Agendamento */}
+              <div>
+                <label className="text-xs font-medium text-gray-500 block mb-1.5">Agendamento</label>
+                <SearchableSelect
+                  value={selectedAppointmentId}
+                  onChange={handleAppointmentSelect}
+                  placeholder="Selecione o agendamento"
+                  options={appointments
+                    .filter((a) => ["COMPLETED", "FINISHED"].includes(a.status))
+                    .map((a) => {
+                      const dateLabel = `${new Date(a.startsAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })} ${new Date(a.startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+                      const procLabel = (a.procedures || []).length > 0 ? a.procedures.map((p) => p.procedureName).join(", ") : "";
+                      return {
+                        value: a.id,
+                        label: [dateLabel, a.title, procLabel].filter(Boolean).join(" — "),
+                      };
+                    })}
+                />
+                <p className="text-[11px] text-gray-400 mt-1.5">
+                  Puxa automaticamente procedimento e materiais do agendamento escolhido.
+                </p>
+              </div>
+
+              {/* Procedimento (manual, caso não venha de agendamento) */}
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1.5">Procedimento</label>
-                <select
+                <SearchableSelect
                   value={selectedProcedureId}
-                  onChange={(e) => handleProcedureSelect(e.target.value)}
-                  className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
-                >
-                  <option value="">Selecione o procedimento</option>
-                  {procedures.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}{p.duration ? ` (${p.duration} min)` : ""}
-                    </option>
-                  ))}
-                </select>
+                  onChange={handleProcedureSelect}
+                  placeholder="Selecione o procedimento"
+                  options={procedures.map((p) => ({
+                    value: p.id,
+                    label: `${p.name}${p.duration ? ` (${p.duration} min)` : ""}`,
+                  }))}
+                />
               </div>
 
               {/* Nome da evolução */}
@@ -952,18 +1028,53 @@ export default function PatientDetails() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-medium text-gray-500">Materiais utilizados</label>
-                  {materialsUsed.length > 0 && (
-                    <span className="text-xs text-verde bg-creme-100 px-2 py-0.5 rounded-full">
-                      {materialsUsed.length} {materialsUsed.length === 1 ? "item" : "itens"} do procedimento
-                    </span>
-                  )}
+                  <button
+                    type="button"
+                    onClick={addMaterial}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-verde hover:text-verde-900 transition"
+                  >
+                    <Plus size={13} /> Adicionar
+                  </button>
                 </div>
-                <input
-                  value={materials}
-                  onChange={(e) => setMaterials(e.target.value)}
-                  placeholder="Ex: Botox 50U, Hyalurônico 1ml…"
-                  className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
-                />
+                {materialsUsed.length === 0 ? (
+                  <p className="text-xs text-gray-400">Nenhum material. Selecione um agendamento/procedimento ou adicione manualmente.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {materialsUsed.map((m, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <input
+                          value={m.name}
+                          onChange={(e) => updateMaterialName(idx, e.target.value)}
+                          placeholder="Nome do material"
+                          className="flex-1 border border-ambar rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={m.quantity}
+                          onChange={(e) => updateMaterialQuantity(idx, e.target.value)}
+                          placeholder="Qtd"
+                          className="w-20 border border-ambar rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-verde/20"
+                        />
+                        <input
+                          value={m.unit}
+                          onChange={(e) => updateMaterialUnit(idx, e.target.value)}
+                          placeholder="un"
+                          className="w-14 border border-ambar rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-verde/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeMaterial(idx)}
+                          className="text-gray-300 hover:text-red-500 transition p-1 shrink-0"
+                          aria-label="Remover material"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-1">
@@ -1336,18 +1447,12 @@ export default function PatientDetails() {
                           <div className="grid grid-cols-1 md:grid-cols-[1.5fr_0.65fr_0.8fr_0.8fr_auto] gap-3 items-end">
                             <div>
                               <label className="text-xs font-medium text-gray-500 block mb-1.5">Procedimento</label>
-                              <select
+                              <SearchableSelect
                                 value={item.procedureId}
-                                onChange={(e) => handleBudgetProcedureSelect(index, e.target.value)}
-                                className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
-                              >
-                                <option value="">Buscar procedimento...</option>
-                                {procedures.map((proc) => (
-                                  <option key={proc.id} value={proc.id}>
-                                    {proc.name}
-                                  </option>
-                                ))}
-                              </select>
+                                onChange={(v) => handleBudgetProcedureSelect(index, v)}
+                                placeholder="Buscar procedimento..."
+                                options={procedures.map((proc) => ({ value: proc.id, label: proc.name }))}
+                              />
                             </div>
                             <div>
                               <label className="text-xs font-medium text-gray-500 block mb-1.5">Qtd</label>

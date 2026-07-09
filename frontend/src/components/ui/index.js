@@ -5,3 +5,4 @@ export { default as Input } from "./Input.jsx";
 export { default as Toggle } from "./Toggle.jsx";
 export { default as Spinner } from "./Spinner.jsx";
 export { default as Logo, LogoMark } from "./Logo.jsx";
+export { default as SearchableSelect } from "./SearchableSelect.jsx";

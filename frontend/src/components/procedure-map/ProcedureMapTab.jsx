@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import FaceMap from "./FaceMap";
 import Spinner from "../ui/Spinner";
+import SearchableSelect from "../ui/SearchableSelect";
 import { FACIAL_MUSCLES, GLUTEAL_MUSCLES, TAG_COLORS, TAG_LABELS, vividColor } from "../../data/faceMuscles";
 
 // Grupo muscular sugerido por imagem (a pessoa pode ver os músculos em
@@ -573,14 +574,15 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                       {stockProducts.length > 0 && (
                         <div className="sm:col-span-2">
                           <label className="text-[11px] text-gray-500 mb-1 block">Selecionar do estoque (opcional)</label>
-                          <select value={p.productId || ""}
-                            onChange={(e) => selectStockProduct(p.id, e.target.value)}
-                            className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-verde">
-                            <option value="">— digitar manualmente —</option>
-                            {stockProducts.map((s) => (
-                              <option key={s.id} value={s.id}>{s.name}{s.lotNumber ? ` (lote ${s.lotNumber})` : ""}</option>
-                            ))}
-                          </select>
+                          <SearchableSelect
+                            value={p.productId || ""}
+                            onChange={(v) => selectStockProduct(p.id, v)}
+                            placeholder="— digitar manualmente —"
+                            options={stockProducts.map((s) => ({
+                              value: s.id,
+                              label: `${s.name}${s.lotNumber ? ` (lote ${s.lotNumber})` : ""}`,
+                            }))}
+                          />
                         </div>
                       )}
                       {/* Nome (campo aberto — sempre editável) */}
