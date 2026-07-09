@@ -10,7 +10,7 @@ const PRESET_IMAGES = [
 ];
 import toast from "react-hot-toast";
 import api from "../../services/api";
-import FaceMap, { buildProductLegend } from "./FaceMap";
+import FaceMap, { buildProductLegend, shapeForGen, GEN_SHAPE_LABEL, ShapeSwatch } from "./FaceMap";
 import Spinner from "../ui/Spinner";
 import SearchableSelect from "../ui/SearchableSelect";
 import { FACIAL_MUSCLES, GLUTEAL_MUSCLES, TAG_COLORS, TAG_LABELS, vividColor } from "../../data/faceMuscles";
@@ -373,6 +373,12 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
   const legendEntries = productLegend
     ? namedProducts.map((p) => ({ ...productLegend[p.id], product: p }))
     : [];
+
+  // Legenda de atendimentos por forma: quais gerações existem no mapa atual.
+  const gensPresent = [...new Set(markers
+    .filter((m) => !m.type || m.type === "point")
+    .map((m) => Number(m.gen) || 0))].sort((a, b) => a - b);
+  const showShapeLegend = gensPresent.some((g) => g > 0); // só faz sentido com pontos herdados
 
   // Grupo de músculos correspondente à imagem atual (faciais ou glúteos)
   const activeMuscles = muscleGroupForImage(baseImage);
@@ -744,6 +750,26 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                     showInherited={showInherited}
                     compact
                   />
+
+                  {/* LEGENDA DE ATENDIMENTOS — forma por geração (na tela e na impressão) */}
+                  {showShapeLegend && (
+                    <div className="mt-3 border border-creme-200 rounded-xl p-3 bg-creme-50/50">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">Atendimentos</p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                        {gensPresent.map((g) => {
+                          const shape = shapeForGen(g);
+                          return (
+                            <div key={g} className="flex items-center gap-1.5 text-xs">
+                              <ShapeSwatch shape={shape} color={g === 0 ? "#00704A" : "#7A7A7A"} size={14} />
+                              <span className={g === 0 ? "font-semibold text-verde" : "text-gray-500"}>
+                                {GEN_SHAPE_LABEL[shape]}{g > 1 ? ` (${g})` : ""}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* LEGENDA DE PRODUTOS — cor + número por produto (na tela e na impressão) */}
                   {legendEntries.length > 0 && (

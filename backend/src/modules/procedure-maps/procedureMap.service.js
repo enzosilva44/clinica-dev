@@ -79,11 +79,17 @@ export async function createRetorno(parentId, userId, data = {}) {
   const parent = await prisma.procedureMap.findFirst({ where: { id: parentId, userId } });
   if (!parent) throw new Error("Mapa não encontrado");
 
+  // Cada retorno empurra os marcadores existentes uma "geração" para trás.
+  // gen=0 → atendimento atual (círculo). gen=1 → retorno anterior imediato,
+  // gen=2 → o anterior a esse, etc. O front escolhe a FORMA por geração.
+  // origin guarda a data do mapa de onde o ponto veio, p/ a legenda.
   const srcMarkers = Array.isArray(parent.markers) ? parent.markers : [];
   const inheritedMarkers = srcMarkers.map((m) => ({
     ...m,
     id: `inh_${Math.random().toString(36).slice(2, 10)}`,
     inherited: true,
+    gen: (Number(m.gen) || 0) + 1,
+    origin: m.origin || parent.date, // 1ª herança carimba a data do mapa-mãe
   }));
 
   return prisma.procedureMap.create({

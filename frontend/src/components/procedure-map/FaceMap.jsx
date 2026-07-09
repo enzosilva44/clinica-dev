@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { X, Trash2, Dot, Minus, ImageIcon, Eraser } from "lucide-react";
+import { X, Trash2, Dot, Minus, ImageIcon, Eraser, Pencil, Slash } from "lucide-react";
 import api from "../../services/api";
 import { vividColor } from "../../data/faceMuscles";
 
@@ -26,6 +26,54 @@ const MARKER_COLORS = [
   { label: "Laranja",  value: "#FF6D00" }, // laranja intenso
   { label: "Vermelho", value: "#FF1744" }, // vermelho vibrante
 ];
+
+// Paleta ampliada p/ o modo desenho (Paint): cores da caneta/traço.
+const DRAW_COLORS = [
+  "#00704A", "#00E676", "#00B0FF", "#2962FF", "#B026FF", "#FF2D95",
+  "#FF1744", "#FF6D00", "#FFD600", "#795548", "#212121", "#FFFFFF",
+];
+
+// Espessuras disponíveis para caneta/traço (px no viewBox do SVG).
+const STROKE_WIDTHS = [1.5, 2.5, 4, 6];
+
+// Forma do marcador por geração: gen 0 = atendimento atual (círculo),
+// gen 1 = retorno anterior (estrela), gen 2 = quadrado, gen 3+ = triângulo.
+const GEN_SHAPES = ["circle", "star", "square", "triangle"];
+export function shapeForGen(gen = 0) {
+  return GEN_SHAPES[Math.min(gen, GEN_SHAPES.length - 1)];
+}
+export const GEN_SHAPE_LABEL = { circle: "Atendimento atual", star: "Retorno anterior", square: "Atendimento anterior", triangle: "Mais antigo" };
+
+// Gera o `points`/`d` de uma forma centrada em (cx,cy) com raio r.
+function starPoints(cx, cy, r) {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const ang = (Math.PI / 5) * i - Math.PI / 2;
+    const rad = i % 2 === 0 ? r : r * 0.45;
+    pts.push(`${cx + rad * Math.cos(ang)},${cy + rad * Math.sin(ang)}`);
+  }
+  return pts.join(" ");
+}
+function trianglePoints(cx, cy, r) {
+  return [
+    `${cx},${cy - r}`,
+    `${cx - r * 0.87},${cy + r * 0.5}`,
+    `${cx + r * 0.87},${cy + r * 0.5}`,
+  ].join(" ");
+}
+
+// Ícone SVG de uma forma (p/ a legenda de atendimentos). size em px.
+export function ShapeSwatch({ shape, color = "#00704A", size = 14 }) {
+  const c = size / 2, r = size * 0.4;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
+      {shape === "star" && <polygon points={starPoints(c, c, r)} fill={color} stroke="white" strokeWidth="0.6" />}
+      {shape === "square" && <rect x={c - r} y={c - r} width={r * 2} height={r * 2} rx="1" fill={color} stroke="white" strokeWidth="0.6" />}
+      {shape === "triangle" && <polygon points={trianglePoints(c, c, r)} fill={color} stroke="white" strokeWidth="0.6" />}
+      {(!shape || shape === "circle") && <circle cx={c} cy={c} r={r} fill={color} stroke="white" strokeWidth="0.6" />}
+    </svg>
+  );
+}
 
 // Paleta fixa para a LEGENDA de produtos: cada produto do mapa ganha uma cor
 // (por posição) e um número, exibidos no marcador e na legenda impressa.
@@ -108,6 +156,12 @@ export default function FaceMap({
   const [mousePos, setMousePos] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+
+  // ── Modo desenho (Paint) ──
+  // tool "pen" (mão livre) e "straight" (traço reto) desenham por arrasto.
+  const [drawColor, setDrawColor] = useState("#00704A");
+  const [drawWidth, setDrawWidth] = useState(2.5);
+  const [drawing, setDrawing] = useState(null); // { mode, points:[{x,y}] } em construção
   useEffect(() => {
     const fn = (e) => {
       if (e.key === "Escape") { setLinePoints([]); setPendingMarker(null); setShowPhotoPicker(false); }
@@ -136,6 +190,8 @@ export default function FaceMap({
 
   function handleSvgClick(e) {
     if (readOnly || showPhotoPicker || tool === "erase") return;
+    // Modos de desenho (caneta/reta) são tratados por arrasto, não por clique.
+    if (tool === "pen" || tool === "straight") return;
     if (e.target.closest(".marker-dot")) return;
     const { x, y } = getSvgCoords(e);
     if (!isInsideFace(x, y)) return;
@@ -145,13 +201,45 @@ export default function FaceMap({
         setPendingUnits(String(selectedMuscle.defaultUnits ?? ""));
       }
       setForm({ procedure: "", dose: "", notes: "", label: "", color: selectedMuscle?.color ?? "#00704A", unit: "U" });
-    } else {
+    } else if (tool === "line") {
       setLinePoints((prev) => [...prev, { x, y }]);
     }
   }
 
   function handleSvgMouseMove(e) {
     if (tool === "line" && linePoints.length > 0) setMousePos(getSvgCoords(e));
+    if (drawing) {
+      const p = getSvgCoords(e);
+      setDrawing((d) => {
+        if (!d) return d;
+        if (d.mode === "straight") return { ...d, points: [d.points[0], p] };
+        return { ...d, points: [...d.points, p] };
+      });
+    }
+  }
+
+  // ── desenho por arrasto (caneta livre / traço reto) ──
+  const isDrawTool = tool === "pen" || tool === "straight";
+  function handleDrawDown(e) {
+    if (readOnly || !isDrawTool) return;
+    const p = getSvgCoords(e);
+    setDrawing({ mode: tool, points: [p] });
+  }
+  function handleDrawUp() {
+    if (!drawing) return;
+    const pts = drawing.points;
+    if (pts.length >= 2) {
+      const d = pts.map((pt, i) => `${i === 0 ? "M" : "L"} ${pt.x} ${pt.y}`).join(" ");
+      onChange((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        type: "draw",
+        mode: drawing.mode,
+        d,
+        color: drawColor,
+        strokeWidth: drawWidth,
+      }]);
+    }
+    setDrawing(null);
   }
 
   function confirmMarker() {
@@ -193,13 +281,14 @@ export default function FaceMap({
     return { left: `${(x / SVG_W) * 100}%`, top: `${(y / svgH) * 100}%` };
   }
 
-  function switchTool(t) { setTool(t); setLinePoints([]); setPendingMarker(null); }
+  function switchTool(t) { setTool(t); setLinePoints([]); setPendingMarker(null); setDrawing(null); }
 
   // Marcadores herdados (inherited) vêm de um mapa de retorno: aparecem como
   // "fantasma" (referência) e podem ser ocultados via toggle; nunca são apagados.
   const visibleMarkers = showInherited ? markers : markers.filter((m) => !m.inherited);
   const pointMarkers = visibleMarkers.filter((m) => !m.type || m.type === "point");
   const lineMarkers  = visibleMarkers.filter((m) => m.type === "line");
+  const drawMarkers  = visibleMarkers.filter((m) => m.type === "draw");
 
   // Soma total de unidades, agrupado por tipo de unidade (U, ml, mg, etc.)
   const totalsByUnit = markers.reduce((acc, m) => {
@@ -380,24 +469,56 @@ export default function FaceMap({
         {!readOnly && (
           <div className="no-print">
             {/* Tool bar */}
-            <div className="flex gap-1 mb-2 bg-creme-50 border border-creme-200 rounded-xl p-1">
+            <div className="grid grid-cols-5 gap-1 mb-2 bg-creme-50 border border-creme-200 rounded-xl p-1">
               <button onClick={() => switchTool("point")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${tool === "point" ? "bg-verde text-white" : "text-verde hover:bg-creme-100"}`}>
+                className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${tool === "point" ? "bg-verde text-white" : "text-verde hover:bg-creme-100"}`}>
                 <Dot size={14} /> Ponto
               </button>
               <button onClick={() => switchTool("line")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${tool === "line" ? "bg-verde text-white" : "text-verde hover:bg-creme-100"}`}>
+                className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${tool === "line" ? "bg-verde text-white" : "text-verde hover:bg-creme-100"}`}>
                 <Minus size={14} /> Traço
               </button>
+              <button onClick={() => switchTool("pen")}
+                title="Desenhar à mão livre (arraste sobre a imagem)"
+                className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${tool === "pen" ? "bg-verde text-white" : "text-verde hover:bg-creme-100"}`}>
+                <Pencil size={14} /> Caneta
+              </button>
+              <button onClick={() => switchTool("straight")}
+                title="Traço reto (arraste do início ao fim)"
+                className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${tool === "straight" ? "bg-verde text-white" : "text-verde hover:bg-creme-100"}`}>
+                <Slash size={14} /> Reta
+              </button>
               <button onClick={() => switchTool("erase")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${tool === "erase" ? "bg-erro text-white" : "text-erro hover:bg-erro/10"}`}>
+                className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${tool === "erase" ? "bg-erro text-white" : "text-erro hover:bg-erro/10"}`}>
                 <Eraser size={14} /> Apagar
               </button>
             </div>
             {tool === "erase" && (
               <p className="text-xs text-erro/80 mb-2 flex items-center gap-1.5">
-                <Eraser size={12} /> Modo apagar: clique em um ponto ou traço para removê-lo.
+                <Eraser size={12} /> Modo apagar: clique em um ponto, traço ou desenho para removê-lo.
               </p>
+            )}
+
+            {/* Opções de desenho (Paint): cor + espessura — só nos modos caneta/reta */}
+            {isDrawTool && (
+              <div className="flex flex-wrap items-center gap-2 mb-2 bg-white border border-creme-200 rounded-xl p-2">
+                <div className="flex items-center gap-1">
+                  {DRAW_COLORS.map((c) => (
+                    <button key={c} type="button" title="Cor" onClick={() => setDrawColor(c)}
+                      className={`w-5 h-5 rounded-full border transition ${drawColor === c ? "ring-2 ring-verde ring-offset-1 scale-110" : "border-creme-200"}`}
+                      style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+                <div className="w-px h-5 bg-creme-200" />
+                <div className="flex items-center gap-1.5">
+                  {STROKE_WIDTHS.map((w) => (
+                    <button key={w} type="button" title={`Espessura ${w}`} onClick={() => setDrawWidth(w)}
+                      className={`flex items-center justify-center w-7 h-7 rounded-lg border transition ${drawWidth === w ? "border-verde bg-verde-50" : "border-creme-200 hover:bg-creme-50"}`}>
+                      <span className="rounded-full bg-gray-700" style={{ width: w + 2, height: w + 2 }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Photo background bar */}
@@ -447,8 +568,10 @@ export default function FaceMap({
             ref={svgRef}
             viewBox={`0 0 ${SVG_W} ${svgH}`}
             onClick={handleSvgClick}
+            onMouseDown={handleDrawDown}
             onMouseMove={handleSvgMouseMove}
-            onMouseLeave={() => setMousePos(null)}
+            onMouseUp={handleDrawUp}
+            onMouseLeave={() => { setMousePos(null); handleDrawUp(); }}
             className={`block w-full rounded-2xl overflow-hidden shadow-sm ${readOnly ? "" : "cursor-crosshair"}`}
             style={{ userSelect: "none", height: "auto" }}
           >
@@ -688,6 +811,32 @@ export default function FaceMap({
               </>
             )}
 
+            {/* ── SAVED DRAWINGS (modo Paint: caneta livre / traço reto) ── */}
+            {drawMarkers.map((m) => {
+              const ghost = !!m.inherited;
+              return (
+                <path key={m.id} d={m.d} fill="none"
+                  stroke={m.color || "#00704A"} strokeWidth={m.strokeWidth || 2.5}
+                  strokeLinecap="round" strokeLinejoin="round"
+                  opacity={ghost ? 0.4 : 1}
+                  strokeDasharray={ghost ? "4,3" : undefined}
+                  className="marker-dot"
+                  style={{ cursor: readOnly || ghost ? "default" : tool === "erase" ? "pointer" : "default" }}
+                  onClick={(e) => { e.stopPropagation(); if (!readOnly && !ghost && tool === "erase") removeMarker(m.id); }}
+                />
+              );
+            })}
+
+            {/* desenho em construção (feedback ao vivo) */}
+            {drawing && drawing.points.length >= 1 && (
+              <path
+                d={drawing.points.map((pt, i) => `${i === 0 ? "M" : "L"} ${pt.x} ${pt.y}`).join(" ")}
+                fill="none" stroke={drawColor} strokeWidth={drawWidth}
+                strokeLinecap="round" strokeLinejoin="round" opacity="0.85"
+                style={{ pointerEvents: "none" }}
+              />
+            )}
+
             {/* ── SAVED LINE MARKERS ── */}
             {lineMarkers.map((m) => {
               const mid = m.points[Math.floor(m.points.length / 2)];
@@ -731,25 +880,38 @@ export default function FaceMap({
               const r = (hoveredId === m.id ? 6.5 : 5) * (ghost ? 0.85 : 1);
               const color = vividColor(m.color);
               const leg = productLegend && m.productId ? productLegend[m.productId] : null;
+              // Forma pela geração: atual = círculo, retornos anteriores = estrela/quadrado/triângulo.
+              const shape = shapeForGen(m.gen);
+              const sr = shape === "circle" ? r : r * 1.25; // formas não-círculo um pouco maiores p/ legibilidade
+              const shapeEl = (fill, stroke, strokeWidth, dash) => {
+                const common = { fill, stroke, strokeWidth, ...(dash ? { strokeDasharray: dash } : {}) };
+                if (shape === "star")     return <polygon points={starPoints(m.x, m.y, sr)} strokeLinejoin="round" {...common} />;
+                if (shape === "square")   return <rect x={m.x - sr} y={m.y - sr} width={sr * 2} height={sr * 2} rx={1} {...common} />;
+                if (shape === "triangle") return <polygon points={trianglePoints(m.x, m.y, sr)} strokeLinejoin="round" {...common} />;
+                return <circle cx={m.x} cy={m.y} r={r} {...common} />;
+              };
               return (
                 <g key={m.id} className="marker-dot"
-                  style={{ cursor: readOnly || ghost ? "default" : tool === "erase" ? "pointer" : "default", opacity: ghost ? 0.4 : 1 }}
+                  style={{ cursor: readOnly || ghost ? "default" : tool === "erase" ? "pointer" : "default", opacity: ghost ? 0.55 : 1 }}
                   onMouseEnter={() => setHoveredId(m.id)}
                   onMouseLeave={() => setHoveredId(null)}
                   onClick={(e) => { e.stopPropagation(); if (!readOnly && !ghost && tool === "erase") removeMarker(m.id); }}
                 >
                   {ghost ? (
-                    // ponto fantasma (aplicação anterior): tracejado, sem brilho
-                    <circle cx={m.x} cy={m.y} r={r} fill={color} stroke="white" strokeWidth="1.4"
-                      strokeDasharray="2,1.5" fillOpacity="0.55" />
+                    // marcador de atendimento anterior: forma por geração, tracejado
+                    shapeEl(color, "white", 1.4, "2,1.5")
                   ) : (
                     <>
-                      {/* anel escuro externo — destaca a cor neon sobre qualquer fundo */}
-                      <circle cx={m.x} cy={m.y} r={r + 1.5} fill="#1A1A1A" opacity="0.35" />
-                      {/* borda branca */}
-                      <circle cx={m.x} cy={m.y} r={r} fill={color} stroke="white" strokeWidth="2" />
-                      {/* brilho central */}
-                      <circle cx={m.x - r * 0.3} cy={m.y - r * 0.3} r={r * 0.3} fill="white" opacity="0.55" />
+                      {/* halo escuro externo — destaca a cor neon sobre qualquer fundo */}
+                      {shape === "circle"
+                        ? <circle cx={m.x} cy={m.y} r={r + 1.5} fill="#1A1A1A" opacity="0.35" />
+                        : null}
+                      {/* forma preenchida com borda branca */}
+                      {shapeEl(color, "white", 2)}
+                      {/* brilho central (só no círculo) */}
+                      {shape === "circle" && (
+                        <circle cx={m.x - r * 0.3} cy={m.y - r * 0.3} r={r * 0.3} fill="white" opacity="0.55" />
+                      )}
                     </>
                   )}
                   {/* badge numérico do produto (legenda) */}
