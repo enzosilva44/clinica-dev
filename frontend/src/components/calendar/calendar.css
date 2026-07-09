@@ -97,8 +97,14 @@
 /* Events — fundo claro + borda esquerda colorida (estilo Google Calendar) */
 .fc .fc-event {
   border-radius: 7px !important;
-  border: none !important;
-  border-left: 3px solid transparent !important;
+  /* borda esquerda colorida = cor pura do evento (borderColor inline do FullCalendar).
+     Deixamos as bordas top/right/bottom sem cor; só a esquerda usa a cor do evento,
+     que agora vem via prop (re-renderiza ao editar/trocar cor). */
+  border-style: solid !important;
+  border-width: 0 0 0 3px !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
   box-shadow: none !important;
   cursor: pointer !important;
 }

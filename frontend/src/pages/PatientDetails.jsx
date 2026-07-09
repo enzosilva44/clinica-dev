@@ -15,6 +15,13 @@ import AnamnesisTab from "../components/anamnesis/AnamnesisTab";
 import SigningModal from "../components/documents/SigningModal";
 import PatientPhotos from "../components/patient/PatientPhotos";
 
+// Mesma regra da Agenda: a "Compensação" só se aplica a pagamento no cartão.
+function isCardMethod(method) {
+  if (!method) return false;
+  const m = method.toLowerCase();
+  return m.includes("cart") || m.includes("card");
+}
+
 export default function PatientDetails() {
   const { id } = useParams();
 
@@ -40,6 +47,7 @@ export default function PatientDetails() {
 
   const [selectedProcedureId, setSelectedProcedureId] = useState("");
   const [procedure, setProcedure] = useState("");
+  const [evolutionName, setEvolutionName] = useState("");
   const [description, setDescription] = useState("");
   const [materials, setMaterials] = useState("");
   const [materialsUsed, setMaterialsUsed] = useState([]);
@@ -64,6 +72,7 @@ export default function PatientDetails() {
     isPackage: false,
     sessionCount: 1,
     txPaymentMethod: "",
+    txSettlementType: "",
     txInstallments: "1",
     txDueDate: "",
     txNotes: "",
@@ -290,6 +299,7 @@ export default function PatientDetails() {
         sessionCount: budgetForm.isPackage ? Math.max(Number(budgetForm.sessionCount) || 1, 1) : 1,
         idempotencyKey: budgetKeyRef.current,
         txPaymentMethod: budgetForm.txPaymentMethod || null,
+        txSettlementType: isCardMethod(budgetForm.txPaymentMethod) ? (budgetForm.txSettlementType || null) : null,
         txInstallments: Number(budgetForm.txInstallments) > 1 ? Number(budgetForm.txInstallments) : undefined,
         txDueDate: budgetForm.txDueDate || null,
         txNotes: budgetForm.txNotes || null,
@@ -322,6 +332,17 @@ export default function PatientDetails() {
       loadBudgets();
     } catch {
       toast.error("Erro ao excluir orçamento");
+    }
+  }
+
+  async function cancelBudget(budgetId) {
+    if (!confirm("Cancelar este orçamento? Ele fica registrado, apenas marcado como cancelado.")) return;
+    try {
+      await api.patch(`/budgets/${budgetId}/status`, { status: "cancelado" });
+      toast.success("Orçamento cancelado");
+      loadBudgets();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Erro ao cancelar orçamento");
     }
   }
 
@@ -408,6 +429,7 @@ export default function PatientDetails() {
   function resetEvolutionForm() {
     setSelectedProcedureId("");
     setProcedure("");
+    setEvolutionName("");
     setDescription("");
     setMaterials("");
     setMaterialsUsed([]);
@@ -417,6 +439,7 @@ export default function PatientDetails() {
     try {
       await api.post("/evolutions", {
         patientId: id,
+        name: evolutionName || undefined,
         procedure,
         description,
         materials,
@@ -884,6 +907,17 @@ export default function PatientDetails() {
                 </select>
               </div>
 
+              {/* Nome da evolução */}
+              <div>
+                <label className="text-xs font-medium text-gray-500 block mb-1.5">Nome da evolução <span className="text-gray-300">(opcional)</span></label>
+                <input
+                  value={evolutionName}
+                  onChange={(e) => setEvolutionName(e.target.value)}
+                  placeholder="Ex: Sessão 1 — limpeza de pele"
+                  className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                />
+              </div>
+
               {/* Descrição */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -958,8 +992,13 @@ export default function PatientDetails() {
             {evolutions.map((evolution) => (
               <div key={evolution.id} className="bg-white border border-creme-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-verde">{evolution.procedure}</h3>
-                  <span className="text-sm font-mono text-gray-500">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-verde truncate">{evolution.name || evolution.procedure}</h3>
+                    {evolution.name && evolution.procedure && (
+                      <p className="text-xs text-gray-400 truncate">{evolution.procedure}</p>
+                    )}
+                  </div>
+                  <span className="text-sm font-mono text-gray-500 shrink-0 ml-2">
                     {new Date(evolution.createdAt).toLocaleDateString("pt-BR")}
                   </span>
                 </div>
@@ -1432,6 +1471,22 @@ export default function PatientDetails() {
                         </div>
                       </div>
 
+                      {/* Compensação — igual à Agenda: só para cartão */}
+                      {isCardMethod(budgetForm.txPaymentMethod) && (
+                        <div>
+                          <label className="text-xs font-medium text-gray-500 block mb-1.5">Compensação</label>
+                          <select
+                            value={budgetForm.txSettlementType}
+                            onChange={set("txSettlementType")}
+                            className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                          >
+                            <option value="">Selecione</option>
+                            <option value="imediato">Compensação imediata</option>
+                            <option value="crediario">Crediário</option>
+                          </select>
+                        </div>
+                      )}
+
                       <div>
                         <label className="text-xs font-medium text-gray-500 block mb-1.5">
                           {txN > 1 ? "Vencimento 1ª parcela" : "Vencimento"}
@@ -1495,15 +1550,16 @@ export default function PatientDetails() {
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-verde">{budget.title}</h3>
+                        <h3 className={`font-semibold ${budget.status === "cancelado" ? "text-gray-400 line-through" : "text-verde"}`}>{budget.title}</h3>
                         {(() => {
                           const st = budget.status || "rascunho";
                           const map = {
                             rascunho: "bg-gray-100 text-gray-500",
                             aprovado: "bg-emerald-100 text-emerald-700",
                             concluido: "bg-verde/15 text-verde",
+                            cancelado: "bg-red-100 text-red-600",
                           };
-                          const label = { rascunho: "Rascunho", aprovado: "Aprovado", concluido: "Concluído" };
+                          const label = { rascunho: "Rascunho", aprovado: "Aprovado", concluido: "Concluído", cancelado: "Cancelado" };
                           return (
                             <span className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${map[st]}`}>
                               {label[st]}
@@ -1534,13 +1590,26 @@ export default function PatientDetails() {
                       <span className="text-base font-bold font-mono text-verde">
                         {budget.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       </span>
-                      <button
-                        onClick={() => deleteBudget(budget.id)}
-                        className="w-8 h-8 border border-red-200 rounded-lg hover:bg-red-50 text-red-400 transition flex items-center justify-center"
-                        title="Excluir orçamento"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {/* Cancelar: mantém o registro (para orçamentos já enviados/aprovados). */}
+                      {!["rascunho", "cancelado"].includes(budget.status || "rascunho") && (
+                        <button
+                          onClick={() => cancelBudget(budget.id)}
+                          className="text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition"
+                          title="Cancelar orçamento (mantém registrado)"
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                      {/* Excluir de vez só para rascunhos — o resto se cancela, não some. */}
+                      {(budget.status || "rascunho") === "rascunho" && (
+                        <button
+                          onClick={() => deleteBudget(budget.id)}
+                          className="w-8 h-8 border border-red-200 rounded-lg hover:bg-red-50 text-red-400 transition flex items-center justify-center"
+                          title="Excluir orçamento"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </div>
 

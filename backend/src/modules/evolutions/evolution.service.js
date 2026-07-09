@@ -22,6 +22,7 @@ export async function create(
   const evolution =
     await prisma.evolution.create({
       data: {
+        name: data.name,
         description: data.description,
         procedure: data.procedure,
         materials: data.materials,

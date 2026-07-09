@@ -142,12 +142,23 @@ router.post("/responses/:id/finalize", async (req, res) => {
     // Caso contrário mantém o comportamento antigo (arquiva já como assinado pelo profissional).
     const forSignature = req.body.forSignature === true;
 
+    // O JWT só carrega { id, role } — clinicName/name NÃO vêm no token (por isso
+    // o PDF saía "Clínica: undefined"). Buscamos o profissional no banco e montamos
+    // um nome amigável com fallback: nome da clínica → título+apelido → título+nome.
+    const owner = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { name: true, clinicName: true, nickname: true, gender: true },
+    });
+    const title = owner?.gender === "F" ? "Dra." : owner?.gender === "M" ? "Dr." : "";
+    const displayName = [title, owner?.nickname || owner?.name].filter(Boolean).join(" ").trim();
+    const clinicHeader = owner?.clinicName?.trim() || displayName || "—";
+
     const pdfBytes = await buildAnamnesisPdf({
       patientName: response.patient.name,
       templateName: response.template.name,
       questions: response.template.questions,
       answers,
-      clinicName: req.user.clinicName || req.user.name,
+      clinicName: clinicHeader,
     });
 
     const filePath = buildStorageKey({

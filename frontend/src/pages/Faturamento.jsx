@@ -148,10 +148,24 @@ function MethodBadge({ method }) {
 
 // ─── charge detail modal ──────────────────────────────────────────────────────
 
-function ChargeDetailModal({ charge, onClose, onSimulate }) {
+function ChargeDetailModal({ charge, onClose, onSimulate, onCancel }) {
   const [copied, setCopied] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [sendingLink, setSendingLink] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  async function handleCancel() {
+    if (!window.confirm("Cancelar esta cobrança? O paciente não poderá mais pagá-la.")) return;
+    setCancelling(true);
+    try {
+      await onCancel(charge.id);
+      onClose();
+    } catch {
+      // erro já tratado no componente pai (toast)
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   function copy(text) {
     navigator.clipboard.writeText(text);
@@ -221,17 +235,37 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
               </div>
             )}
           </div>
-          {charge.method === "pix" && charge.status === "pending" && (
+          {charge.method === "pix" && ["pending", "PENDING", "overdue", "OVERDUE"].includes(charge.status) && (
             <div className="border border-creme-200 rounded-2xl p-4">
               <p className="text-xs font-semibold text-verde mb-3 flex items-center gap-1.5">
                 <QrCode size={14} /> QR Code PIX
               </p>
-              <div className="flex items-center justify-center bg-[#FAF8F5] rounded-xl py-6 mb-3">
-                <div className="w-32 h-32 bg-verde rounded-xl flex items-center justify-center opacity-10">
-                  <QrCode size={64} className="text-white" />
+              {charge.pixInfo?.encodedImage ? (
+                <>
+                  <div className="flex items-center justify-center bg-white rounded-xl py-4 mb-3">
+                    <img
+                      src={`data:image/png;base64,${charge.pixInfo.encodedImage}`}
+                      alt="QR Code PIX"
+                      className="w-40 h-40"
+                    />
+                  </div>
+                  {charge.pixInfo.payload && (
+                    <div className="flex items-center gap-2 bg-[#FAF8F5] rounded-xl px-3 py-2.5">
+                      <p className="text-[10px] text-gray-500 flex-1 truncate font-mono">{charge.pixInfo.payload}</p>
+                      <button onClick={() => copy(charge.pixInfo.payload)}
+                        className="shrink-0 w-7 h-7 rounded-lg bg-verde flex items-center justify-center text-white transition hover:bg-verde-900">
+                        {copied ? <Check size={12} /> : <Copy size={12} />}
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-gray-400 text-center mt-2">Aponte a câmera ou copie o código PIX</p>
+                </>
+              ) : (
+                <div className="flex items-center justify-center bg-[#FAF8F5] rounded-xl py-6">
+                  <RefreshCw size={20} className="text-gray-300 animate-spin" />
+                  <span className="text-[10px] text-gray-400 ml-2">Carregando QR Code…</span>
                 </div>
-              </div>
-              <p className="text-[10px] text-gray-400 text-center">QR Code gerado após integração com Asaas</p>
+              )}
             </div>
           )}
           {charge.paymentLink && charge.status !== "cancelled" && (
@@ -272,6 +306,14 @@ function ChargeDetailModal({ charge, onClose, onSimulate }) {
               >
                 {simulating ? <RefreshCw size={13} className="animate-spin" /> : <Zap size={13} />}
                 {simulating ? "Simulando…" : "Simular pagamento (sandbox)"}
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="w-full flex items-center justify-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-60"
+              >
+                {cancelling ? <RefreshCw size={13} className="animate-spin" /> : <X size={13} />}
+                {cancelling ? "Cancelando…" : "Cancelar cobrança"}
               </button>
             </div>
           )}
@@ -879,6 +921,30 @@ export default function Faturamento() {
     }
   }
 
+  async function openDetail(charge) {
+    setDetail(charge); // abre já com o que temos da lista
+    try {
+      // busca a versão completa — traz pixQrCode (QR real + copia-e-cola) e invoiceUrl
+      const res = await api.get(`/billing/charges/${charge.id}`);
+      setDetail((cur) => (cur && cur.id === charge.id ? { ...cur, ...normalizeCharge(res.data) } : cur));
+    } catch {
+      // mantém o que já está aberto se o fetch falhar
+    }
+  }
+
+  async function cancelCharge(chargeId) {
+    try {
+      await api.delete(`/billing/charges/${chargeId}`);
+      toast.success("Cobrança cancelada!");
+      setCharges((prev) => prev.map((c) =>
+        c.id === chargeId ? { ...c, status: "cancelled" } : c
+      ));
+    } catch (err) {
+      toast.error(err.response?.data?.error ?? "Erro ao cancelar cobrança");
+      throw err;
+    }
+  }
+
   const loadCharges = useCallback(async () => {
     setLoadingCharges(true);
     try {
@@ -1056,7 +1122,7 @@ export default function Faturamento() {
                     </div>
                     <div><StatusBadge status={charge.status} /></div>
                     <div className="flex items-center gap-1">
-                      <button onClick={() => setDetail(charge)}
+                      <button onClick={() => openDetail(charge)}
                         className="w-8 h-8 rounded-xl border border-creme-200 hover:bg-creme-50 flex items-center justify-center text-gray-400 hover:text-verde transition">
                         <Eye size={13} />
                       </button>
@@ -1088,7 +1154,7 @@ export default function Faturamento() {
         <NewChargeModal onClose={() => setShowNew(false)} onSave={(c) => setCharges((prev) => [c, ...prev])} />
       )}
       {detail && (
-        <ChargeDetailModal charge={detail} onClose={() => setDetail(null)} onSimulate={simulateCharge} />
+        <ChargeDetailModal charge={detail} onClose={() => setDetail(null)} onSimulate={simulateCharge} onCancel={cancelCharge} />
       )}
     </MainLayout>
   );

@@ -227,6 +227,7 @@ model AppointmentProcedure {
 
 model Evolution {
   id                String     @id @default(cuid())
+  name              String?    // título/nome da evolução (ex.: "Sessão de limpeza de pele")
   content           String?
   photoUrl          String?
   patientId         String
@@ -438,6 +439,7 @@ model PatientPhoto {
   filePath  String
   fileSize  Int?
   mimeType  String?
+  category  String?  // null = foto comum; "device" = foto do dispositivo/aparelho usado
   patientId String
   userId    String
   createdAt DateTime @default(now())
@@ -455,6 +457,7 @@ model PortfolioCase {
   featured      Boolean  @default(false)
   beforePhotoId String
   afterPhotoId  String
+  devicePhotoId String?  // foto do dispositivo/aparelho usado (PatientPhoto, opcional)
   patientId     String
   userId        String
   createdAt     DateTime @default(now())

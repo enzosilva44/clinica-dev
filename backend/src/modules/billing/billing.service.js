@@ -178,7 +178,16 @@ export async function getCharge(userId, chargeId) {
 
 export async function cancelCharge(userId, chargeId) {
   const key = await resolveKey(userId);
-  return asaas("DELETE", `/payments/${chargeId}`, null, key);
+  const result = await asaas("DELETE", `/payments/${chargeId}`, null, key);
+
+  // marca a Transaction vinculada como cancelada — evita registro órfão no Financeiro.
+  // só cancela se ainda estiver pendente (não reverte algo já pago)
+  await prisma.transaction.updateMany({
+    where: { userId, notes: `asaas:${chargeId}`, status: "pendente" },
+    data: { status: "cancelado" },
+  });
+
+  return result;
 }
 
 export async function simulatePayment(userId, chargeId) {

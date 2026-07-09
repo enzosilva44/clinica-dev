@@ -21,7 +21,7 @@ router.get("/", async (req, res) => {
 // Cria um case a partir de um par de fotos antes/depois.
 router.post("/", async (req, res) => {
   try {
-    const { patientId, beforePhotoId, afterPhotoId, title, procedureName, caption, featured } = req.body;
+    const { patientId, beforePhotoId, afterPhotoId, devicePhotoId, title, procedureName, caption, featured } = req.body;
     if (!patientId || !beforePhotoId || !afterPhotoId) {
       return res.status(400).json({ error: "Paciente e as duas fotos (antes/depois) são obrigatórios." });
     }
@@ -38,6 +38,7 @@ router.post("/", async (req, res) => {
         patientId,
         beforePhotoId,
         afterPhotoId,
+        devicePhotoId: devicePhotoId || null,
         title: title?.trim() || null,
         procedureName: procedureName?.trim() || null,
         caption: caption?.trim() || null,

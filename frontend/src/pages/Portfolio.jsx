@@ -104,13 +104,14 @@ export default function Portfolio() {
 }
 
 /* ── Modal de metadados do case (reutilizado por criar e editar) ── */
-function CaseMetaModal({ heading, submitLabel, beforeId, afterId, initial, saving, onClose, onSubmit }) {
+function CaseMetaModal({ heading, submitLabel, beforeId, afterId, initial, saving, allowDevicePhoto, onClose, onSubmit }) {
   const [meta, setMeta] = useState({
     title: initial?.title || "",
     procedureName: initial?.procedureName || "",
     caption: initial?.caption || "",
     featured: initial?.featured || false,
   });
+  const [deviceFile, setDeviceFile] = useState(null);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -161,6 +162,24 @@ function CaseMetaModal({ heading, submitLabel, beforeId, afterId, initial, savin
               className="w-full border border-ambar rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-verde/20"
             />
           </div>
+          {/* Foto do dispositivo/aparelho usado — fica salva nas fotos do paciente. */}
+          {allowDevicePhoto && (
+            <div>
+              <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                Foto do dispositivo <span className="text-gray-300">(opcional)</span>
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setDeviceFile(e.target.files?.[0] || null)}
+                className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-creme-100 file:text-verde hover:file:bg-creme-200 transition"
+              />
+              {deviceFile && (
+                <p className="text-[11px] text-verde mt-1 truncate">Selecionada: {deviceFile.name}</p>
+              )}
+            </div>
+          )}
+
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -178,7 +197,7 @@ function CaseMetaModal({ heading, submitLabel, beforeId, afterId, initial, savin
           <button onClick={onClose} className="text-sm text-gray-500 px-4 py-2 rounded-xl hover:bg-creme-50 transition">
             Cancelar
           </button>
-          <Button size="sm" onClick={() => onSubmit(meta)} disabled={saving}>
+          <Button size="sm" onClick={() => onSubmit({ ...meta, deviceFile })} disabled={saving}>
             {saving ? "Salvando…" : submitLabel}
           </Button>
         </div>
@@ -292,7 +311,10 @@ function Showcase({ onCreateNew }) {
                 <p className="text-[15px] font-bold text-verde-900 truncate">
                   {c.title || c.procedureName || "Case de sucesso"}
                 </p>
-                <p className="text-xs text-gray-400 truncate">{c.patient?.name}</p>
+                {/* Nome do paciente removido da exibição da vitrine (privacidade). */}
+                {c.title && c.procedureName && (
+                  <p className="text-xs text-gray-400 truncate">{c.procedureName}</p>
+                )}
               </div>
               <button
                 onClick={() => toggleFeatured(c)}
@@ -447,10 +469,21 @@ function CreateCase({ onSaved }) {
     if (!before || !after || !patient) return;
     setSaving(true);
     try {
+      // Se anexou foto do dispositivo, sobe primeiro (fica salva nas fotos do
+      // paciente, marcada como "device") e vincula o id ao case.
+      let devicePhotoId = null;
+      if (meta.deviceFile) {
+        const fd = new FormData();
+        fd.append("photos", meta.deviceFile);
+        fd.append("category", "device");
+        const up = await api.post(`/photos/patient/${patient.id}`, fd);
+        devicePhotoId = up.data?.[0]?.id ?? null;
+      }
       await api.post("/portfolio", {
         patientId: patient.id,
         beforePhotoId: before.id,
         afterPhotoId: after.id,
+        devicePhotoId,
         title: meta.title,
         procedureName: meta.procedureName,
         caption: meta.caption,
@@ -654,6 +687,7 @@ function CreateCase({ onSaved }) {
           afterId={after.id}
           initial={{ procedureName: suggestedProcedure || "" }}
           saving={saving}
+          allowDevicePhoto
           onClose={() => setShowSaveModal(false)}
           onSubmit={saveCase}
         />

@@ -1,7 +1,7 @@
 import { prisma } from "../../config/prisma.js";
 import { createPending } from "../financial/transaction.service.js";
 
-const BUDGET_STATUSES = ["rascunho", "aprovado", "concluido"];
+const BUDGET_STATUSES = ["rascunho", "aprovado", "concluido", "cancelado"];
 
 function normalizeItem(item) {
   const quantity = Math.max(Number(item.quantity) || 1, 1);
@@ -47,6 +47,32 @@ export async function updateStatus(id, userId, status) {
   if (!BUDGET_STATUSES.includes(status)) throw new Error("Status inválido");
   const budget = await prisma.budget.findFirst({ where: { id, userId } });
   if (!budget) throw new Error("Orçamento não encontrado");
+
+  // Cancelar mantém o orçamento registrado, mas o financeiro precisa bater:
+  // removemos as parcelas/cobranças AINDA PENDENTES vinculadas (para não seguirem
+  // aparecendo como a-receber). Transações já PAGAS são preservadas — dinheiro que
+  // entrou é fato consumado. Segue a lógica de grupo de parcelas do remove().
+  if (status === "cancelado") {
+    return prisma.$transaction(async (tx) => {
+      const linked = await tx.transaction.findMany({
+        where: { budgetId: id, userId },
+        select: { installmentGroupId: true },
+      });
+      const groupIds = linked.map((t) => t.installmentGroupId).filter(Boolean);
+      await tx.transaction.deleteMany({
+        where: {
+          userId,
+          status: "pendente",
+          OR: [
+            { budgetId: id },
+            ...(groupIds.length ? [{ installmentGroupId: { in: groupIds } }] : []),
+          ],
+        },
+      });
+      return tx.budget.update({ where: { id }, data: { status } });
+    });
+  }
+
   return prisma.budget.update({ where: { id }, data: { status } });
 }
 
@@ -173,6 +199,7 @@ export async function create(data, userId) {
     amount: budget.total,
     category: "Procedimento",
     paymentMethod: data.txPaymentMethod || null,
+    settlementType: data.txSettlementType || null,
     installments: data.txInstallments ? Number(data.txInstallments) : 1,
     dueDate: data.txDueDate || null,
     notes: data.txNotes || `Orçamento gerado em ${new Date(budget.createdAt).toLocaleDateString("pt-BR")}${budget.validUntil ? `, válido até ${new Date(budget.validUntil).toLocaleDateString("pt-BR")}` : ""}.`,

@@ -35,7 +35,7 @@ const CATEGORY_COLORS = {
   retorno:     "#2E6FA8",
   lembrete:    "#C4895A",
   compromisso: "#6F7F73",
-  bloqueio:    "#8A8A8A",
+  bloqueio:    "#4B5563", // cinza-escuro neutro, bem distinto do compromisso (verde-acinzentado)
   receivable:  "#1E9E5A",
   payable:     "#D9534F",
 };
@@ -120,6 +120,17 @@ function pastelize(hex, ratio = 0.85) {
     const c = parseInt(m[i], 16);
     return Math.round(c + (255 - c) * ratio);
   });
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Escurece uma cor hex misturando com preto. Usado na COR DO TEXTO dos cards:
+// como o fundo é pastel (clareado), a cor pura de status/categoria pode ficar
+// clara demais e sumir sobre o fundo (ex.: azul "confirmado" #4A8EC2). Escurecer
+// garante contraste legível em qualquer cor, sem caso a caso.
+function darken(hex, ratio = 0.45) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "");
+  if (!m) return "#0A3326";
+  const [r, g, b] = [1, 2, 3].map((i) => Math.round(parseInt(m[i], 16) * (1 - ratio)));
   return `rgb(${r}, ${g}, ${b})`;
 }
 
@@ -401,9 +412,16 @@ export default function Agenda() {
         const base = {
           id: a.id,
           title: a.title || "Agendamento",
-          allDay: a.isAllDay ?? false,
-          backgroundColor: statusColor,
-          borderColor: "transparent",
+          // Calendário roda com allDaySlot={false}: eventos all-day sumiriam na
+          // visão SEMANA/DIA (só apareceriam no MÊS). Este app não tem all-day
+          // legítimo — lembretes antigos foram salvos assim por engano. Forçamos
+          // timed p/ que tudo apareça em todas as visões (usa o horário do start).
+          allDay: false,
+          // Cor aplicada JÁ AQUI (não no eventDidMount): assim, ao editar e trocar
+          // status/cor, o FullCalendar re-renderiza com a cor nova. Antes a cor era
+          // setada via DOM no mount e não atualizava até remontar a página.
+          backgroundColor: pastelize(statusColor),
+          borderColor: statusColor,
           extendedProps: {
             kind: "appointment",
             category,
@@ -448,8 +466,8 @@ export default function Agenda() {
           start: e.start,
           end: e.end,
           allDay: e.isAllDay ?? false,
-          backgroundColor: e.color,
-          borderColor: "transparent",
+          backgroundColor: pastelize(e.color),
+          borderColor: e.color,
           extendedProps: {
             kind: e.kind,
             category: e.category,
@@ -791,7 +809,10 @@ export default function Agenda() {
         patientId: returnSuggestion.patientId,
         professional: returnSuggestion.professional,
         category,
-        isAllDay: isReminder,
+        // Não usar all-day: o calendário roda com allDaySlot={false}, então
+        // eventos all-day só aparecem na visão MÊS e somem na SEMANA/DIA.
+        // O lembrete herda o horário do agendamento original (start já tem hora).
+        isAllDay: false,
         color: PROFESSIONAL_COLORS[returnSuggestion.professional],
         idempotencyKey: crypto.randomUUID(),
       });
@@ -953,19 +974,12 @@ export default function Agenda() {
               scrollTime={getInitialScrollTime()}
               scrollTimeReset={false}
               allDaySlot={false}
-              eventDidMount={(info) => {
-                // Itens financeiros (a receber/a pagar) não têm statusColor;
-                // usam a cor do próprio evento (verde/vermelho) vinda do backend.
-                const color = info.event.extendedProps.statusColor || info.event.backgroundColor;
-                if (color) {
-                  info.el.style.backgroundColor = pastelize(color);
-                  info.el.style.borderLeftColor = color;
-                }
-              }}
               eventContent={(info) => {
                 const isMonth = info.view.type === "dayGridMonth";
                 const { patientName, procedureType, procedures, professional, professionalColor, statusColor } = info.event.extendedProps;
-                const textColor = statusColor || info.event.backgroundColor || "#0A3326";
+                // Escurecemos a cor pra garantir contraste sobre o fundo pastel
+                // (a cor pura de alguns status é clara demais e sumia o texto).
+                const textColor = darken(statusColor || info.event.backgroundColor || "#0A3326");
                 // Rótulo de procedimentos: 1º nome + "+N" se houver vários; senão o legado.
                 const procLabel =
                   Array.isArray(procedures) && procedures.length > 0
@@ -1000,7 +1014,9 @@ export default function Agenda() {
                         {procLabel}
                       </p>
                     )}
-                    {professional && (
+                    {/* Só mostra o profissional em clínicas multi-profissional;
+                        no plano solo isso poluía todo card com "Dra Ana" fixo. */}
+                    {features.multiProfessional && professional && (
                       <div className="flex items-center gap-1 mt-auto">
                         <div
                           className="w-2 h-2 rounded-full shrink-0"

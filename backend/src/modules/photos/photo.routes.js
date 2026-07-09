@@ -69,6 +69,7 @@ router.post("/patient/:patientId", authMiddleware, (req, res, next) => {
             filePath,
             fileSize: file.size,
             mimeType: file.mimetype,
+            category: req.body.category || null,
             patientId: req.params.patientId,
             userId: req.user.id,
           },
