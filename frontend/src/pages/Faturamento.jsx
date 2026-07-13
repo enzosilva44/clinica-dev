@@ -686,6 +686,7 @@ function ConfigTab() {
   // IASOPay (subconta Asaas)
   const [subaccount, setSubaccount] = useState(null); // { hasSubaccount, subaccountStatus }
   const [activating, setActivating] = useState(false);
+  const [income, setIncome] = useState("");
 
   useEffect(() => {
     api.get("/billing/config")
@@ -694,9 +695,11 @@ function ConfigTab() {
   }, []);
 
   async function activateIasopay() {
+    const val = Number(String(income).replace(/\./g, "").replace(",", "."));
+    if (!val || val <= 0) return toast.error("Informe o faturamento/renda mensal");
     setActivating(true);
     try {
-      const r = await api.post("/billing/subaccount");
+      const r = await api.post("/billing/subaccount", { incomeValue: val });
       toast.success(r.data.alreadyExists ? "IASOPay já estava ativo." : "IASOPay ativado! Sua conta de recebimento foi criada.");
       const cfg = await api.get("/billing/config");
       setSubaccount(cfg.data);
@@ -773,6 +776,19 @@ function ConfigTab() {
               Ative o IASOPay para criar sua conta de recebimento e cobrar seus pacientes por PIX, boleto e cartão —
               tudo dentro do sistema, sem precisar acessar o Asaas. Usamos os dados do seu cadastro (nome, documento e endereço).
             </p>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Faturamento / renda mensal (R$)</label>
+              <input
+                value={income}
+                onChange={(e) => setIncome(e.target.value.replace(/[^\d.,]/g, ""))}
+                placeholder="Ex: 15000"
+                inputMode="decimal"
+                className={INPUT}
+              />
+              <p className="text-[11px] text-gray-400 mt-1.5">
+                Exigido pelo Asaas para criar a conta. Informe uma estimativa da média mensal.
+              </p>
+            </div>
             <button
               onClick={activateIasopay}
               disabled={activating}

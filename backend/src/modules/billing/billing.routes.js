@@ -106,7 +106,7 @@ router.post("/config", async (req, res) => {
 // ── IASOPay: ativar (cria subconta Asaas para a clínica) ────────────────────────
 router.post("/subaccount", async (req, res) => {
   try {
-    const result = await createSubaccount(req.user.id);
+    const result = await createSubaccount(req.user.id, { incomeValue: req.body?.incomeValue });
     res.json(result);
   } catch (e) { res.status(400).json({ error: e.message }); }
 });

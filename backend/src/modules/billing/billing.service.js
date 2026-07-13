@@ -272,19 +272,22 @@ export async function getConfig(userId) {
 
 const onlyDigits = (v) => (v || "").replace(/\D/g, "");
 
-function buildSubaccountPayload(user) {
+function buildSubaccountPayload(user, incomeValue) {
   const isPJ = (user.personType || "").toLowerCase() === "pj" || !!user.cnpj;
   const cpfCnpj = onlyDigits(isPJ ? user.cnpj : user.cpf);
 
+  const income = Number(incomeValue);
+
   const missing = [];
-  if (!user.name && !user.clinicName) missing.push("nome");
-  if (!user.email)                    missing.push("e-mail");
-  if (!cpfCnpj)                       missing.push(isPJ ? "CNPJ" : "CPF");
-  if (!user.zipCode)                  missing.push("CEP");
-  if (!isPJ && !user.birthDate)       missing.push("data de nascimento");
+  if (!user.name && !user.clinicName)  missing.push("nome");
+  if (!user.email)                     missing.push("e-mail");
+  if (!cpfCnpj)                        missing.push(isPJ ? "CNPJ" : "CPF");
+  if (!user.zipCode)                   missing.push("CEP");
+  if (!isPJ && !user.birthDate)        missing.push("data de nascimento");
+  if (!income || income <= 0)          missing.push(isPJ ? "faturamento mensal" : "renda mensal");
   if (missing.length) {
     throw new Error(
-      `Complete seu cadastro antes de ativar o IASOPay. Faltam: ${missing.join(", ")}.`
+      `Complete os dados antes de ativar o IASOPay. Faltam: ${missing.join(", ")}.`
     );
   }
 
@@ -293,6 +296,7 @@ function buildSubaccountPayload(user) {
     email:         user.email,
     cpfCnpj,
     mobilePhone:   onlyDigits(user.phone) || undefined,
+    incomeValue:   income,
     address:       user.street || undefined,
     addressNumber: user.addressNumber || undefined,
     complement:    user.complement || undefined,
@@ -312,7 +316,7 @@ function buildSubaccountPayload(user) {
   return payload;
 }
 
-export async function createSubaccount(userId) {
+export async function createSubaccount(userId, { incomeValue } = {}) {
   const rootKey = process.env.ASAAS_API_KEY;
   if (!rootKey) throw new Error("Chave raiz Asaas (ASAAS_API_KEY) não configurada no servidor.");
 
@@ -322,7 +326,7 @@ export async function createSubaccount(userId) {
     return { alreadyExists: true, accountId: user.asaasAccountId, status: user.asaasAccountStatus };
   }
 
-  const payload = buildSubaccountPayload(user);
+  const payload = buildSubaccountPayload(user, incomeValue);
 
   // Chamada com a chave RAIZ (não a do usuário)
   const account = await asaas("POST", "/accounts", payload, rootKey);
