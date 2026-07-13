@@ -683,6 +683,30 @@ function ConfigTab() {
   const [notifications, setNotifications] = useState({ paid: true, overdue: true, webhook: false });
   const [saving, setSaving] = useState(false);
 
+  // IASOPay (subconta Asaas)
+  const [subaccount, setSubaccount] = useState(null); // { hasSubaccount, subaccountStatus }
+  const [activating, setActivating] = useState(false);
+
+  useEffect(() => {
+    api.get("/billing/config")
+      .then((r) => setSubaccount(r.data))
+      .catch(() => {});
+  }, []);
+
+  async function activateIasopay() {
+    setActivating(true);
+    try {
+      const r = await api.post("/billing/subaccount");
+      toast.success(r.data.alreadyExists ? "IASOPay já estava ativo." : "IASOPay ativado! Sua conta de recebimento foi criada.");
+      const cfg = await api.get("/billing/config");
+      setSubaccount(cfg.data);
+    } catch (err) {
+      toast.error(err.response?.data?.error ?? "Erro ao ativar o IASOPay");
+    } finally {
+      setActivating(false);
+    }
+  }
+
   function toggleMethod(key) { setMethods((m) => ({ ...m, [key]: !m[key] })); }
   function toggleNotif(key)  { setNotifications((n) => ({ ...n, [key]: !n[key] })); }
 
@@ -726,8 +750,44 @@ function ConfigTab() {
 
   return (
     <div className="space-y-5">
+      {/* IASOPay — conta de recebimento própria (subconta Asaas) */}
+      <Section icon={Sparkles} title="IASOPay">
+        {subaccount?.hasSubaccount ? (
+          <div className="flex items-center gap-3 bg-verde-50 border border-verde-200 rounded-xl px-4 py-3">
+            <Shield size={15} className="text-sucesso shrink-0" />
+            <div className="flex-1">
+              <p className="text-xs font-bold text-verde-800">IASOPay ativo</p>
+              <p className="text-[11px] text-verde-700 mt-0.5">
+                Sua conta de recebimento está criada. Os pagamentos dos pacientes caem direto na sua conta.
+                {subaccount.subaccountStatus && subaccount.subaccountStatus !== "approved" && (
+                  <span className="block text-ambar font-medium mt-0.5">
+                    Status: {subaccount.subaccountStatus} — pode ser necessário enviar documentos no Asaas para liberar saques.
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500">
+              Ative o IASOPay para criar sua conta de recebimento e cobrar seus pacientes por PIX, boleto e cartão —
+              tudo dentro do sistema, sem precisar acessar o Asaas. Usamos os dados do seu cadastro (nome, documento e endereço).
+            </p>
+            <button
+              onClick={activateIasopay}
+              disabled={activating}
+              className="w-full py-3 rounded-xl bg-verde hover:bg-verde-900 text-white text-sm font-semibold transition disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {activating
+                ? <><RefreshCw size={14} className="animate-spin" /> Ativando…</>
+                : <><Sparkles size={14} /> Ativar IASOPay</>}
+            </button>
+          </div>
+        )}
+      </Section>
+
       {/* banner conectar */}
-      {!apiKey && (
+      {!apiKey && !subaccount?.hasSubaccount && (
         <div className="bg-verde rounded-2xl p-5 flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
             <Sparkles size={18} className="text-ambar" />
