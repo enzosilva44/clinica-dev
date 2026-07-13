@@ -255,11 +255,92 @@ export async function saveConfig(userId, { asaasApiKey, defaultPixKey, clinicNam
 export async function getConfig(userId) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { asaasApiKey: true },
+    select: { asaasApiKey: true, asaasAccountId: true, asaasAccountStatus: true },
   });
   return {
     connected: !!user?.asaasApiKey || !!process.env.ASAAS_API_KEY,
     hasCustomKey: !!user?.asaasApiKey,
+    hasSubaccount: !!user?.asaasAccountId,
+    subaccountStatus: user?.asaasAccountStatus ?? null,
+  };
+}
+
+// ─── IASOPay: criação de subconta Asaas (1 por tenant/User) ──────────────────
+// Usa a chave RAIZ da IASO (env) para criar uma subconta cujo apiKey/walletId
+// ficam salvos no próprio User. A partir daí resolveKey passa a usá-los, e todas
+// as cobranças da clínica caem na conta dela. Raiz precisa ser PJ/CNPJ.
+
+const onlyDigits = (v) => (v || "").replace(/\D/g, "");
+
+function buildSubaccountPayload(user) {
+  const isPJ = (user.personType || "").toLowerCase() === "pj" || !!user.cnpj;
+  const cpfCnpj = onlyDigits(isPJ ? user.cnpj : user.cpf);
+
+  const missing = [];
+  if (!user.name && !user.clinicName) missing.push("nome");
+  if (!user.email)                    missing.push("e-mail");
+  if (!cpfCnpj)                       missing.push(isPJ ? "CNPJ" : "CPF");
+  if (!user.zipCode)                  missing.push("CEP");
+  if (!isPJ && !user.birthDate)       missing.push("data de nascimento");
+  if (missing.length) {
+    throw new Error(
+      `Complete seu cadastro antes de ativar o IASOPay. Faltam: ${missing.join(", ")}.`
+    );
+  }
+
+  const payload = {
+    name:          user.clinicName || user.name,
+    email:         user.email,
+    cpfCnpj,
+    mobilePhone:   onlyDigits(user.phone) || undefined,
+    address:       user.street || undefined,
+    addressNumber: user.addressNumber || undefined,
+    complement:    user.complement || undefined,
+    province:      user.neighborhood || undefined,
+    postalCode:    onlyDigits(user.zipCode),
+  };
+
+  if (isPJ) {
+    // LIMITED cobre a maioria das clínicas PJ; MEI/associação a clínica ajusta no Asaas.
+    payload.companyType = "LIMITED";
+  } else {
+    payload.birthDate = user.birthDate
+      ? new Date(user.birthDate).toISOString().slice(0, 10)
+      : undefined;
+  }
+
+  return payload;
+}
+
+export async function createSubaccount(userId) {
+  const rootKey = process.env.ASAAS_API_KEY;
+  if (!rootKey) throw new Error("Chave raiz Asaas (ASAAS_API_KEY) não configurada no servidor.");
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("Usuário não encontrado.");
+  if (user.asaasAccountId) {
+    return { alreadyExists: true, accountId: user.asaasAccountId, status: user.asaasAccountStatus };
+  }
+
+  const payload = buildSubaccountPayload(user);
+
+  // Chamada com a chave RAIZ (não a do usuário)
+  const account = await asaas("POST", "/accounts", payload, rootKey);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      asaasApiKey:        account.apiKey        ?? user.asaasApiKey,
+      asaasWalletId:      account.walletId      ?? null,
+      asaasAccountId:     account.id            ?? null,
+      asaasAccountStatus: account.status || account.accountStatus || "pending",
+    },
+  });
+
+  return {
+    accountId: account.id,
+    walletId:  account.walletId,
+    status:    account.status || account.accountStatus || "pending",
   };
 }
 

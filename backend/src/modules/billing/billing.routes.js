@@ -5,6 +5,7 @@ import {
   createCharge, listCharges, getCharge, cancelCharge, simulatePayment,
   getBalance, createTransfer, listTransfers,
   saveConfig, getConfig, handleWebhook, sendPaymentLink,
+  createSubaccount,
 } from "./billing.service.js";
 
 const router = Router();
@@ -98,6 +99,14 @@ router.get("/config", async (req, res) => {
 router.post("/config", async (req, res) => {
   try {
     const result = await saveConfig(req.user.id, req.body);
+    res.json(result);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── IASOPay: ativar (cria subconta Asaas para a clínica) ────────────────────────
+router.post("/subaccount", async (req, res) => {
+  try {
+    const result = await createSubaccount(req.user.id);
     res.json(result);
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
