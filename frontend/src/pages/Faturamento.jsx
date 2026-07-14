@@ -801,7 +801,7 @@ function ConfigTab() {
                   "Envia a cobrança pro paciente por WhatsApp e e-mail, com lembretes automáticos",
                   "Confirma o pagamento sozinho e concilia com o seu financeiro",
                   "PIX, boleto e cartão (com parcelamento) num só lugar",
-                  "Consulte seu saldo e faça saques por PIX quando quiser, direto no sistema",
+                  "Consulte o saldo e saque para sua conta bancária por PIX quando quiser, direto no sistema",
                 ].map((t) => (
                   <li key={t} className="flex items-start gap-2 text-[11px] text-white/85">
                     <Zap size={12} className="text-ambar shrink-0 mt-0.5" /> {t}
