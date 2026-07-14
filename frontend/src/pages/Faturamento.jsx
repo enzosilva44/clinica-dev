@@ -1036,18 +1036,6 @@ export default function Faturamento() {
         )}
       </div>
 
-      {/* banner — sandbox ativo */}
-      <div className="bg-verde-50 border border-verde-200 rounded-2xl px-5 py-3 mb-6 flex items-center gap-3">
-        <div className="w-6 h-6 rounded-lg bg-verde-100 flex items-center justify-center shrink-0">
-          <Shield size={12} className="text-sucesso" />
-        </div>
-        <p className="text-xs text-verde-900 font-medium flex-1">
-          <span className="font-bold">Asaas Sandbox conectado</span> — cobranças criadas aqui são de teste.
-          Para produção, troque a chave em{" "}
-          <button onClick={() => setTab("config")} className="underline font-bold">Configuração</button>.
-        </p>
-      </div>
-
       {/* tabs */}
       <div className="flex gap-2 border-b-[1.5px] border-creme-200 mb-6">
         {TABS.map(({ id, label, icon: Icon }) => (
