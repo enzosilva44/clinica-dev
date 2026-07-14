@@ -845,6 +845,14 @@ function ConfigTab() {
                     Criamos sua conta com os dados do seu cadastro. O faturamento é exigido pelo Asaas.
                   </p>
                 </div>
+                <div className="flex items-start gap-2 bg-ambar/10 border border-ambar/30 rounded-xl px-3.5 py-2.5">
+                  <AlertCircle size={13} className="text-ambar shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-gray-600">
+                    Usaremos o <span className="font-semibold">e-mail do seu cadastro</span> como acesso à conta no Asaas —
+                    é por ele que você conclui a verificação, cadastra sua conta bancária e faz saques.
+                    Use um e-mail <span className="font-semibold">real e ativo</span>.
+                  </p>
+                </div>
                 <button
                   onClick={activateIasopay}
                   disabled={activating}

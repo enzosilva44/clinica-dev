@@ -291,6 +291,12 @@ function buildSubaccountPayload(user, incomeValue) {
     );
   }
 
+  // O e-mail é o login/acesso do titular no Asaas — precisa ser real e válido.
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRe.test(user.email)) {
+    throw new Error("E-mail inválido. Use um e-mail real e ativo — ele será seu acesso ao Asaas para receber e sacar.");
+  }
+
   const payload = {
     name:          user.clinicName || user.name,
     email:         user.email,
