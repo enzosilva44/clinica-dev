@@ -682,9 +682,12 @@ function ConfigTab() {
   const [saving, setSaving] = useState(false);
 
   // IASOPay (subconta Asaas)
-  const [subaccount, setSubaccount] = useState(null); // { hasSubaccount, subaccountStatus }
+  const [subaccount, setSubaccount] = useState(null); // { hasSubaccount, subaccountStatus, hasCustomKey }
   const [activating, setActivating] = useState(false);
   const [income, setIncome] = useState("");
+  const [accountMode, setAccountMode] = useState("new"); // "new" | "existing"
+  const [existingKey, setExistingKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
     api.get("/billing/config")
@@ -703,6 +706,21 @@ function ConfigTab() {
       setSubaccount(cfg.data);
     } catch (err) {
       toast.error(err.response?.data?.error ?? "Erro ao ativar o IASOPay");
+    } finally {
+      setActivating(false);
+    }
+  }
+
+  async function connectExisting() {
+    if (!existingKey.trim()) return toast.error("Cole a API Key da sua conta Asaas");
+    setActivating(true);
+    try {
+      await api.post("/billing/config", { asaasApiKey: existingKey.trim() });
+      toast.success("Conta Asaas conectada!");
+      const cfg = await api.get("/billing/config");
+      setSubaccount(cfg.data);
+    } catch (err) {
+      toast.error(err.response?.data?.error ?? "Chave inválida. Verifique e tente novamente.");
     } finally {
       setActivating(false);
     }
@@ -750,16 +768,18 @@ function ConfigTab() {
 
   return (
     <div className="space-y-5">
-      {/* IASOPay — conta de recebimento própria (subconta Asaas) */}
+      {/* IASOPay — conta de recebimento (subconta nova OU conta Asaas existente) */}
       <Section icon={Sparkles} title="IASOPay">
-        {subaccount?.hasSubaccount ? (
+        {(subaccount?.hasSubaccount || subaccount?.hasCustomKey) ? (
           <div className="flex items-center gap-3 bg-verde-50 border border-verde-200 rounded-xl px-4 py-3">
             <Shield size={15} className="text-sucesso shrink-0" />
             <div className="flex-1">
               <p className="text-xs font-bold text-verde-800">IASOPay ativo</p>
               <p className="text-[11px] text-verde-700 mt-0.5">
-                Sua conta de recebimento está criada. Os pagamentos dos pacientes caem direto na sua conta.
-                {subaccount.subaccountStatus && subaccount.subaccountStatus !== "approved" && (
+                {subaccount?.hasSubaccount
+                  ? "Sua conta de recebimento está criada. Os pagamentos dos pacientes caem direto na sua conta."
+                  : "Sua conta Asaas está conectada. Os pagamentos dos pacientes caem direto nela."}
+                {subaccount?.hasSubaccount && subaccount.subaccountStatus && subaccount.subaccountStatus !== "approved" && (
                   <span className="block text-ambar font-medium mt-0.5">
                     Status: {subaccount.subaccountStatus} — pode ser necessário enviar documentos no Asaas para liberar saques.
                   </span>
@@ -768,33 +788,108 @@ function ConfigTab() {
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            <p className="text-xs text-gray-500">
-              Ative o IASOPay para criar sua conta de recebimento e cobrar seus pacientes por PIX, boleto e cartão —
-              tudo dentro do sistema, sem precisar acessar o Asaas. Usamos os dados do seu cadastro (nome, documento e endereço).
-            </p>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Faturamento / renda mensal (R$)</label>
-              <input
-                value={income}
-                onChange={(e) => setIncome(e.target.value.replace(/[^\d.,]/g, ""))}
-                placeholder="Ex: 15000"
-                inputMode="decimal"
-                className={INPUT}
-              />
-              <p className="text-[11px] text-gray-400 mt-1.5">
-                Exigido pelo Asaas para criar a conta. Informe uma estimativa da média mensal.
+          <div className="space-y-4">
+            <div className="bg-verde rounded-xl p-4">
+              <p className="text-sm font-bold text-white">Receba dos seus pacientes sem sair do sistema</p>
+              <p className="text-xs text-white/70 mt-1.5">
+                O IASOPay é a sua conta de recebimento integrada. Com ele você cobra por PIX, boleto e cartão,
+                e o dinheiro cai direto na sua conta — sem precisar acessar outro app.
               </p>
+              <ul className="mt-3 space-y-1.5">
+                {[
+                  "Gera o link de pagamento automaticamente ao criar uma cobrança",
+                  "Envia a cobrança pro paciente por WhatsApp e e-mail, com lembretes automáticos",
+                  "Confirma o pagamento sozinho e concilia com o seu financeiro",
+                  "PIX, boleto e cartão (com parcelamento) num só lugar",
+                  "Consulte seu saldo e faça saques por PIX quando quiser, direto no sistema",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-2 text-[11px] text-white/85">
+                    <Zap size={12} className="text-ambar shrink-0 mt-0.5" /> {t}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <button
-              onClick={activateIasopay}
-              disabled={activating}
-              className="w-full py-3 rounded-xl bg-verde hover:bg-verde-900 text-white text-sm font-semibold transition disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {activating
-                ? <><RefreshCw size={14} className="animate-spin" /> Ativando…</>
-                : <><Sparkles size={14} /> Ativar IASOPay</>}
-            </button>
+
+            {/* seletor: nova conta ou conta existente */}
+            <div className="flex gap-2">
+              {[
+                { key: "new",      label: "Criar nova conta" },
+                { key: "existing", label: "Já tenho conta Asaas" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setAccountMode(key)}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition ${
+                    accountMode === key
+                      ? "border-verde bg-verde text-white"
+                      : "border-creme-200 text-gray-600 hover:bg-[#FAF8F5]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {accountMode === "new" ? (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Faturamento / renda mensal (R$)</label>
+                  <input
+                    value={income}
+                    onChange={(e) => setIncome(e.target.value.replace(/[^\d.,]/g, ""))}
+                    placeholder="Ex: 15000"
+                    inputMode="decimal"
+                    className={INPUT}
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1.5">
+                    Criamos sua conta com os dados do seu cadastro. O faturamento é exigido pelo Asaas.
+                  </p>
+                </div>
+                <button
+                  onClick={activateIasopay}
+                  disabled={activating}
+                  className="w-full py-3 rounded-xl bg-verde hover:bg-verde-900 text-white text-sm font-semibold transition disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {activating
+                    ? <><RefreshCw size={14} className="animate-spin" /> Ativando…</>
+                    : <><Sparkles size={14} /> Ativar IASOPay</>}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block">API Key da sua conta Asaas</label>
+                  <div className="relative">
+                    <input
+                      type={showKey ? "text" : "password"}
+                      value={existingKey}
+                      onChange={(e) => setExistingKey(e.target.value)}
+                      placeholder="$aact_xxxxxxxxxxxxxxxxxxxx"
+                      className={INPUT + " pr-20"}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowKey((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 hover:text-verde transition"
+                    >
+                      {showKey ? "Ocultar" : "Mostrar"}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-1.5">
+                    Encontre em <span className="text-verde font-medium">Minha conta → Integrações</span> no Asaas.
+                  </p>
+                </div>
+                <button
+                  onClick={connectExisting}
+                  disabled={activating}
+                  className="w-full py-3 rounded-xl bg-verde hover:bg-verde-900 text-white text-sm font-semibold transition disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {activating
+                    ? <><RefreshCw size={14} className="animate-spin" /> Conectando…</>
+                    : <><Shield size={14} /> Conectar minha conta</>}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </Section>
