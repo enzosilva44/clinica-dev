@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Pencil, Trash2, Copy, Plus, X, Stethoscope, Search } from "lucide-react";
+import { Pencil, Trash2, Copy, Plus, X, Stethoscope, Search, LayoutGrid, List } from "lucide-react";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import { Button } from "../components/ui";
@@ -11,6 +12,7 @@ export default function Procedures() {
   const [originFilter, setOriginFilter] = useState("todos"); // todos | padrao | meus
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem("procedures:viewMode") || "card"); // card | lista
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -35,7 +37,7 @@ export default function Procedures() {
       setProcedures(response.data);
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar procedimentos");
+      toast.error(mensagemDeErro(error, "carregar os procedimentos"));
     } finally {
       setLoading(false);
     }
@@ -77,7 +79,7 @@ export default function Procedures() {
       loadProcedures();
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao salvar procedimento");
+      toast.error(mensagemDeErro(error, "salvar o procedimento"));
     }
   }
 
@@ -90,7 +92,7 @@ export default function Procedures() {
       loadProcedures();
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao excluir procedimento");
+      toast.error(mensagemDeErro(error, "excluir o procedimento"));
     }
   }
 
@@ -255,6 +257,26 @@ export default function Procedures() {
             <option value="name_asc">Nome (A–Z)</option>
             <option value="name_desc">Nome (Z–A)</option>
           </select>
+          {/* TOGGLE CARD / LISTA */}
+          <div className="flex border border-ambar rounded-xl overflow-hidden bg-white shrink-0">
+            {[
+              { key: "card", icon: LayoutGrid, label: "Cards" },
+              { key: "lista", icon: List, label: "Lista" },
+            ].map(({ key, icon: Icon, label }) => (
+              <button
+                key={key}
+                onClick={() => { setViewMode(key); localStorage.setItem("procedures:viewMode", key); }}
+                aria-pressed={viewMode === key}
+                title={`Ver em ${label.toLowerCase()}`}
+                className={`flex items-center gap-1.5 px-3 py-2.5 text-sm transition ${
+                  viewMode === key ? "bg-verde-50 text-verde font-semibold" : "text-gray-400 hover:text-verde"
+                }`}
+              >
+                <Icon size={15} />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -276,6 +298,43 @@ export default function Procedures() {
           <p className="text-sm">
             Nenhum resultado para <span className="font-medium text-verde">"{search}"</span>
           </p>
+        </div>
+      ) : viewMode === "lista" ? (
+        <div className="bg-white border border-creme-200 rounded-2xl divide-y divide-creme-100 overflow-hidden">
+          {visibleProcedures.map((procedure) => (
+            <div
+              key={procedure.id}
+              className="flex items-center gap-4 px-4 py-3 hover:bg-creme-50 transition"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-sm font-bold text-verde-900 truncate">{procedure.name}</h2>
+                  {procedure.isDefault && (
+                    <span className="bg-verde-100 text-verde-900 rounded px-1.5 py-0.5 text-[9px] font-bold font-mono tracking-wide uppercase">Padrão</span>
+                  )}
+                  {procedure.requiresReturn && (
+                    <span className="bg-ambar-50 text-ambar-700 rounded px-1.5 py-0.5 text-[9px] font-bold font-mono tracking-wide uppercase">Retorno</span>
+                  )}
+                  {procedure.hasMultipleSessions && (
+                    <span className="bg-ia/10 text-ia rounded px-1.5 py-0.5 text-[9px] font-bold font-mono tracking-wide uppercase">Múltiplas</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {procedure.category}
+                  {procedure.products?.length ? ` · ${procedure.products.length} produto${procedure.products.length > 1 ? "s" : ""}` : ""}
+                </p>
+              </div>
+              <div className="hidden sm:block text-[11px] font-semibold text-gray-500 shrink-0">{procedure.duration} min</div>
+              <div className="bg-verde-50 rounded-lg px-2.5 py-1 text-[11px] font-bold text-verde font-mono shrink-0">
+                R$ {procedure.price || "0,00"}
+              </div>
+              <div className="flex gap-3 shrink-0">
+                <button onClick={() => handleEdit(procedure)} className="text-verde hover:text-verde-900"><Pencil size={15} /></button>
+                <button onClick={() => handleDuplicate(procedure)} className="text-gray-400 hover:text-verde"><Copy size={15} /></button>
+                <button className="text-erro/60 hover:text-erro" onClick={() => { setProcedureToDelete(procedure); setShowDeleteModal(true); }}><Trash2 size={15} /></button>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4.5">

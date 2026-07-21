@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { IMaskInput } from "react-imask";
 import { ArrowLeft, Save, UserX } from "lucide-react";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
@@ -69,7 +70,7 @@ export default function EditPatient() {
           alertLevel: p.alertLevel || "none",
         });
       })
-      .catch(() => toast.error("Erro ao carregar paciente"))
+      .catch((err) => toast.error(mensagemDeErro(err, "carregar o paciente")))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -87,8 +88,8 @@ export default function EditPatient() {
         city: data.localidade || p.city,
         state: data.uf || p.state,
       }));
-    } catch {
-      toast.error("Erro ao buscar CEP");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "buscar o CEP"));
     }
   }
 
@@ -99,8 +100,8 @@ export default function EditPatient() {
       await api.put(`/patients/${id}`, form);
       toast.success("Paciente atualizado!");
       navigate(`/patients/${id}`);
-    } catch {
-      toast.error("Erro ao atualizar paciente");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "atualizar o paciente"));
     } finally {
       setSaving(false);
     }
@@ -112,8 +113,8 @@ export default function EditPatient() {
       await api.delete(`/patients/${id}`);
       toast.success("Paciente inativado");
       navigate("/patients");
-    } catch {
-      toast.error("Erro ao inativar paciente");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "inativar o paciente"));
       setDeactivating(false);
     }
   }

@@ -3,9 +3,10 @@ import {
   Plus, Pencil, Trash2, X, Package,
   ArrowDownCircle, ArrowUpCircle, CheckCircle2, XCircle,
   Clock, Filter, AlertTriangle, CalendarClock,
-  Sparkles, ShieldCheck, RefreshCw, Info, Search,
+  Sparkles, ShieldCheck, RefreshCw, Info, Search, LayoutGrid, List,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import { Button, SearchableSelect } from "../components/ui";
@@ -213,11 +214,12 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem("products:viewMode") || "card"); // card | lista
 
   // modal produto
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [form, setForm] = useState({ name: "", description: "", stock: "", minStock: "", unit: "", lotNumber: "", expiryDate: "" });
+  const [form, setForm] = useState({ name: "", description: "", category: "", supplier: "", unitPrice: "", stock: "", minStock: "", unit: "", lotNumber: "", expiryDate: "" });
 
   // modal excluir
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -249,8 +251,8 @@ export default function Products() {
     try {
       const r = await api.get("/products");
       setProducts(r.data);
-    } catch {
-      toast.error("Erro ao carregar produtos");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar os produtos"));
     } finally {
       setLoading(false);
     }
@@ -261,8 +263,8 @@ export default function Products() {
     try {
       const r = await api.get("/products/stock-requests", { params: { status: reqFilter } });
       setRequests(r.data);
-    } catch {
-      toast.error("Erro ao carregar solicitações");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar as solicitações"));
     } finally {
       setLoadingReq(false);
     }
@@ -279,8 +281,8 @@ export default function Products() {
         },
       });
       setMovements(r.data);
-    } catch {
-      toast.error("Erro ao carregar extrato");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar o extrato"));
     } finally {
       setLoadingMov(false);
     }
@@ -295,7 +297,7 @@ export default function Products() {
       const r = await api.get("/ai/product-health");
       setGuardian(r.data);
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao analisar produtos");
+      toast.error(mensagemDeErro(e, "analisar os produtos"));
     } finally {
       setGuardianLoading(false);
     }
@@ -310,7 +312,7 @@ export default function Products() {
 
   function openCreate() {
     setEditingProduct(null);
-    setForm({ name: "", description: "", stock: "", minStock: "", unit: "", lotNumber: "", expiryDate: "" });
+    setForm({ name: "", description: "", category: "", supplier: "", unitPrice: "", stock: "", minStock: "", unit: "", lotNumber: "", expiryDate: "" });
     setShowModal(true);
   }
 
@@ -319,6 +321,9 @@ export default function Products() {
     setForm({
       name: p.name || "",
       description: p.description || "",
+      category: p.category || "",
+      supplier: p.supplier || "",
+      unitPrice: p.unitPrice ?? "",
       stock: p.stock ?? "",
       minStock: p.minStock ?? "",
       unit: p.unit || "",
@@ -341,8 +346,8 @@ export default function Products() {
       }
       setShowModal(false);
       loadProducts();
-    } catch {
-      toast.error("Erro ao salvar produto");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "salvar o produto"));
     }
   }
 
@@ -353,8 +358,8 @@ export default function Products() {
       setProductToDelete(null);
       toast.success("Produto excluído");
       loadProducts();
-    } catch {
-      toast.error("Erro ao excluir produto");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "excluir o produto"));
     }
   }
 
@@ -382,7 +387,7 @@ export default function Products() {
       toast.success("Solicitação enviada! Aguardando aprovação.");
       setShowRequestModal(false);
     } catch (err) {
-      toast.error(err.response?.data?.error || "Erro ao criar solicitação");
+      toast.error(mensagemDeErro(err, "criar a solicitação"));
     } finally {
       setSavingReq(false);
     }
@@ -397,7 +402,7 @@ export default function Products() {
       loadRequests();
       loadProducts();
     } catch (err) {
-      toast.error(err.response?.data?.error || "Erro ao aprovar");
+      toast.error(mensagemDeErro(err, "aprovar a solicitação"));
     }
   }
 
@@ -406,8 +411,8 @@ export default function Products() {
       await api.patch(`/products/stock-requests/${id}/reject`);
       toast.success("Solicitação rejeitada");
       loadRequests();
-    } catch {
-      toast.error("Erro ao rejeitar");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "rejeitar a solicitação"));
     }
   }
 
@@ -513,6 +518,26 @@ export default function Products() {
                 <option value="name_asc">Nome (A–Z)</option>
                 <option value="name_desc">Nome (Z–A)</option>
               </select>
+              {/* TOGGLE CARD / LISTA */}
+              <div className="flex border border-ambar rounded-xl overflow-hidden bg-white shrink-0">
+                {[
+                  { key: "card", icon: LayoutGrid, label: "Cards" },
+                  { key: "lista", icon: List, label: "Lista" },
+                ].map(({ key, icon: Icon, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => { setViewMode(key); localStorage.setItem("products:viewMode", key); }}
+                    aria-pressed={viewMode === key}
+                    title={`Ver em ${label.toLowerCase()}`}
+                    className={`flex items-center gap-1.5 px-3 py-2.5 text-sm transition ${
+                      viewMode === key ? "bg-verde-50 text-verde font-semibold" : "text-gray-400 hover:text-verde"
+                    }`}
+                  >
+                    <Icon size={15} />
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -534,6 +559,47 @@ export default function Products() {
                 Nenhum resultado para <span className="font-medium text-verde">"{search}"</span>
               </p>
             </div>
+          ) : viewMode === "lista" ? (
+            <div className="bg-white border border-creme-200 rounded-2xl divide-y divide-creme-100 overflow-hidden">
+              {visibleProducts.map((product) => {
+                const st = stockStatus(product);
+                const styles = STATUS_STYLES[st];
+                const stockVal = product.stock ?? 0;
+                return (
+                  <div key={product.id} className="flex items-center gap-4 px-4 py-3 hover:bg-creme-50 transition">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-sm font-bold text-verde-900 truncate">{product.name}</h2>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${styles.pill}`}>{styles.label}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">
+                        {product.category || "sem categoria"}
+                        {product.supplier ? ` · ${product.supplier}` : ""}
+                      </p>
+                    </div>
+                    {product.unitPrice != null && (
+                      <div className="hidden md:block text-[11px] font-semibold text-gray-500 shrink-0 whitespace-nowrap">
+                        {product.unitPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/{product.unit || "un"}
+                      </div>
+                    )}
+                    <div className="text-right shrink-0">
+                      <p className="text-base font-bold font-mono text-verde-900 leading-none">
+                        {stockVal % 1 === 0 ? stockVal : stockVal.toFixed(2)}
+                        <span className="text-[11px] font-sans font-normal text-gray-400 ml-1">{product.unit || "un"}</span>
+                      </p>
+                      {product.minStock != null && (
+                        <p className="text-[10px] text-gray-400 mt-0.5">mín. {product.minStock}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-3 shrink-0">
+                      <button onClick={() => openRequest(product)} className="text-verde/60 hover:text-verde transition" title="Solicitar movimentação"><Plus size={15} /></button>
+                      <button onClick={() => openEdit(product)} className="text-verde hover:text-verde-900 transition"><Pencil size={15} /></button>
+                      <button onClick={() => { setProductToDelete(product); setShowDeleteModal(true); }} className="text-erro/50 hover:text-erro transition"><Trash2 size={15} /></button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {visibleProducts.map((product) => {
@@ -551,6 +617,11 @@ export default function Products() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <h2 className="text-base font-bold text-verde-900 truncate">{product.name}</h2>
+                        {product.category && (
+                          <span className="inline-block mt-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-creme-100 text-gray-500">
+                            {product.category}
+                          </span>
+                        )}
                         {product.description && (
                           <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{product.description}</p>
                         )}
@@ -598,6 +669,21 @@ export default function Products() {
                             : exp?.level === "soon" ? "text-ambar-700 font-medium" : ""
                           }`}>
                             <CalendarClock size={11} /> val. {fmtDateOnly(product.expiryDate)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* fornecedor / preço unitário */}
+                    {(product.supplier || product.unitPrice != null) && (
+                      <div className="flex items-center justify-between text-[11px] text-gray-400 -mt-1">
+                        {product.supplier
+                          ? <span className="truncate">{product.supplier}</span>
+                          : <span />}
+                        {product.unitPrice != null && (
+                          <span className="font-medium text-verde-900 whitespace-nowrap">
+                            {product.unitPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            <span className="text-gray-400 font-normal">/{product.unit || "un"}</span>
                           </span>
                         )}
                       </div>
@@ -960,7 +1046,44 @@ export default function Products() {
                   className={`${INPUT} resize-none`}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Categoria</label>
+                  <input
+                    value={form.category}
+                    onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+                    placeholder="descartáveis, insumos…"
+                    className={INPUT}
+                    list="product-categories"
+                  />
+                  <datalist id="product-categories">
+                    <option value="descartáveis" />
+                    <option value="insumos" />
+                  </datalist>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Fornecedor</label>
+                  <input
+                    value={form.supplier}
+                    onChange={(e) => setForm((p) => ({ ...p, supplier: e.target.value }))}
+                    placeholder="ex: Galderma"
+                    className={INPUT}
+                  />
+                </div>
+              </div>
               <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Preço unit. (R$)</label>
+                  <input
+                    value={form.unitPrice}
+                    onChange={(e) => setForm((p) => ({ ...p, unitPrice: e.target.value }))}
+                    placeholder="0,00"
+                    type="number"
+                    step="any"
+                    min="0"
+                    className={INPUT}
+                  />
+                </div>
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Estoque inicial</label>
                   <input

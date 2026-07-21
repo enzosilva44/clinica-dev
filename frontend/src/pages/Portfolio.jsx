@@ -4,6 +4,7 @@ import MainLayout from "../layouts/MainLayout";
 import { Card, Button } from "../components/ui";
 import api from "../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -221,8 +222,8 @@ function Showcase({ onCreateNew }) {
     try {
       const res = await api.get("/portfolio");
       setCases(res.data || []);
-    } catch {
-      toast.error("Erro ao carregar a vitrine");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar a vitrine"));
     } finally {
       setLoading(false);
     }
@@ -234,8 +235,8 @@ function Showcase({ onCreateNew }) {
     try {
       await api.put(`/portfolio/${c.id}`, { featured: !c.featured });
       setCases((prev) => prev.map((x) => (x.id === c.id ? { ...x, featured: !x.featured } : x)));
-    } catch {
-      toast.error("Erro ao atualizar destaque");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "atualizar o destaque"));
     }
   }
 
@@ -247,8 +248,8 @@ function Showcase({ onCreateNew }) {
       setCases((prev) => prev.filter((x) => x.id !== deleting.id));
       toast.success("Case removido");
       setDeleting(null);
-    } catch {
-      toast.error("Erro ao remover");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "remover o case"));
     } finally {
       setRemoving(false);
     }
@@ -263,7 +264,7 @@ function Showcase({ onCreateNew }) {
       toast.success("Case atualizado");
       setEditing(null);
     } catch (err) {
-      toast.error(err?.response?.data?.error || "Erro ao atualizar");
+      toast.error(mensagemDeErro(err, "atualizar o case"));
     } finally {
       setSavingEdit(false);
     }
@@ -428,8 +429,8 @@ function CreateCase({ onSaved }) {
       ]);
       setPhotos([...photosRes.data].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
       setEvolutions(evoRes.data || []);
-    } catch {
-      toast.error("Erro ao carregar fotos e histórico do paciente");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar as fotos e o histórico do paciente"));
     } finally {
       setLoading(false);
     }
@@ -493,7 +494,7 @@ function CreateCase({ onSaved }) {
       setShowSaveModal(false);
       onSaved();
     } catch (err) {
-      toast.error(err?.response?.data?.error || "Erro ao salvar o case");
+      toast.error(mensagemDeErro(err, "salvar o case"));
     } finally {
       setSaving(false);
     }

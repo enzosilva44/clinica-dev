@@ -27,6 +27,8 @@ import anamnesisRoutes from "./modules/anamnesis/anamnesis.routes.js";
 import portfolioRoutes from "./modules/portfolio/portfolio.routes.js";
 import packagesRoutes from "./modules/packages/packages.routes.js";
 import protocolRoutes from "./modules/protocols/protocol.routes.js";
+import whatsappEmbedRoutes from "./modules/whatsapp-embed/whatsappEmbed.routes.js";
+import { verifyWebhook, receiveWebhook } from "./modules/whatsapp-embed/whatsappWebhook.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -36,7 +38,14 @@ const uploadsDir = path.resolve(__dirname, "../uploads");
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(
+  express.json({
+    // Guarda o corpo bruto para validar a assinatura HMAC do webhook do WhatsApp.
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use("/uploads", express.static(uploadsDir));
 app.use("/auth", authRoutes);
 app.use("/patients", patientsRoutes);
@@ -57,6 +66,11 @@ app.use("/reports", authMiddleware, requireFeature("analytics"), reportsRoutes);
 app.use("/photos", photoRoutes);
 app.use("/portfolio", authMiddleware, requireFeature("portfolio"), portfolioRoutes);
 app.use("/automations", authMiddleware, requireFeature("whatsapp"), automationRoutes);
+// Webhook público da Meta (sem authMiddleware — a Meta chama sem nosso token).
+app.get("/whatsapp/webhook", verifyWebhook);
+app.post("/whatsapp/webhook", receiveWebhook);
+// Rotas autenticadas do Embedded Signup (connect/status/disconnect).
+app.use("/whatsapp", whatsappEmbedRoutes);
 app.use("/billing", billingRoutes);
 app.use("/admin", adminRoutes);
 app.use("/profile", profileRoutes);

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Upload, Trash2, X, ZoomIn, ImageOff } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../../lib/tomDeVoz";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -34,8 +35,8 @@ export default function PatientPhotos({ patientId }) {
     try {
       const res = await api.get(`/photos/patient/${patientId}`);
       setPhotos(res.data);
-    } catch {
-      toast.error("Erro ao carregar fotos");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar as fotos"));
     } finally {
       setLoading(false);
     }
@@ -53,8 +54,8 @@ export default function PatientPhotos({ patientId }) {
       await api.post(`/photos/patient/${patientId}`, fd);
       toast.success(`${images.length} foto${images.length > 1 ? "s" : ""} adicionada${images.length > 1 ? "s" : ""}`);
       load();
-    } catch {
-      toast.error("Erro ao fazer upload");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "enviar a foto"));
     } finally {
       setUploading(false);
     }
@@ -67,8 +68,8 @@ export default function PatientPhotos({ patientId }) {
       setPhotos((prev) => prev.filter((p) => p.id !== id));
       if (lightbox?.id === id) setLightbox(null);
       toast.success("Foto excluída");
-    } catch {
-      toast.error("Erro ao excluir");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "excluir a foto"));
     }
   }
 

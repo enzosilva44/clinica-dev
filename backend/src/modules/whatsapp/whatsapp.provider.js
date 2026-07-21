@@ -35,3 +35,46 @@ export async function sendWhatsAppMessage(phone, message, config = {}) {
   }
   return data;
 }
+
+// Envia via Message Template aprovado na Meta (obrigatório fora da janela de 24h).
+// params = array ordenado de strings, mapeado para {{1}}, {{2}}... na ordem.
+export async function sendWhatsAppTemplate(phone, templateName, params, config = {}) {
+  const phoneNumberId = config.phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken   = config.accessToken   || process.env.WHATSAPP_ACCESS_TOKEN;
+  const language      = config.language      || "pt_BR";
+
+  if (!phoneNumberId || !accessToken) {
+    throw new Error("WhatsApp não configurado — adicione Phone Number ID e Access Token.");
+  }
+
+  let to = phone.replace(/\D/g, "");
+  if (!to.startsWith("55")) to = "55" + to;
+
+  const components = params.length
+    ? [{ type: "body", parameters: params.map((text) => ({ type: "text", text: String(text) })) }]
+    : [];
+
+  const res = await fetch(
+    `https://graph.facebook.com/${META_API_VERSION}/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "template",
+        template: { name: templateName, language: { code: language }, components },
+      }),
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = data?.error?.message || `Erro ${res.status} na Meta API`;
+    throw new Error(msg);
+  }
+  return data;
+}

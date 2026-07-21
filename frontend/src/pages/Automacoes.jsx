@@ -6,9 +6,11 @@ import {
   BarChart2, TrendingUp, DollarSign, AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 import MainLayout from "../layouts/MainLayout";
 import { Card, Spinner } from "../components/ui";
 import api from "../services/api";
+import ConnectWhatsAppButton from "../components/whatsapp/ConnectWhatsAppButton";
 
 const TYPE_META = {
   birthday:     { label: "Feliz aniversário",        icon: Cake,          color: "#C4895A", desc: "Enviada no dia do aniversário do paciente (todos os dias às 09h)." },
@@ -216,8 +218,8 @@ export default function Automacoes() {
       await loadWpConfig();
       setWpAccessToken("");
       toast.success("Configuração salva!");
-    } catch {
-      toast.error("Erro ao salvar configuração.");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "salvar a configuração"));
     } finally {
       setSavingWp(false);
     }
@@ -230,7 +232,7 @@ export default function Automacoes() {
       await api.post("/automations/whatsapp-test", { phone: testPhone });
       toast.success("Mensagem de teste enviada!");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Erro ao enviar teste.");
+      toast.error(mensagemDeErro(err, "enviar o teste"));
     } finally {
       setTestingWp(false);
     }
@@ -348,6 +350,17 @@ export default function Automacoes() {
       {/* CONEXÃO TAB */}
       {tab === "conexao" && (
         <div className="max-w-lg space-y-6">
+          {/* Conexão automática (Embedded Signup) — caminho recomendado */}
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-verde-900">Conexão rápida</p>
+            <p className="text-xs text-gray-500">
+              Conecte seu WhatsApp em poucos cliques, sem precisar copiar tokens.
+            </p>
+            <ConnectWhatsAppButton onConnected={loadWpConfig} />
+          </div>
+          <div className="border-t border-creme-200 pt-2 text-xs text-gray-400">
+            ou configure manualmente abaixo
+          </div>
           {/* Status */}
           <div className={`flex items-center gap-3 rounded-2xl px-5 py-4 border ${wpConfig.configured ? "bg-sucesso/10 border-sucesso/30" : "bg-atencao/10 border-atencao/30"}`}>
             {wpConfig.configured

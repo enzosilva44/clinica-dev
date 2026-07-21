@@ -181,21 +181,6 @@ export async function create(data, user) {
   // Valor sugerido = soma dos procedimentos do atendimento.
   const amount = proceduresTotal;
 
-  // Sugestão de retorno: usa o 1º procedimento do atendimento que exija retorno.
-  let suggestedReturn = null;
-  if (category !== "retorno" && procItems.length > 0) {
-    const names = procItems.map((i) => i.procedureName).filter(Boolean);
-    const withReturn = await prisma.procedure.findFirst({
-      where: { name: { in: names }, userId: user.id, requiresReturn: true },
-    });
-    if (withReturn) {
-      const days = withReturn.returnDays ?? 0;
-      const returnDate = new Date(startsAt);
-      returnDate.setDate(returnDate.getDate() + days);
-      suggestedReturn = { date: returnDate.toISOString(), days, procedureName: withReturn.name };
-    }
-  }
-
   // Descrição financeira: lista os procedimentos (ex: "Botox +1") ou cai no título.
   const description =
     procItems.length > 0
@@ -214,7 +199,31 @@ export async function create(data, user) {
     settlementType: data.txSettlementType || null,
   });
 
+  // Sugere retorno se o agendamento já NASCE concluído (mesma regra da transição no update).
+  let suggestedReturn = null;
+  if (COMPLETED_STATUSES.includes(appointment.status)) {
+    suggestedReturn = await computeSuggestedReturn(user.id, {
+      category,
+      procedureNames: procItems.map((i) => i.procedureName).filter(Boolean),
+      startsAt,
+    });
+  }
+
   return { ...appointment, suggestedReturn };
+}
+
+// Sugestão de retorno: usa o 1º procedimento do atendimento que exija retorno.
+// Contagem de dias a partir da data do atendimento (startsAt).
+async function computeSuggestedReturn(userId, { category, procedureNames, startsAt }) {
+  if (category === "retorno" || !procedureNames?.length) return null;
+  const withReturn = await prisma.procedure.findFirst({
+    where: { name: { in: procedureNames }, userId, requiresReturn: true },
+  });
+  if (!withReturn) return null;
+  const days = withReturn.returnDays ?? 0;
+  const returnDate = new Date(startsAt);
+  returnDate.setDate(returnDate.getDate() + days);
+  return { date: returnDate.toISOString(), days, procedureName: withReturn.name };
 }
 
 export async function findAll(user) {
@@ -438,5 +447,20 @@ export async function update(
     });
   }
 
-  return updated;
+  // Sugere retorno só na TRANSIÇÃO para concluído (antes não estava, agora está).
+  let suggestedReturn = null;
+  const becameCompleted =
+    COMPLETED_STATUSES.includes(data.status) &&
+    !COMPLETED_STATUSES.includes(appointment.status);
+  if (becameCompleted) {
+    const procedureNames = updated.procedures?.map((p) => p.procedureName).filter(Boolean) || [];
+    if (!procedureNames.length && updated.procedureType) procedureNames.push(updated.procedureType);
+    suggestedReturn = await computeSuggestedReturn(userId, {
+      category: updated.category,
+      procedureNames,
+      startsAt: updated.startsAt,
+    });
+  }
+
+  return { ...updated, suggestedReturn };
 }

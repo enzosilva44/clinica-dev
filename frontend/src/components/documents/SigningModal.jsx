@@ -5,6 +5,7 @@ import SignatureCanvas from "react-signature-canvas";
 import { X, ChevronLeft, ChevronRight, Shield, Mail, Phone, CheckCircle, Download, RefreshCw, Loader2, Trash2, Check, FlaskConical } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../../lib/tomDeVoz";
 import { useFeatures } from "../../hooks/useFeatures";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -195,7 +196,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
       startTimer();
       setStep("otp-code");
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao enviar código");
+      toast.error(mensagemDeErro(e, "enviar o código"));
     } finally {
       setOtpSending(false);
     }
@@ -241,7 +242,7 @@ export default function SigningModal({ patientDoc, patient, onClose, onSigned })
       toast.success("Documento assinado com sucesso!");
       onSigned?.();
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao assinar documento");
+      toast.error(mensagemDeErro(e, "assinar o documento"));
     } finally {
       setSaving(false);
     }

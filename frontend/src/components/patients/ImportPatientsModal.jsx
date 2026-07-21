@@ -5,6 +5,18 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import api from "../../services/api";
+import { mensagemDeErro } from "../../lib/tomDeVoz";
+
+// ── Error helper ──────────────────────────────────────────────────────────────
+
+// Traduz erros da API no tom de voz Iaso (ver lib/tomDeVoz). Um 401 aqui não é
+// problema do CSV: a sessão caiu e o usuário só precisa entrar de novo.
+function friendlyError(err, acao) {
+  if (err?.response?.status === 401) {
+    return "Sua sessão expirou. Entre de novo e a gente continua a importação de onde parou.";
+  }
+  return mensagemDeErro(err, acao);
+}
 
 // ── Column mapping ────────────────────────────────────────────────────────────
 
@@ -146,7 +158,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
       setSelected(sel);
       setStep("review");
     } catch (err) {
-      setError(err.response?.data?.error || "Erro ao verificar duplicatas.");
+      setError(friendlyError(err, "verificar os pacientes"));
       setStep("upload");
     }
   }
@@ -185,7 +197,7 @@ export default function ImportPatientsModal({ onClose, onSuccess }) {
       setResult(res.data);
       setStep("done");
     } catch (err) {
-      setResult({ error: err.response?.data?.error || "Erro ao importar." });
+      setResult({ error: friendlyError(err, "importar os pacientes") });
       setStep("done");
     }
   }

@@ -7,6 +7,7 @@ import {
   saveConfig, getConfig, handleWebhook, sendPaymentLink,
   createSubaccount,
 } from "./billing.service.js";
+import { contratar } from "./contract.service.js";
 
 const router = Router();
 
@@ -18,6 +19,27 @@ router.post("/webhook", async (req, res) => {
   } catch (e) {
     console.error("Webhook error:", e.message);
     res.status(200).json({ received: true }); // sempre 200 para o Asaas não retentar
+  }
+});
+
+// ── contratação self-service (mensalidade Iaso → clínica) ───────────────────────
+// Fica ANTES do requireFeature: contas demo (plano Solo) não têm "faturamento",
+// mas precisam poder contratar. Só exige estar autenticado.
+router.post("/contratar", authMiddleware, async (req, res) => {
+  try {
+    const u = await contratar(req.user.id, req.body);
+    // devolve só os campos públicos (nunca o password hash)
+    res.json({
+      user: {
+        id: u.id, name: u.name, email: u.email, role: u.role,
+        plan: u.plan, nickname: u.nickname, clinicName: u.clinicName,
+        featureOverrides: u.featureOverrides ?? {}, avatarUrl: u.avatarUrl,
+        demoExpiresAt: u.demoExpiresAt ?? null,
+      },
+    });
+  } catch (e) {
+    console.error("[/billing/contratar]", e.message);
+    res.status(400).json({ error: e.message });
   }
 });
 

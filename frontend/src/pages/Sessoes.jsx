@@ -5,6 +5,7 @@ import { Card, Button } from "../components/ui";
 import ProtocolsTab from "../components/sessions/ProtocolsTab";
 import api from "../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 
 // Barra de progresso realizado/contratado.
 function ProgressBar({ done, contracted }) {
@@ -151,8 +152,8 @@ export default function Sessoes() {
     try {
       const { data } = await api.get("/packages/overview");
       setPackages(data);
-    } catch {
-      toast.error("Erro ao carregar pacotes");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar os pacotes"));
     } finally {
       setLoading(false);
     }
@@ -200,7 +201,7 @@ export default function Sessoes() {
       setSessionModal(null);
       await load();
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao registrar sessão");
+      toast.error(mensagemDeErro(e, "registrar a sessão"));
     } finally {
       setBusy(false);
     }
@@ -217,7 +218,7 @@ export default function Sessoes() {
       toast.success("Sessão removida");
       await load();
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao remover sessão");
+      toast.error(mensagemDeErro(e, "remover a sessão"));
     } finally {
       setBusy(false);
     }

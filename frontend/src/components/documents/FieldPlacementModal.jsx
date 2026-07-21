@@ -4,6 +4,7 @@ import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { X, ChevronLeft, ChevronRight, Save, Trash2, Check } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../../lib/tomDeVoz";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -36,7 +37,7 @@ export default function FieldPlacementModal({ patientDoc, onClose, onSaved }) {
     const url = `${API_BASE}/documents/${patientDoc.document.id}/file?token=${encodeURIComponent(token ?? "")}`;
     pdfjsLib.getDocument({ url }).promise
       .then((doc) => { setPdfDoc(doc); setTotalPages(doc.numPages); })
-      .catch(() => { setPdfError("Não foi possível carregar o PDF."); toast.error("Erro ao carregar PDF"); })
+      .catch(() => { setPdfError("Não foi possível carregar o PDF."); toast.error(mensagemDeErro(null, "carregar o PDF")); })
       .finally(() => setPdfLoading(false));
   }, [patientDoc.document.id]);
 
@@ -90,8 +91,8 @@ export default function FieldPlacementModal({ patientDoc, onClose, onSaved }) {
       toast.success("Campos salvos!");
       onSaved?.(fields);
       onClose();
-    } catch {
-      toast.error("Erro ao salvar campos");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "salvar os campos"));
     } finally {
       setSaving(false);
     }

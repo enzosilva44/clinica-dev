@@ -3,6 +3,7 @@ import { Plus, Trash2, Pencil, Package, X, Layers } from "lucide-react";
 import { Card, Button, SearchableSelect } from "../ui";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../../lib/tomDeVoz";
 
 const BRL = (v) =>
   (Number(v) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -57,8 +58,8 @@ export default function ProtocolsTab() {
       setProtocols(p.data);
       setProcedures(procs.data.filter((x) => x.isActive !== false));
       setProducts(prods.data || []);
-    } catch {
-      toast.error("Erro ao carregar protocolos");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar os protocolos"));
     } finally {
       setLoading(false);
     }
@@ -249,7 +250,7 @@ export default function ProtocolsTab() {
       closeForm();
       await load();
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao salvar protocolo");
+      toast.error(mensagemDeErro(e, "salvar o protocolo"));
     } finally {
       setSaving(false);
     }
@@ -262,7 +263,7 @@ export default function ProtocolsTab() {
       toast.success("Protocolo removido");
       await load();
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao remover");
+      toast.error(mensagemDeErro(e, "remover o protocolo"));
     }
   }
 

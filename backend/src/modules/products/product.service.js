@@ -12,6 +12,9 @@ export async function create(data, userId) {
     data: {
       name: data.name,
       description: data.description,
+      category: data.category || null,
+      supplier: data.supplier || null,
+      unitPrice: data.unitPrice != null && data.unitPrice !== "" ? Number(data.unitPrice) : null,
       stock: data.stock ? Number(data.stock) : 0,
       minStock: data.minStock != null ? Number(data.minStock) : null,
       unit: data.unit,
@@ -31,6 +34,11 @@ export async function update(id, userId, data) {
     data: {
       name: data.name,
       description: data.description,
+      category: data.category !== undefined ? (data.category || null) : product.category,
+      supplier: data.supplier !== undefined ? (data.supplier || null) : product.supplier,
+      unitPrice: data.unitPrice !== undefined
+        ? (data.unitPrice !== "" && data.unitPrice != null ? Number(data.unitPrice) : null)
+        : product.unitPrice,
       stock: data.stock !== undefined ? Number(data.stock) : product.stock,
       minStock: data.minStock != null ? Number(data.minStock) : product.minStock,
       unit: data.unit,

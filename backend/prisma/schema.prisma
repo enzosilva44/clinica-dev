@@ -59,8 +59,21 @@ model User {
   asaasWalletId         String?
   asaasAccountId        String?
   asaasAccountStatus    String?
+  asaasSubscriptionId   String?   // assinatura recorrente Asaas (mensalidade SaaS)
+  // Ciclo de vida self-service
+  demoExpiresAt         DateTime? // conta demo temporária expira nesta data (cron limpa)
+  leadSource            String?   // "self-service" | "assistido"
+  acquisitionChannel    String?   // ads | influencer | cupom (UTM/origem)
+  lgpdAcceptedAt        DateTime?
+  lgpdVersion           String?
+  contractAcceptedAt    DateTime?
+  contractVersion       String?
   whatsappAccessToken   String?
   whatsappPhoneNumberId String?
+  whatsappWabaId        String?
+  whatsappBusinessId    String?
+  whatsappStatus        String?   // null | "connected" | "pending" | "error"
+  whatsappConnectedAt   DateTime?
   appointments          Appointment[]
   automationLogs        AutomationLog[]
   automationTemplates   AutomationTemplate[]
@@ -355,6 +368,9 @@ model Product {
   id                String             @id @default(cuid())
   name              String
   description       String?
+  category          String?            // ex: descartaveis | insumos (texto livre)
+  supplier          String?            // fornecedor (ex: Mercado Livre, Galderma)
+  unitPrice         Float?             // preço unitário de compra (R$)
   stock             Float?             @default(0)
   unit              String?
   userId            String
@@ -653,6 +669,9 @@ model AutomationTemplate {
   body                String
   isActive            Boolean         @default(true)
   reminderHoursBefore Int?
+  metaTemplateName    String?
+  metaLanguage        String?         @default("pt_BR")
+  metaVariables       String[]        @default([])
   userId              String
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
@@ -673,6 +692,7 @@ model AutomationLog {
   templateId   String?
   patientId    String?
   userId       String
+  metaMessageId String?            // ID retornado pela Meta; casa com status do webhook
   createdAt    DateTime            @default(now())
   patient      Patient?            @relation(fields: [patientId], references: [id])
   template     AutomationTemplate? @relation(fields: [templateId], references: [id])
@@ -681,6 +701,7 @@ model AutomationLog {
 
 model AdminTask {
   id          String             @id @default(cuid())
+  number      Int                @unique @default(autoincrement())
   title       String
   description String?
   priority    String             @default("media")
@@ -690,6 +711,7 @@ model AdminTask {
   dueDate     DateTime?
   reminderAt  DateTime?
   assignees   Json?
+  attachments Json?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   comments    AdminTaskComment[]
@@ -741,8 +763,26 @@ model AdminFinancialEntry {
   createdBy      String
   approvedBy     String?
   approvedAt     DateTime?
+  societySettled   Boolean   @default(false) // despesa já acertada entre os sócios
+  societySettledAt DateTime?
+  societyPaid      Json?     // { [socioKey]: valor já coberto por cada sócio }
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String   // id do admin que executou
+  actorName  String?
+  action     String   // ex: "clinic.delete", "clinic.plan", "clinic.features"
+  targetType String?  // ex: "clinic"
+  targetId   String?
+  targetName String?
+  detail     Json?    // dados extras (plano antigo/novo, etc.)
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
 }
 
 model AdminNotification {

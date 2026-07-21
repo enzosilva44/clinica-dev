@@ -2,12 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IMaskInput } from "react-imask";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 import AlertLevelPicker from "../components/patient/AlertLevelPicker";
+import { useDemoInvite } from "../contexts/DemoInviteContext";
 
 export default function CreatePatient() {
   const navigate = useNavigate();
+  const { maybeInvite } = useDemoInvite();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -66,7 +69,7 @@ export default function CreatePatient() {
       console.log(error.response?.data);
       console.log(error.message);
 
-      toast.error("Erro ao buscar CEP");
+      toast.error(mensagemDeErro(error, "buscar o CEP"));
     }
   }
 
@@ -99,9 +102,10 @@ export default function CreatePatient() {
 
       toast.success("Paciente cadastrado!");
       navigate("/patients");
+      maybeInvite("esse paciente");
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao criar paciente");
+      toast.error(mensagemDeErro(error, "criar o paciente"));
     }
   }
 

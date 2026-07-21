@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { prisma } from "../../config/prisma.js";
 import {
   generatePatientSummary,
   generateEvolutionDraft,
@@ -10,9 +11,43 @@ import {
   analyzeProductHealth,
   generateDailyInsight,
 } from "./ai.service.js";
+import { aiDemo } from "./ai.demo.js";
 
 const router = Router();
 router.use(authMiddleware);
+
+// Contas demo NUNCA batem no Claude: respondem com mocks chumbados.
+// Este interceptor roda antes de todos os handlers de IA.
+router.use(async (req, res, next) => {
+  try {
+    const u = await prisma.user.findUnique({ where: { id: req.user.id }, select: { plan: true } });
+    if (u?.plan !== "demo") return next();
+  } catch {
+    return next(); // em caso de erro, deixa o fluxo normal decidir
+  }
+
+  const p = req.path;
+  // GET de resumo salvo continua normal (lê do banco, não gera).
+  if (req.method === "GET" && p.startsWith("/patient-summary/")) return next();
+
+  if (req.method === "POST" && p.startsWith("/patient-summary/")) {
+    const summary = aiDemo.patientSummary();
+    await prisma.patient.updateMany({
+      where: { id: req.params.patientId ?? p.split("/").pop(), userId: req.user.id },
+      data: { aiSummary: summary, aiSummaryAt: new Date() },
+    }).catch(() => {});
+    return res.json({ summary });
+  }
+  if (p === "/evolution-draft") return res.json({ draft: aiDemo.evolutionDraft() });
+  if (p === "/return-suggestions") return res.json({ suggestions: await aiDemo.returnSuggestions(req.user.id) });
+  if (p === "/chat") return res.json({ reply: aiDemo.chat() });
+  if (p === "/chat-reports") return res.json({ reply: aiDemo.chatReports() });
+  if (p === "/financial-health") return res.json(aiDemo.financialHealth());
+  if (p === "/product-health") return res.json(aiDemo.productHealth());
+  if (p === "/daily-insight") return res.json({ phrase: aiDemo.dailyInsight() });
+
+  return next();
+});
 
 function sendAiError(res, error, context) {
   const message = error?.message || "Erro ao processar IA.";

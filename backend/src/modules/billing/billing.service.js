@@ -9,7 +9,7 @@ function asaasHeaders(apiKey) {
   };
 }
 
-async function asaas(method, path, body, apiKey) {
+export async function asaas(method, path, body, apiKey) {
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers: asaasHeaders(apiKey),

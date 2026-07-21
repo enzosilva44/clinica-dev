@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../../lib/tomDeVoz";
 
 export default function AnamnesisTab({ patientId }) {
   const [templates, setTemplates] = useState([]);
@@ -21,8 +22,8 @@ export default function AnamnesisTab({ patientId }) {
       ]);
       setTemplates(t.data);
       setResponses(r.data);
-    } catch {
-      toast.error("Erro ao carregar anamneses");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar as anamneses"));
     } finally {
       setLoading(false);
     }
@@ -82,7 +83,7 @@ export default function AnamnesisTab({ patientId }) {
       setFilling(null);
       load();
     } catch (err) {
-      toast.error(err?.response?.data?.error || "Erro ao finalizar");
+      toast.error(mensagemDeErro(err, "finalizar a anamnese"));
     } finally {
       setSaving(false);
     }

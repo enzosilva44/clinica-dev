@@ -2,9 +2,39 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { prisma } from "../../config/prisma.js";
+import { getMetrics, getCost, getBackups, INFRA_IDS } from "../../providers/infra/aws.infra.js";
 
 const router = Router();
 router.use(authMiddleware);
+
+// Único usuário autorizado a excluir clínicas (proprietário da conta).
+const OWNER_EMAIL = "enzo.silva@codebit.com.br";
+function isOwner(user) {
+  return user?.email?.toLowerCase() === OWNER_EMAIL;
+}
+
+// Clínicas isentas de pagamento (nunca entram no MRR/cobrança).
+const EXEMPT_EMAILS = [
+  "eurianebiomedica@gmail.com",
+  "dra.fernandabecari@gmail.com",
+];
+function isExempt(email) {
+  return EXEMPT_EMAILS.includes((email ?? "").toLowerCase());
+}
+
+// Registra uma ação de admin na auditoria (best-effort, nunca quebra a request)
+async function audit(req, { action, targetType, targetId, targetName, detail }) {
+  try {
+    let actorName = null;
+    try {
+      const actor = await prisma.user.findUnique({ where: { id: req.user.id }, select: { name: true } });
+      actorName = actor?.name ?? null;
+    } catch { /* ignore */ }
+    await prisma.adminAuditLog.create({
+      data: { actorId: req.user.id, actorName, action, targetType, targetId, targetName, detail },
+    });
+  } catch { /* auditoria não deve interromper a operação */ }
+}
 
 function requireAdmin(req, res, next) {
   if (req.user.role !== "ADMIN") return res.status(403).json({ error: "Acesso negado." });
@@ -80,7 +110,83 @@ router.patch("/clinics/:id", async (req, res) => {
       data,
       select: { id: true, name: true, email: true, plan: true, featureOverrides: true },
     });
+    if (plan !== undefined) {
+      await audit(req, { action: "clinic.plan", targetType: "clinic", targetId: updated.id, targetName: updated.name, detail: { plan } });
+    }
+    if (featureOverrides !== undefined) {
+      await audit(req, { action: "clinic.features", targetType: "clinic", targetId: updated.id, targetName: updated.name, detail: { featureOverrides } });
+    }
     res.json(updated);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── exclui uma clínica (apenas o proprietário) ────────────────────────────────
+router.delete("/clinics/:id", async (req, res) => {
+  try {
+    // Confirma que o admin autenticado é o proprietário (email não vem no JWT).
+    const actor = await prisma.user.findUnique({
+      where: { id: req.user.id }, select: { email: true },
+    });
+    if (!isOwner(actor)) {
+      return res.status(403).json({ error: "Apenas o proprietário pode excluir clínicas." });
+    }
+
+    const userId = req.params.id;
+    const target = await prisma.user.findUnique({
+      where: { id: userId }, select: { id: true, role: true, name: true, email: true },
+    });
+    if (!target) return res.status(404).json({ error: "Clínica não encontrada." });
+    if (target.role !== "PROFESSIONAL") {
+      return res.status(400).json({ error: "Só é possível excluir contas de clínica." });
+    }
+
+    // Remove todas as relações diretas da clínica; filhos com onDelete:Cascade
+    // (BudgetItem, ProtocolSession, etc.) são removidos automaticamente.
+    await prisma.$transaction([
+      prisma.automationLog.deleteMany({ where: { userId } }),
+      prisma.automationTemplate.deleteMany({ where: { userId } }),
+      prisma.productMovement.deleteMany({ where: { userId } }),
+      prisma.stockRequest.deleteMany({ where: { userId } }),
+      prisma.transaction.deleteMany({ where: { userId } }),
+      prisma.clubMember.deleteMany({ where: { userId } }),
+      prisma.clubPlan.deleteMany({ where: { userId } }),
+      prisma.portfolioCase.deleteMany({ where: { userId } }),
+      prisma.anamnesisResponse.deleteMany({ where: { userId } }),
+      prisma.anamnesisTemplate.deleteMany({ where: { userId } }),
+      prisma.documentVersion.deleteMany({ where: { createdBy: userId } }),
+      prisma.document.deleteMany({ where: { userId } }),
+      prisma.documentFolder.deleteMany({ where: { userId } }),
+      prisma.patientDocument.deleteMany({ where: { userId } }),
+      prisma.patientPhoto.deleteMany({ where: { userId } }),
+      prisma.evolution.deleteMany({ where: { createdById: userId } }),
+      prisma.procedureMap.deleteMany({ where: { userId } }),
+      prisma.budget.deleteMany({ where: { userId } }),
+      prisma.protocol.deleteMany({ where: { userId } }),
+      prisma.appointment.deleteMany({ where: { userId } }),
+      // ProcedureProduct referencia Procedure e Product sem cascade → apagar antes
+      prisma.procedureProduct.deleteMany({ where: { procedure: { userId } } }),
+      prisma.procedure.deleteMany({ where: { userId } }),
+      prisma.product.deleteMany({ where: { userId } }),
+      prisma.cardFee.deleteMany({ where: { userId } }),
+      prisma.patient.deleteMany({ where: { userId } }),
+      prisma.user.delete({ where: { id: userId } }),
+    ]);
+
+    await audit(req, { action: "clinic.delete", targetType: "clinic", targetId: userId, targetName: target.name, detail: { email: target.email } });
+    res.json({ ok: true });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── AUDITORIA (logs de ações do admin) ────────────────────────────────────────
+router.get("/audit", async (req, res) => {
+  try {
+    const { action, take } = req.query;
+    const where = {};
+    if (action) where.action = action;
+    const logs = await prisma.adminAuditLog.findMany({
+      where, orderBy: { createdAt: "desc" }, take: Math.min(Number(take) || 100, 300),
+    });
+    res.json(logs);
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
@@ -97,6 +203,206 @@ router.get("/stats", async (req, res) => {
     ]);
     res.json({ total, byPlan });
   } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── SAÚDE DO SISTEMA (Tecnologia) ─────────────────────────────────────────────
+router.get("/health", async (req, res) => {
+  const checks = {};
+
+  // Banco: SELECT 1 com latência + contagem de registros
+  try {
+    const t0 = Date.now();
+    await prisma.$queryRaw`SELECT 1`;
+    const latencyMs = Date.now() - t0;
+    checks.database = {
+      status: latencyMs > 800 ? "comprometido" : "up",
+      latencyMs,
+    };
+  } catch (e) {
+    checks.database = { status: "down", error: e.message };
+  }
+
+  // Contagens rápidas (indicam que as tabelas respondem)
+  try {
+    const [clinics, tasks, leads] = await Promise.all([
+      prisma.user.count({ where: { role: "PROFESSIONAL" } }),
+      prisma.adminTask.count(),
+      prisma.lead.count(),
+    ]);
+    checks.counts = { clinics, tasks, leads };
+  } catch { checks.counts = null; }
+
+  const mem = process.memoryUsage();
+  checks.server = {
+    status: "up",
+    uptimeSec: Math.round(process.uptime()),
+    nodeVersion: process.version,
+    memoryMB: Math.round(mem.rss / 1024 / 1024),
+    heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
+    env: process.env.NODE_ENV ?? "development",
+  };
+
+  res.json({ checkedAt: new Date().toISOString(), ...checks });
+});
+
+// ── INFRAESTRUTURA (AWS: métricas EC2+RDS, custo, backups) ────────────────────
+router.get("/infra/metrics", async (req, res) => {
+  try {
+    const data = await getMetrics();
+    res.json(data);
+  } catch (e) { res.status(502).json({ error: `Falha ao ler métricas AWS: ${e.message}`, ids: INFRA_IDS }); }
+});
+
+router.get("/infra/cost", async (req, res) => {
+  try {
+    const data = await getCost();
+    res.json(data);
+  } catch (e) { res.status(502).json({ error: `Falha ao ler custo AWS: ${e.message}` }); }
+});
+
+router.get("/infra/backups", async (req, res) => {
+  try {
+    const data = await getBackups(Number(req.query.days) || 3);
+    res.json(data);
+  } catch (e) { res.status(502).json({ error: `Falha ao ler backups AWS: ${e.message}` }); }
+});
+
+// ── DASHBOARD (visão geral por usuário) ───────────────────────────────────────
+router.get("/dashboard", async (req, res) => {
+  const now = Date.now();
+  const day = 86400000;
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+  // ── Saúde: servidor (respondeu = up) + banco (SELECT 1 com latência) ─────────
+  let db = { status: "up", latencyMs: null };
+  try {
+    const t0 = Date.now();
+    await prisma.$queryRaw`SELECT 1`;
+    const latencyMs = Date.now() - t0;
+    db = { status: latencyMs > 800 ? "comprometido" : "up", latencyMs };
+  } catch {
+    db = { status: "down", latencyMs: null };
+  }
+  const health = {
+    server: { status: "up", uptimeSec: Math.round(process.uptime()) },
+    database: db,
+  };
+
+  try {
+    const [me, clinics, leads, myTasks] = await Promise.all([
+      prisma.user.findUnique({ where: { id: req.user.id }, select: { id: true, name: true } }),
+      prisma.user.findMany({
+        where: { role: "PROFESSIONAL" },
+        select: {
+          id: true, name: true, email: true, plan: true, billingCycle: true,
+          createdAt: true, canceledAt: true, lastLoginAt: true,
+          _count: { select: { patients: true, appointments: true } },
+        },
+      }),
+      prisma.lead.findMany({ select: { status: true, value: true, createdAt: true } }),
+      prisma.adminTask.findMany({
+        where: { status: { not: "concluido" } },
+        select: { id: true, number: true, title: true, priority: true, status: true, dueDate: true, assignees: true, createdAt: true },
+        orderBy: { createdAt: "asc" },
+      }),
+    ]);
+
+    // ── Financeiro ──────────────────────────────────────────────────────────
+    const active = clinics.filter((c) => !c.canceledAt);
+    const paying = active.filter((c) => !isExempt(c.email));
+    const mrr = paying
+      .filter((c) => c.billingCycle !== "anual")
+      .reduce((s, c) => s + (PLAN_MRR[c.plan] ?? 0), 0);
+    const arr = paying
+      .filter((c) => c.billingCycle === "anual")
+      .reduce((s, c) => s + (PLAN_ARR[c.plan] ?? 0), 0);
+    const newThisMonth = clinics.filter((c) => new Date(c.createdAt) >= startOfMonth).length;
+    const exemptCount  = active.filter((c) => isExempt(c.email)).length;
+
+    // Caixa (receitas − despesas pagas/aprovadas registradas)
+    const entries = await prisma.adminFinancialEntry.findMany({
+      where: { recorrente: false }, select: { type: true, amount: true, status: true },
+    });
+    let receitas = 0, despesas = 0;
+    entries.forEach((e) => {
+      if (e.status === "rejeitado") return;
+      if (e.type === "receita") receitas += e.amount ?? 0;
+      else if (e.type === "despesa") despesas += e.amount ?? 0;
+    });
+    const financial = {
+      mrr, arr, newThisMonth, exemptCount,
+      activeClinics: active.length,
+      caixa: receitas - despesas,
+      receitas, despesas,
+    };
+
+    // ── Customer Success: score por clínica (top 5 / piores 5) ───────────────
+    const scored = active.map((c) => {
+      const daysSinceCreate = Math.floor((now - new Date(c.createdAt)) / day);
+      const daysSinceLogin  = c.lastLoginAt ? Math.floor((now - new Date(c.lastLoginAt)) / day) : 999;
+      if (daysSinceCreate < 7) return null; // muito nova, fora do score
+
+      let score;
+      if (daysSinceCreate <= 30) {
+        score = 60;
+        if (c._count.patients >= 1)     score += 15;
+        if (c._count.appointments >= 1) score += 15;
+        if (daysSinceLogin <= 7)        score += 10;
+      } else {
+        score = 100;
+        if (daysSinceLogin > 30)      score -= 30;
+        else if (daysSinceLogin > 14) score -= 15;
+        if (c._count.appointments === 0) score -= 40;
+      }
+      score = Math.max(0, Math.min(100, score));
+      return { id: c.id, name: c.name, plan: c.plan, score };
+    }).filter(Boolean);
+
+    const byScore = [...scored].sort((a, b) => b.score - a.score);
+    const cs = {
+      total: scored.length,
+      avgScore: scored.length ? Math.round(scored.reduce((s, x) => s + x.score, 0) / scored.length) : null,
+      atRisk: scored.filter((x) => x.score < 40).length,
+      top5:    byScore.slice(0, 5),
+      bottom5: byScore.slice(-5).reverse(),
+    };
+
+    // ── Comercial (leads) ────────────────────────────────────────────────────
+    const byStatus = {};
+    let pipelineValue = 0;
+    leads.forEach((l) => {
+      const st = l.status ?? "novo";
+      byStatus[st] = (byStatus[st] ?? 0) + 1;
+      if (st !== "ganho" && st !== "perdido") pipelineValue += l.value ?? 0;
+    });
+    const commercial = {
+      total: leads.length,
+      byStatus,
+      pipelineValue,
+      newThisMonth: leads.filter((l) => new Date(l.createdAt) >= startOfMonth).length,
+    };
+
+    // ── Minhas tasks (atribuídas ao usuário logado, mais antigas primeiro) ────
+    const mine = myTasks.filter((t) => {
+      const as = Array.isArray(t.assignees) ? t.assignees : [];
+      return as.some((a) => a?.id === me?.id || a?.name === me?.name);
+    }).map((t) => ({
+      id: t.id, number: t.number, title: t.title, priority: t.priority,
+      status: t.status, dueDate: t.dueDate, createdAt: t.createdAt,
+      overdue: t.dueDate ? new Date(t.dueDate) < new Date() : false,
+    }));
+
+    res.json({
+      user: me,
+      health,
+      financial,
+      cs,
+      commercial,
+      myTasks: { total: mine.length, items: mine.slice(0, 6) },
+    });
+  } catch (e) {
+    res.status(400).json({ error: e.message, health });
+  }
 });
 
 // ── TEAM (admin users) ────────────────────────────────────────────────────────
@@ -292,12 +598,20 @@ router.delete("/leads/:id", async (req, res) => {
 const PLAN_MRR = { solo: 97,   clinica: 197,   enterprise: 497,   dev: 0 };
 const PLAN_ARR = { solo: 970,  clinica: 1970,  enterprise: 4970,  dev: 0 }; // valor contratado anual
 
+// Sócios e proporção do rateio de despesas (conciliação de sociedade)
+const SOCIOS = [
+  { key: "enzo",      name: "Enzo",       share: 0.60 },
+  { key: "euriane",   name: "Euriane",    share: 0.25 },
+  { key: "gean",      name: "Gean",       share: 0.10 },
+  { key: "anaflavia", name: "Ana Flávia", share: 0.05 },
+];
+
 router.get("/financial", async (req, res) => {
   try {
     const [allClinics, newThisMonth, newLastMonth, churnedThisMonth] = await Promise.all([
       prisma.user.findMany({
         where: { role: "PROFESSIONAL" },
-        select: { plan: true, billingCycle: true },
+        select: { plan: true, billingCycle: true, email: true },
       }),
       prisma.user.count({
         where: { role: "PROFESSIONAL", createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } },
@@ -317,13 +631,16 @@ router.get("/financial", async (req, res) => {
       }),
     ]);
 
+    // Clínicas isentas não entram no MRR/ARR
+    const billableClinics = allClinics.filter((c) => !isExempt(c.email));
+
     // MRR: apenas clínicas mensais (valor mensal confirmado)
-    const mrr = allClinics
+    const mrr = billableClinics
       .filter((c) => c.billingCycle !== "anual")
       .reduce((sum, c) => sum + (PLAN_MRR[c.plan] ?? 0), 0);
 
     // ARR: apenas clínicas anuais (valor anual contratado/comprovado)
-    const arr = allClinics
+    const arr = billableClinics
       .filter((c) => c.billingCycle === "anual")
       .reduce((sum, c) => sum + (PLAN_ARR[c.plan] ?? 0), 0);
 
@@ -335,12 +652,13 @@ router.get("/financial", async (req, res) => {
     allClinics.forEach((c) => {
       if (!planMap[c.plan]) planMap[c.plan] = { plan: c.plan, count: 0, mensal: 0, anual: 0, mrr: 0, arr: 0 };
       planMap[c.plan].count++;
+      const exempt = isExempt(c.email); // isentas contam, mas não somam receita
       if (c.billingCycle === "anual") {
         planMap[c.plan].anual++;
-        planMap[c.plan].arr += PLAN_ARR[c.plan] ?? 0;
+        if (!exempt) planMap[c.plan].arr += PLAN_ARR[c.plan] ?? 0;
       } else {
         planMap[c.plan].mensal++;
-        planMap[c.plan].mrr += PLAN_MRR[c.plan] ?? 0;
+        if (!exempt) planMap[c.plan].mrr += PLAN_MRR[c.plan] ?? 0;
       }
     });
     const planBreakdown = Object.values(planMap);
@@ -410,7 +728,8 @@ router.get("/financial/billing", async (req, res) => {
     const result = clinics.map((c) => {
       const display  = c.clinicName || c.name;
       const isAnual  = c.billingCycle === "anual";
-      const expected = isAnual ? (PLAN_ARR_VAL[c.plan] ?? 0) : (PLAN_MRR_VAL[c.plan] ?? 0);
+      const exempt   = isExempt(c.email);
+      const expected = exempt ? 0 : (isAnual ? (PLAN_ARR_VAL[c.plan] ?? 0) : (PLAN_MRR_VAL[c.plan] ?? 0));
       const paid     = paidMap[c.id] ?? null;
       const method   = c.cardBrand && c.cardLast4
         ? `${c.cardBrand} ****${c.cardLast4}`
@@ -419,11 +738,12 @@ router.get("/financial/billing", async (req, res) => {
       return {
         id: c.id, name: display, email: c.email,
         plan: c.plan, billingCycle: c.billingCycle ?? "mensal", expected, paid,
+        exempt,
         paymentMethod: method,
         cardHolderName: c.cardHolderName,
         cardExpiry: c.cardExpiry,
         since: c.createdAt,
-        status: expected === 0 ? "isento" : paid ? "pago" : "pendente",
+        status: (exempt || expected === 0) ? "isento" : paid ? "pago" : "pendente",
       };
     });
 
@@ -467,6 +787,10 @@ async function processRecurrence() {
       const start = new Date(now); start.setDate(now.getDate() - day); start.setHours(0,0,0,0);
       const end   = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
       windowStart = start; windowEnd = end;
+    } else if (freq === "trimestral") {
+      const q = Math.floor(now.getMonth() / 3);          // 0..3
+      windowStart = new Date(now.getFullYear(), q * 3, 1);
+      windowEnd   = new Date(now.getFullYear(), q * 3 + 3, 0, 23, 59, 59);
     } else if (freq === "anual") {
       windowStart = new Date(now.getFullYear(), 0, 1);
       windowEnd   = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
@@ -610,6 +934,84 @@ router.delete("/financial/entries/:id", async (req, res) => {
   try {
     await prisma.adminFinancialEntry.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── CONCILIAÇÃO DE SOCIEDADE ──────────────────────────────────────────────────
+// Enquanto o faturamento não cobre as despesas, os sócios rateiam o que falta.
+router.get("/financial/conciliacao", async (req, res) => {
+  try {
+    const entries = await prisma.adminFinancialEntry.findMany({
+      where: { recorrente: false },
+      orderBy: { createdAt: "desc" },
+    });
+
+    let receitas = 0, despesasPagas = 0;
+    entries.forEach((e) => {
+      if (e.status === "rejeitado") return;
+      if (e.type === "receita") receitas += e.amount ?? 0;
+      else if (e.type === "despesa") despesasPagas += e.amount ?? 0;
+    });
+    const caixa = receitas - despesasPagas;
+
+    // Despesas em aberto = ainda não acertadas entre os sócios
+    const despesas = entries.filter((e) => e.type === "despesa" && e.status !== "rejeitado");
+    const abertas  = despesas.filter((e) => !e.societySettled);
+
+    const totalDividaAberta = abertas.reduce((s, e) => s + (e.amount ?? 0), 0);
+    // Quanto o caixa cobre; o que sobra é o que os sócios precisam ratear
+    const cobertoPorCaixa = Math.max(0, Math.min(totalDividaAberta, caixa > 0 ? caixa : 0));
+    const faltaRatear     = Math.max(0, totalDividaAberta - cobertoPorCaixa);
+
+    // Rateio por sócio sobre o que falta
+    const porSocio = SOCIOS.map((s) => ({
+      ...s,
+      devido: Math.round(faltaRatear * s.share * 100) / 100,
+    }));
+
+    // Detalhe por despesa
+    const despesasDetalhe = despesas.map((e) => ({
+      id: e.id,
+      description: e.description,
+      amount: e.amount,
+      category: e.category,
+      createdAt: e.createdAt,
+      societySettled: e.societySettled,
+      societySettledAt: e.societySettledAt,
+      societyPaid: e.societyPaid ?? {},
+      rateio: SOCIOS.map((s) => ({
+        key: s.key, name: s.name, share: s.share,
+        valor: Math.round((e.amount ?? 0) * s.share * 100) / 100,
+      })),
+    }));
+
+    res.json({
+      socios: SOCIOS,
+      resumo: {
+        receitas, despesasPagas, caixa,
+        totalDivida: despesas.reduce((s, e) => s + (e.amount ?? 0), 0),
+        totalDividaAberta, cobertoPorCaixa, faltaRatear,
+      },
+      porSocio,
+      despesas: despesasDetalhe,
+    });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// Marca/desmarca uma despesa como acertada entre os sócios (ou registra quanto cada um cobriu)
+router.patch("/financial/entries/:id/society", async (req, res) => {
+  try {
+    const { societySettled, societyPaid } = req.body;
+    const data = {};
+    if (societySettled !== undefined) {
+      data.societySettled = !!societySettled;
+      data.societySettledAt = societySettled ? new Date() : null;
+    }
+    if (societyPaid !== undefined) data.societyPaid = societyPaid;
+    const entry = await prisma.adminFinancialEntry.update({
+      where: { id: req.params.id }, data,
+    });
+    res.json(entry);
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 

@@ -26,6 +26,8 @@ import Settings from "../pages/Settings";
 import TrocarSenha from "../pages/TrocarSenha";
 import AnamneseModelos from "../pages/AnamneseModelos";
 import Mais from "../pages/Mais";
+import ComeceAgora from "../pages/ComeceAgora";
+import Contratar from "../pages/Contratar";
 
 export default function AppRoutes() {
   return (
@@ -36,9 +38,14 @@ export default function AppRoutes() {
       <Route path="/login"    element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/cadastro" element={<Signup />} />
+      <Route path="/comece-agora" element={<ComeceAgora />} />
+      <Route path="/demo" element={<Navigate to="/comece-agora" replace />} />
 
       {/* ── Troca de senha obrigatória (1º acesso) ── */}
       <Route path="/trocar-senha"      element={<PrivateRoute allowPasswordChange><TrocarSenha /></PrivateRoute>} />
+
+      {/* ── Contratação self-service (a partir da demo) ── */}
+      <Route path="/contratar"         element={<PrivateRoute><Contratar /></PrivateRoute>} />
 
       {/* ── Sistema clínica ── */}
       <Route path="/dashboard"         element={<PrivateRoute><Dashboard /></PrivateRoute>} />

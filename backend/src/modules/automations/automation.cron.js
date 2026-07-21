@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import { runBirthdayCron, runReminderCron } from "./automation.service.js";
+import { cleanupExpiredDemos } from "../auth/demoCleanup.service.js";
 
 export function startAutomationCrons() {
   // Every day at 09:00 — birthday messages
@@ -14,6 +15,13 @@ export function startAutomationCrons() {
     console.log("[Cron] Running reminder automation…");
     try { await runReminderCron(); }
     catch (e) { console.error("[Cron] reminder error:", e.message); }
+  });
+
+  // Every hour — remove expired demo accounts (TTL 48h)
+  cron.schedule("15 * * * *", async () => {
+    console.log("[Cron] Cleaning expired demo accounts…");
+    try { await cleanupExpiredDemos(); }
+    catch (e) { console.error("[Cron] demo cleanup error:", e.message); }
   });
 
   console.log("[Cron] Automation crons scheduled.");

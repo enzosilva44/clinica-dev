@@ -1,5 +1,5 @@
 import { prisma } from "../../config/prisma.js";
-import { sendWhatsAppMessage } from "../whatsapp/whatsapp.provider.js";
+import { sendWhatsAppMessage, sendWhatsAppTemplate } from "../whatsapp/whatsapp.provider.js";
 
 const DEFAULT_TEMPLATES = {
   birthday: {
@@ -17,6 +17,9 @@ const DEFAULT_TEMPLATES = {
   reminder: {
     name: "Lembrete de consulta",
     body: "Olá {{nome}}! 🔔 Lembrando que você tem uma consulta amanhã, {{data}} às {{hora}}. Te esperamos!",
+    metaTemplateName: "lembrete_consulta",
+    metaLanguage: "pt_BR",
+    metaVariables: ["nome", "data", "hora"],
   },
 };
 
@@ -26,11 +29,23 @@ function interpolate(body, vars) {
 
 export async function ensureDefaultTemplates(userId) {
   const existing = await prisma.automationTemplate.findMany({ where: { userId } });
-  const existingTypes = new Set(existing.map((t) => t.type));
+  const existingByType = new Map(existing.map((t) => [t.type, t]));
   for (const [type, data] of Object.entries(DEFAULT_TEMPLATES)) {
-    if (!existingTypes.has(type)) {
+    const metaFields = {
+      metaTemplateName: data.metaTemplateName ?? null,
+      metaLanguage: data.metaLanguage ?? "pt_BR",
+      metaVariables: data.metaVariables ?? [],
+    };
+    const current = existingByType.get(type);
+    if (!current) {
       await prisma.automationTemplate.create({
-        data: { type, name: data.name, body: data.body, isActive: true, userId },
+        data: { type, name: data.name, body: data.body, isActive: true, userId, ...metaFields },
+      });
+    } else if (data.metaTemplateName && !current.metaTemplateName) {
+      // Retrofit: clínicas que já tinham o template ganham o mapeamento Meta.
+      await prisma.automationTemplate.update({
+        where: { id: current.id },
+        data: metaFields,
       });
     }
   }
@@ -42,7 +57,7 @@ async function getActiveTemplate(userId, type) {
   });
 }
 
-async function logAndSend({ userId, patientId, patientName, phone, type, message, scheduledFor, templateId }) {
+async function logAndSend({ userId, patientId, patientName, phone, type, message, scheduledFor, templateId, tpl, vars }) {
   if (!phone) return;
 
   const user = await prisma.user.findUnique({
@@ -66,7 +81,17 @@ async function logAndSend({ userId, patientId, patientName, phone, type, message
     data: { userId, patientId, patientName, phone, type, message, scheduledFor, templateId, status: "pending" },
   });
   try {
-    await sendWhatsAppMessage(phone, message, config);
+    // Envio proativo (fora da janela de 24h) exige Message Template aprovado na Meta.
+    // Se o template tem metaTemplateName, envia via template; senão, texto livre (janela/teste).
+    if (tpl?.metaTemplateName) {
+      const params = (tpl.metaVariables || []).map((key) => vars?.[key] ?? "");
+      await sendWhatsAppTemplate(phone, tpl.metaTemplateName, params, {
+        ...config,
+        language: tpl.metaLanguage || "pt_BR",
+      });
+    } else {
+      await sendWhatsAppMessage(phone, message, config);
+    }
     await prisma.automationLog.update({
       where: { id: log.id },
       data: { status: "sent", sentAt: new Date() },
@@ -83,11 +108,12 @@ async function logAndSend({ userId, patientId, patientName, phone, type, message
 export async function triggerWelcome(userId, patient) {
   const tpl = await getActiveTemplate(userId, "welcome");
   if (!tpl) return;
-  const message = interpolate(tpl.body, { nome: patient.name.split(" ")[0] });
+  const vars = { nome: patient.name.split(" ")[0] };
+  const message = interpolate(tpl.body, vars);
   await logAndSend({
     userId, patientId: patient.id, patientName: patient.name,
     phone: patient.phone, type: "welcome", message,
-    scheduledFor: new Date(), templateId: tpl.id,
+    scheduledFor: new Date(), templateId: tpl.id, tpl, vars,
   });
 }
 
@@ -98,11 +124,12 @@ export async function triggerConfirmation(userId, appointment, patient) {
   const startsAt = new Date(appointment.startsAt);
   const data = startsAt.toLocaleDateString("pt-BR");
   const hora = startsAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  const message = interpolate(tpl.body, { nome: patient.name.split(" ")[0], data, hora });
+  const vars = { nome: patient.name.split(" ")[0], data, hora };
+  const message = interpolate(tpl.body, vars);
   await logAndSend({
     userId, patientId: patient.id, patientName: patient.name,
     phone: patient.phone, type: "confirmation", message,
-    scheduledFor: new Date(), templateId: tpl.id,
+    scheduledFor: new Date(), templateId: tpl.id, tpl, vars,
   });
 }
 
@@ -137,11 +164,12 @@ export async function runBirthdayCron() {
       });
       if (alreadySent) continue;
 
-      const message = interpolate(tpl.body, { nome: p.name.split(" ")[0] });
+      const vars = { nome: p.name.split(" ")[0] };
+      const message = interpolate(tpl.body, vars);
       await logAndSend({
         userId, patientId: p.id, patientName: p.name,
         phone: p.phone, type: "birthday", message,
-        scheduledFor: now, templateId: tpl.id,
+        scheduledFor: now, templateId: tpl.id, tpl, vars,
       });
     }
   }
@@ -177,11 +205,12 @@ export async function runReminderCron() {
       const startsAt = new Date(appt.startsAt);
       const data = startsAt.toLocaleDateString("pt-BR");
       const hora = startsAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-      const message = interpolate(tpl.body, { nome: appt.patient.name.split(" ")[0], data, hora });
+      const vars = { nome: appt.patient.name.split(" ")[0], data, hora };
+      const message = interpolate(tpl.body, vars);
       await logAndSend({
         userId, patientId: appt.patient.id, patientName: appt.patient.name,
         phone: appt.patient.phone, type: "reminder", message,
-        scheduledFor: new Date(appt.startsAt), templateId: tpl.id,
+        scheduledFor: new Date(appt.startsAt), templateId: tpl.id, tpl, vars,
       });
     }
   }

@@ -7,6 +7,7 @@ import {
   Sparkles, Package, Shield, BarChart2,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 import { useAuth } from "../contexts/AuthContext";
 import { LogoMark } from "../components/ui/Logo.jsx";
 
@@ -187,7 +188,7 @@ export default function Signup() {
         client_id: clientId,
         callback: async (res) => {
           try { await loginWithGoogle(res.credential); }
-          catch { toast.error("Erro ao entrar com Google"); }
+          catch (err) { toast.error(mensagemDeErro(err, "entrar com o Google")); }
         },
       });
       window.google.accounts.id.renderButton(googleRef.current, { theme: "outline", size: "large", text: "signup_with", shape: "rectangular", width: 280 });
@@ -270,7 +271,7 @@ export default function Signup() {
         plan,
       });
     } catch (err) {
-      toast.error(err.response?.data?.error ?? "Erro ao criar conta");
+      toast.error(mensagemDeErro(err, "criar a conta"));
     } finally {
       setLoading(false);
     }

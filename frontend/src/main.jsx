@@ -9,6 +9,7 @@ import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 
 import { AuthProvider } from "./contexts/AuthContext";
+import { DemoInviteProvider } from "./contexts/DemoInviteContext";
 
 ReactDOM.createRoot(
   document.getElementById("root")
@@ -16,6 +17,7 @@ ReactDOM.createRoot(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
+        <DemoInviteProvider>
         <AppRoutes />
         <Toaster
           position="top-right"
@@ -32,6 +34,7 @@ ReactDOM.createRoot(
             error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
           }}
         />
+        </DemoInviteProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

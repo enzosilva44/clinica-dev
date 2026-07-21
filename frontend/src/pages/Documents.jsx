@@ -4,6 +4,7 @@ import MainLayout from "../layouts/MainLayout";
 import { Card, Button } from "../components/ui";
 import api from "../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 import FieldPlacementModal from "../components/documents/FieldPlacementModal";
 
 const DOC_TYPES = [
@@ -52,8 +53,8 @@ export default function Documents() {
     try {
       const res = await api.get("/documents");
       setDocs(res.data);
-    } catch {
-      toast.error("Erro ao carregar documentos");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar os documentos"));
     } finally {
       setLoading(false);
     }
@@ -63,8 +64,8 @@ export default function Documents() {
     try {
       const res = await api.get("/documents/folders");
       setFolders(res.data);
-    } catch {
-      toast.error("Erro ao carregar pastas");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar as pastas"));
     }
   }
 
@@ -79,7 +80,7 @@ export default function Documents() {
       setNewFolderName("");
       setShowNewFolder(false);
     } catch (err) {
-      toast.error(err.response?.data?.error || "Erro ao criar pasta");
+      toast.error(mensagemDeErro(err, "criar a pasta"));
     }
   }
 
@@ -91,7 +92,7 @@ export default function Documents() {
       setDocs((prev) => prev.map((d) => d.folderId === id ? { ...d, folderId: null } : d));
       if (activeFolder === id) setActiveFolder("all");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Erro ao excluir pasta");
+      toast.error(mensagemDeErro(err, "excluir a pasta"));
     }
   }
 
@@ -99,8 +100,8 @@ export default function Documents() {
     try {
       await api.put(`/documents/${docId}`, { folderId: folderId || null });
       setDocs((prev) => prev.map((d) => d.id === docId ? { ...d, folderId: folderId || null } : d));
-    } catch {
-      toast.error("Erro ao mover documento");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "mover o documento"));
     }
   }
 
@@ -139,7 +140,7 @@ export default function Documents() {
       setForm({ name: "", type: "termo", folderId: activeFolder !== "all" && activeFolder !== "none" ? activeFolder : "" });
       loadDocs();
     } catch (err) {
-      toast.error(err.response?.data?.error || "Erro ao fazer upload");
+      toast.error(mensagemDeErro(err, "enviar o documento"));
     } finally {
       setUploading(false);
     }
@@ -151,8 +152,8 @@ export default function Documents() {
       await api.delete(`/documents/${id}`);
       toast.success("Documento excluído");
       setDocs((d) => d.filter((x) => x.id !== id));
-    } catch {
-      toast.error("Erro ao excluir");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "excluir o documento"));
     }
   }
 

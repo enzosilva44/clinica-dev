@@ -11,6 +11,7 @@ import {
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 
 // ─── mock data ────────────────────────────────────────────────────────────────
 
@@ -190,7 +191,7 @@ function ChargeDetailModal({ charge, onClose, onSimulate, onCancel }) {
       await api.post(`/billing/charges/${charge.id}/send-link`);
       toast.success("Link enviado via WhatsApp!");
     } catch (err) {
-      toast.error(err.response?.data?.error ?? "Erro ao enviar link");
+      toast.error(mensagemDeErro(err, "enviar o link"));
     } finally {
       setSendingLink(false);
     }
@@ -361,7 +362,7 @@ function NewChargeModal({ onClose, onSave }) {
       onSave(normalizeCharge(res.data));
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.error ?? "Erro ao gerar cobrança");
+      toast.error(mensagemDeErro(err, "gerar a cobrança"));
     } finally {
       setLoading(false);
     }
@@ -508,7 +509,7 @@ function SaldoTab() {
       const balRes = await api.get("/billing/balance");
       setBalance(balRes.data);
     } catch (err) {
-      toast.error(err.response?.data?.error ?? "Erro ao transferir");
+      toast.error(mensagemDeErro(err, "transferir"));
     } finally {
       setLoading(false);
     }
@@ -705,7 +706,7 @@ function ConfigTab() {
       const cfg = await api.get("/billing/config");
       setSubaccount(cfg.data);
     } catch (err) {
-      toast.error(err.response?.data?.error ?? "Erro ao ativar o IASOPay");
+      toast.error(mensagemDeErro(err, "ativar o IASOPay"));
     } finally {
       setActivating(false);
     }
@@ -735,7 +736,7 @@ function ConfigTab() {
       await api.post("/billing/config", { defaultPixKey: defaultPix, clinicName });
       toast.success("Configurações salvas!");
     } catch (err) {
-      toast.error(err.response?.data?.error ?? "Erro ao salvar configurações");
+      toast.error(mensagemDeErro(err, "salvar as configurações"));
     } finally {
       setSaving(false);
     }
@@ -1039,7 +1040,7 @@ export default function Faturamento() {
         c.id === chargeId ? { ...c, status: "CONFIRMED", paidAt: today } : c
       ));
     } catch (err) {
-      toast.error(err.response?.data?.error ?? "Erro ao simular pagamento");
+      toast.error(mensagemDeErro(err, "simular o pagamento"));
     }
   }
 
@@ -1062,7 +1063,7 @@ export default function Faturamento() {
         c.id === chargeId ? { ...c, status: "cancelled" } : c
       ));
     } catch (err) {
-      toast.error(err.response?.data?.error ?? "Erro ao cancelar cobrança");
+      toast.error(mensagemDeErro(err, "cancelar a cobrança"));
       throw err;
     }
   }

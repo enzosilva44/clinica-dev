@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Map, Trash2, Edit2, Check, X, Printer, RotateCcw, Save, ImageIcon, User, ClipboardList, Pencil, Repeat, Eye, EyeOff, CalendarClock } from "lucide-react";
+import { Plus, Map, Trash2, Edit2, Check, X, Printer, RotateCcw, Save, ImageIcon, User, ClipboardList, Pencil, Repeat, Eye, EyeOff, CalendarClock, AlertTriangle } from "lucide-react";
 
 const PRESET_IMAGES = [
   { value: "/face-1.png",       label: "Rosto Padrão",     desc: "Vista frontal neutra" },
@@ -9,6 +9,7 @@ const PRESET_IMAGES = [
   { value: "/corpo-musculo.png", label: "Glúteos",       desc: "Músculos glúteos e quadril" },
 ];
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../../lib/tomDeVoz";
 import api from "../../services/api";
 import FaceMap, { buildProductLegend, shapeForGen, GEN_SHAPE_LABEL, ShapeSwatch } from "./FaceMap";
 import Spinner from "../ui/Spinner";
@@ -24,6 +25,26 @@ function muscleGroupForImage(img) {
 
 // Unidades de medida disponíveis para apresentação do frasco
 const VIAL_UNITS = ["U", "UI", "ml", "mg", "mcg", "%"];
+
+// Alerta PREVENTIVO de validade no ponto de aplicação: compara a validade do
+// produto com a data de aplicação do mapa (não só "hoje"). Um produto vencido
+// aplicado num paciente é falha gravíssima — tem que avisar ANTES de salvar.
+const EXPIRY_WARN_DAYS = 30;
+function expiryAlert(expiryDate, applicationDate) {
+  if (!expiryDate) return null;
+  const exp = new Date(expiryDate);
+  if (isNaN(exp)) return null;
+  // referência = data de aplicação do mapa (fallback: hoje)
+  const refStr = applicationDate || new Date().toISOString().slice(0, 10);
+  const ref = new Date(refStr);
+  const e = Date.UTC(exp.getUTCFullYear(), exp.getUTCMonth(), exp.getUTCDate());
+  const r = Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), ref.getUTCDate());
+  const days = Math.round((e - r) / 86400000);
+  if (days < 0)  return { level: "expired", days, label: "VENCIDO — não aplicar" };
+  if (days === 0) return { level: "expired", days, label: "Vence na data da aplicação" };
+  if (days <= EXPIRY_WARN_DAYS) return { level: "soon", days, label: `Vence em ${days} dia${days > 1 ? "s" : ""}` };
+  return null;
+}
 
 const EMPTY_FORM = {
   productName: "",
@@ -71,8 +92,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
       const res = await api.get(`/procedure-maps/patient/${patientId}`);
       setMaps(res.data);
       if (res.data.length > 0 && !selectedId) openMap(res.data[0]);
-    } catch {
-      toast.error("Erro ao carregar mapas");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar os mapas"));
     } finally {
       setLoading(false);
     }
@@ -156,8 +177,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
       setCreating(false);
       setNewTitle("");
       toast.success("Sessão criada");
-    } catch {
-      toast.error("Erro ao criar sessão");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "criar a sessão"));
     }
   }
 
@@ -167,7 +188,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     setChoosingImage(false);
     try {
       await api.put(`/procedure-maps/${selectedId}`, { baseImage: imgValue, backgroundPhotoId: null });
-    } catch { toast.error("Erro ao salvar imagem"); }
+    } catch (err) { toast.error(mensagemDeErro(err, "salvar a imagem")); }
   }
 
   async function confirmPatientPhoto(photoId) {
@@ -176,10 +197,26 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     setChoosingImage(false);
     try {
       await api.put(`/procedure-maps/${selectedId}`, { backgroundPhotoId: photoId, baseImage: null });
-    } catch { toast.error("Erro ao salvar foto"); }
+    } catch (err) { toast.error(mensagemDeErro(err, "salvar a foto")); }
   }
 
   async function handleSave() {
+    // Trava PREVENTIVA (bloqueio total): produto vencido na data da aplicação é
+    // risco clínico grave — não deixa salvar. Compara validade x data de aplicação.
+    const vencidos = products.filter((p) => {
+      if (!p.productName?.trim()) return false;
+      return expiryAlert(p.expiryDate, formData.applicationDate)?.level === "expired";
+    });
+    if (vencidos.length > 0) {
+      const nomes = vencidos.map((p) => `${p.productName.trim()}${p.lotNumber ? ` (lote ${p.lotNumber})` : ""}`).join(", ");
+      toast.error(
+        `Não é possível salvar: produto vencido na data da aplicação — ${nomes}. ` +
+        `Remova ou substitua por um lote válido.`,
+        { duration: 7000 }
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       const cleanProducts = products
@@ -212,8 +249,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
         prev.map((m) => m.id === selectedId ? { ...m, ...formData, products: cleanProducts, markers, backgroundPhotoId, baseImage, title: titleInput.trim() || null } : m)
       );
       toast.success("Salvo");
-    } catch {
-      toast.error("Erro ao salvar");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "salvar"));
     } finally {
       setSaving(false);
     }
@@ -297,8 +334,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     setBackgroundPhotoId(photoId);
     try {
       await api.put(`/procedure-maps/${selectedId}`, { backgroundPhotoId: photoId });
-    } catch {
-      toast.error("Erro ao salvar fundo");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "salvar o fundo"));
     }
   }
 
@@ -313,8 +350,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
         else { setSelectedId(null); setMarkers([]); }
       }
       toast.success("Sessão removida");
-    } catch {
-      toast.error("Erro ao remover");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "remover a sessão"));
     }
   }
 
@@ -334,7 +371,7 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
     try {
       await api.put(`/procedure-maps/${selectedId}`, { appointmentId: apptId || null });
       setMaps((prev) => prev.map((m) => m.id === selectedId ? { ...m, appointmentId: apptId || null } : m));
-    } catch { toast.error("Erro ao vincular atendimento"); }
+    } catch (err) { toast.error(mensagemDeErro(err, "vincular o atendimento")); }
   }
 
   // Cria um novo mapa de RETORNO replicando os pontos como referência (fantasma).
@@ -346,8 +383,8 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
       setMaps((prev) => [res.data, ...prev]);
       openMap(res.data);
       toast.success("Mapa de retorno criado — marque os sobrepontos");
-    } catch {
-      toast.error("Erro ao criar retorno");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "criar o retorno"));
     } finally {
       setCreatingRetorno(false);
     }
@@ -679,9 +716,28 @@ export default function ProcedureMapTab({ patientId, patientName = "", procedure
                       </div>
                       <div>
                         <label className="text-[11px] text-gray-500 mb-1 block">Data de Validade</label>
-                        <input type="date" value={p.expiryDate}
-                          onChange={(e) => updateProduct(p.id, { expiryDate: e.target.value })}
-                          className="w-full border border-ambar rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-verde" />
+                        {(() => {
+                          const al = expiryAlert(p.expiryDate, formData.applicationDate);
+                          const danger = al?.level === "expired";
+                          return (
+                            <>
+                              <input type="date" value={p.expiryDate}
+                                onChange={(e) => updateProduct(p.id, { expiryDate: e.target.value })}
+                                className={`w-full rounded-lg px-3 py-1.5 text-sm focus:outline-none border ${
+                                  danger ? "border-red-500 bg-red-50 text-red-700 focus:border-red-500"
+                                  : al ? "border-ambar-400 bg-ambar-50 focus:border-ambar"
+                                  : "border-ambar focus:border-verde"
+                                }`} />
+                              {al && (
+                                <p className={`mt-1 flex items-center gap-1 text-[11px] font-semibold ${
+                                  danger ? "text-red-600" : "text-ambar-700"
+                                }`}>
+                                  <AlertTriangle size={12} className="shrink-0" /> {al.label}
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                       <div>
                         <label className="text-[11px] text-gray-500 mb-1 block">Volume da Diluição (ml)</label>

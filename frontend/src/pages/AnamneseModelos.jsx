@@ -4,6 +4,7 @@ import MainLayout from "../layouts/MainLayout";
 import { Card, Button, Spinner } from "../components/ui";
 import api from "../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 
 const TYPE_LABELS = {
   text: "Resposta aberta",
@@ -34,7 +35,7 @@ export default function AnamneseModelos() {
     try {
       const res = await api.get("/anamnesis/templates");
       setTemplates(res.data);
-    } catch { toast.error("Erro ao carregar modelos"); }
+    } catch (err) { toast.error(mensagemDeErro(err, "carregar os modelos")); }
     finally { setLoading(false); }
   }
 
@@ -66,7 +67,7 @@ export default function AnamneseModelos() {
       setEditing(null);
       load();
     } catch (err) {
-      toast.error(err?.response?.data?.error || "Erro ao salvar");
+      toast.error(mensagemDeErro(err, "salvar o modelo"));
     } finally { setSaving(false); }
   }
 
@@ -76,7 +77,7 @@ export default function AnamneseModelos() {
       await api.delete(`/anamnesis/templates/${id}`);
       toast.success("Modelo excluído");
       load();
-    } catch { toast.error("Erro ao excluir"); }
+    } catch (err) { toast.error(mensagemDeErro(err, "excluir o modelo")); }
   }
 
   if (loading) return <MainLayout><Spinner /></MainLayout>;

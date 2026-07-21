@@ -9,7 +9,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
 import toast from "react-hot-toast";
-import { notify } from "../lib/tomDeVoz";
+import { notify, mensagemDeErro } from "../lib/tomDeVoz";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import api from "../services/api";
@@ -853,7 +853,7 @@ export default function Financeiro() {
       await api.patch(`/financial/${id}/cancel`);
       toast.success("Transação cancelada");
       loadSummary(); loadLancamentos(); loadAnalytics();
-    } catch { toast.error("Erro ao cancelar"); }
+    } catch (err) { toast.error(mensagemDeErro(err, "cancelar a transação")); }
   }
 
   // ── CSV export ─────────────────────────────────────────────────────────────

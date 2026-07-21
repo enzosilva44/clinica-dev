@@ -8,12 +8,14 @@ import rrulePlugin from "@fullcalendar/rrule";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 import { Plus, X, Trash2, Calendar, MessageSquare, TrendingUp, TrendingDown, DollarSign, Check } from "lucide-react";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 import MainLayout from "../layouts/MainLayout";
 import { Card } from "../components/ui";
 import CalendarSidebar from "../components/calendar/CalendarSidebar";
 import "../components/calendar/calendar.css";
 import api from "../services/api";
 import { useFeatures } from "../hooks/useFeatures";
+import { useDemoInvite } from "../contexts/DemoInviteContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import AgendaMobile from "./agenda/AgendaMobile";
 
@@ -300,6 +302,7 @@ export default function Agenda() {
   const features    = useFeatures();
   const navigate    = useNavigate();
   const isMobile    = useIsMobile();
+  const { maybeInvite } = useDemoInvite();
   const calendarRef = useRef(null);
   const idempotencyKeyRef = useRef(null);
   const [now, setNow] = useState(new Date());
@@ -695,7 +698,7 @@ export default function Agenda() {
       };
 
       if (editing) {
-        await api.put(`/appointments/${editing.id}`, {
+        const res = await api.put(`/appointments/${editing.id}`, {
           title: form.title,
           description: isSimple ? form.description : undefined,
           startsAt: start,
@@ -710,6 +713,15 @@ export default function Agenda() {
           ...packageFields,
         });
         toast.success(`${okMsg} atualizado`);
+
+        // Procedimento exige retorno → só sugere quando o atendimento passou a Concluído.
+        if (res.data?.suggestedReturn) {
+          setReturnSuggestion({
+            ...res.data.suggestedReturn,
+            patientId: form.patientId,
+            professional: form.professional,
+          });
+        }
       } else {
         const title = cat === "bloqueio" && !form.title.trim() ? "Horário bloqueado" : form.title;
         const res = await api.post("/appointments", {
@@ -738,8 +750,9 @@ export default function Agenda() {
         // Renova a chave para o próximo agendamento
         idempotencyKeyRef.current = crypto.randomUUID();
         toast.success(`${okMsg} criado`);
+        maybeInvite("sua agenda");
 
-        // Procedimento exige retorno → guarda sugestão pra abrir o modal depois
+        // Só vem preenchido quando o agendamento nasce concluído (backend decide).
         if (res.data?.suggestedReturn) {
           setReturnSuggestion({
             ...res.data.suggestedReturn,
@@ -789,7 +802,7 @@ export default function Agenda() {
       setEditing(null);
       loadAppointments();
     } catch (error) {
-      toast.error("Erro ao excluir agendamento");
+      toast.error(mensagemDeErro(error, "excluir o agendamento"));
     }
   }
 
@@ -819,8 +832,8 @@ export default function Agenda() {
       toast.success(isReminder ? "Lembrete de retorno criado" : "Retorno agendado");
       setReturnSuggestion(null);
       loadAppointments();
-    } catch {
-      toast.error("Erro ao criar retorno");
+    } catch (error) {
+      toast.error(mensagemDeErro(error, "criar o retorno"));
     }
   }
 
@@ -832,7 +845,7 @@ export default function Agenda() {
       });
       loadAppointments();
     } catch (error) {
-      toast.error("Erro ao mover agendamento");
+      toast.error(mensagemDeErro(error, "mover o agendamento"));
     }
   }
 
@@ -844,7 +857,7 @@ export default function Agenda() {
       });
       loadAppointments();
     } catch (error) {
-      toast.error("Erro ao alterar duração");
+      toast.error(mensagemDeErro(error, "alterar a duração"));
     }
   }
 
@@ -1469,10 +1482,14 @@ export default function Agenda() {
                       <label className="text-xs font-medium text-gray-500 block mb-1.5">Parcelas</label>
                       <input
                         type="number" min="1" max="60"
-                        value={form.txInstallments}
+                        value={form.txSettlementType === "imediato" ? 1 : form.txInstallments}
                         onChange={f("txInstallments")}
-                        className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                        disabled={form.txSettlementType === "imediato"}
+                        className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20 disabled:bg-gray-50 disabled:text-gray-400"
                       />
+                      {form.txSettlementType === "imediato" && (
+                        <p className="text-[11px] text-gray-400 mt-1">Compensação imediata é à vista</p>
+                      )}
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 block mb-1.5">
@@ -1500,7 +1517,11 @@ export default function Agenda() {
                       <label className="text-xs font-medium text-gray-500 block mb-1.5">Compensação</label>
                       <select
                         value={form.txSettlementType}
-                        onChange={f("txSettlementType")}
+                        onChange={(e) => setForm((c) => ({
+                          ...c,
+                          txSettlementType: e.target.value,
+                          txInstallments: e.target.value === "imediato" ? "1" : c.txInstallments,
+                        }))}
                         className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                       >
                         <option value="">Selecione</option>

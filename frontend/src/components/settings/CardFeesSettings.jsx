@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, CreditCard } from "lucide-react";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../../lib/tomDeVoz";
 import api from "../../services/api";
 
 const BRANDS = ["Geral", "Visa", "Mastercard", "Elo", "American Express", "Hipercard"];
@@ -31,8 +32,8 @@ export default function CardFeesSettings() {
     try {
       const res = await api.get("/financial/card-fees");
       setFees(res.data || []);
-    } catch {
-      toast.error("Erro ao carregar taxas");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar as taxas"));
     } finally {
       setLoading(false);
     }
@@ -59,8 +60,8 @@ export default function CardFeesSettings() {
       toast.success("Taxa adicionada");
       setForm(emptyForm());
       load();
-    } catch {
-      toast.error("Erro ao adicionar taxa");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "adicionar a taxa"));
     } finally {
       setSaving(false);
     }
@@ -70,8 +71,8 @@ export default function CardFeesSettings() {
     try {
       await api.delete(`/financial/card-fees/${id}`);
       setFees((prev) => prev.filter((f) => f.id !== id));
-    } catch {
-      toast.error("Erro ao remover taxa");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "remover a taxa"));
     }
   }
 

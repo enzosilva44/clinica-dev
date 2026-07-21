@@ -8,6 +8,7 @@ import MainLayout from "../layouts/MainLayout";
 import { Card } from "../components/ui";
 import api from "../services/api";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 
 const PRESETS = [
   { label: "Últimos 30 dias", days: 30 },
@@ -118,8 +119,8 @@ export default function Relatorios() {
       if (toDate) params.set("to", toDate);
       const res = await api.get(`/reports?${params}`);
       setData(res.data);
-    } catch {
-      toast.error("Erro ao carregar relatórios");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "carregar os relatórios"));
     } finally {
       setLoading(false);
     }
@@ -609,8 +610,8 @@ function AiChat() {
         messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
       });
       setMessages([...newMessages, { role: "assistant", content: res.data.reply }]);
-    } catch {
-      toast.error("Erro ao consultar a IA");
+    } catch (err) {
+      toast.error(mensagemDeErro(err, "consultar a IA"));
       setMessages(newMessages);
     } finally {
       setLoading(false);

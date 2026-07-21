@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 import { Sparkles, Cake, CalendarDays, ClipboardList, TrendingUp, TrendingDown, Users, FileText, Download, Trash2, Eye, Send, Plus, PartyPopper, Check, AlertTriangle } from "lucide-react";
 import { getAlertLevel } from "../components/patient/alertLevels";
 import MainLayout from "../layouts/MainLayout";
@@ -128,7 +129,7 @@ export default function PatientDetails() {
       });
       setDescription(res.data.draft);
     } catch (error) {
-      toast.error("Erro ao gerar descrição");
+      toast.error(mensagemDeErro(error, "gerar a descrição"));
     } finally {
       setLoadingDraft(false);
     }
@@ -144,7 +145,7 @@ export default function PatientDetails() {
     } catch (error) {
       console.error(error);
 
-      toast.error("Erro ao carregar paciente");
+      toast.error(mensagemDeErro(error, "carregar o paciente"));
     }
   }
 
@@ -440,8 +441,8 @@ export default function PatientDetails() {
       await api.delete(`/budgets/${budgetId}`);
       toast.success("Orçamento excluído");
       loadBudgets();
-    } catch {
-      toast.error("Erro ao excluir orçamento");
+    } catch (error) {
+      toast.error(mensagemDeErro(error, "excluir o orçamento"));
     }
   }
 
@@ -496,8 +497,8 @@ export default function PatientDetails() {
       await api.delete(`/documents/patient-doc/${pdId}`);
       toast.success("Removido");
       loadPatientDocs();
-    } catch {
-      toast.error("Erro ao remover");
+    } catch (error) {
+      toast.error(mensagemDeErro(error, "remover o documento"));
     }
   }
 
@@ -614,7 +615,7 @@ export default function PatientDetails() {
       toast.success("Evolução registrada");
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao criar evolução");
+      toast.error(mensagemDeErro(error, "criar a evolução"));
     }
   }
 
@@ -1743,10 +1744,14 @@ export default function PatientDetails() {
                           <label className="text-xs font-medium text-gray-500 block mb-1.5">Parcelas</label>
                           <input
                             type="number" min="1" max="60"
-                            value={budgetForm.txInstallments}
+                            value={budgetForm.txSettlementType === "imediato" ? 1 : budgetForm.txInstallments}
                             onChange={set("txInstallments")}
-                            className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                            disabled={budgetForm.txSettlementType === "imediato"}
+                            className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20 disabled:bg-gray-50 disabled:text-gray-400"
                           />
+                          {budgetForm.txSettlementType === "imediato" && (
+                            <p className="text-[11px] text-gray-400 mt-1">Compensação imediata é à vista</p>
+                          )}
                         </div>
                       </div>
 
@@ -1756,7 +1761,11 @@ export default function PatientDetails() {
                           <label className="text-xs font-medium text-gray-500 block mb-1.5">Compensação</label>
                           <select
                             value={budgetForm.txSettlementType}
-                            onChange={set("txSettlementType")}
+                            onChange={(e) => setBudgetForm((c) => ({
+                              ...c,
+                              txSettlementType: e.target.value,
+                              txInstallments: e.target.value === "imediato" ? "1" : c.txInstallments,
+                            }))}
                             className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
                           >
                             <option value="">Selecione</option>

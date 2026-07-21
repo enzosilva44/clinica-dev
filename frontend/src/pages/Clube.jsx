@@ -4,6 +4,7 @@ import {
   Bell, CheckCircle, AlertTriangle, Clock,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { mensagemDeErro } from "../lib/tomDeVoz";
 import MainLayout from "../layouts/MainLayout";
 import Spinner from "../components/ui/Spinner";
 import { Card, Button } from "../components/ui";
@@ -88,7 +89,7 @@ export default function Clube() {
       setAlerts(alertsRes.data);
     } catch (e) {
       console.error(e);
-      toast.error("Erro ao carregar dados do clube");
+      toast.error(mensagemDeErro(e, "carregar os dados do clube"));
     } finally {
       setLoading(false);
     }
@@ -111,7 +112,7 @@ export default function Clube() {
       closePlanModal();
       load();
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao salvar plano");
+      toast.error(mensagemDeErro(e, "salvar o plano"));
     }
   }
 
@@ -121,7 +122,7 @@ export default function Clube() {
       toast.success("Plano removido");
       load();
     } catch (e) {
-      toast.error("Erro ao remover plano");
+      toast.error(mensagemDeErro(e, "remover o plano"));
     }
   }
 
@@ -164,7 +165,7 @@ export default function Clube() {
       closeMemberModal();
       load();
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao adicionar membro");
+      toast.error(mensagemDeErro(e, "adicionar o membro"));
     }
   }
 
@@ -174,7 +175,7 @@ export default function Clube() {
       toast.success("Status atualizado");
       load();
     } catch (e) {
-      toast.error("Erro ao atualizar status");
+      toast.error(mensagemDeErro(e, "atualizar o status"));
     }
   }
 
@@ -200,7 +201,7 @@ export default function Clube() {
       setAppNotes("");
       load();
     } catch (e) {
-      toast.error(e.response?.data?.error || "Erro ao registrar aplicação");
+      toast.error(mensagemDeErro(e, "registrar a aplicação"));
     }
   }
 
