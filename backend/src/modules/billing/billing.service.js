@@ -404,6 +404,8 @@ export async function sendPaymentLink(userId, chargeId) {
 
 export async function handleWebhook(event) {
   const { event: type, payment } = event;
+  console.log(`[webhook] recebido: ${type}` +
+    (payment ? ` | pay=${payment.id} sub=${payment.subscription || "-"} ref=${payment.externalReference || "-"}` : " | sem payment"));
   if (!payment) return;
 
   // ── Assinatura SaaS (mensalidade Iaso → clínica) ──────────────────────────
@@ -466,5 +468,7 @@ async function reconcileSubscription(type, subscriptionId) {
   });
   if (res.count === 0) {
     console.warn(`[webhook] subscription ${subscriptionId} sem clínica correspondente (evento ${type}).`);
+  } else {
+    console.log(`[webhook] assinatura ${subscriptionId} → status=${status} (${res.count} clínica[s]).`);
   }
 }
