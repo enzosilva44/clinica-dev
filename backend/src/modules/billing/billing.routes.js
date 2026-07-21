@@ -11,8 +11,16 @@ import { contratar } from "./contract.service.js";
 
 const router = Router();
 
-// webhook — sem auth (chamado pelo Asaas)
+// webhook — sem authMiddleware (chamado pelo Asaas), mas validado pelo token
+// que o Asaas envia no header `asaas-access-token`. Se ASAAS_WEBHOOK_TOKEN
+// estiver configurado e o header não bater, rejeita (401). Se não estiver
+// configurado, aceita (não quebra caso o token ainda não tenha sido setado).
 router.post("/webhook", async (req, res) => {
+  const expected = process.env.ASAAS_WEBHOOK_TOKEN;
+  if (expected && req.headers["asaas-access-token"] !== expected) {
+    console.warn("[webhook] rejeitado: asaas-access-token ausente ou inválido.");
+    return res.status(401).json({ error: "invalid webhook token" });
+  }
   try {
     await handleWebhook(req.body);
     res.json({ received: true });
