@@ -11,14 +11,17 @@ import {
 import {
   BackupClient, ListBackupJobsCommand,
 } from "@aws-sdk/client-backup";
+import { fromInstanceMetadata } from "@aws-sdk/credential-providers";
 
 // Região dos recursos (EC2/RDS ficam em us-east-1; NÃO herdar AWS_REGION do S3, que é us-east-2)
 const REGION       = process.env.INFRA_AWS_REGION || "us-east-1";
 const EC2_INSTANCE = process.env.INFRA_EC2_INSTANCE_ID || "i-03c56465532e35626";
 const RDS_INSTANCE = process.env.INFRA_RDS_INSTANCE_ID || "iasoclin-db";
 
-// Credenciais dedicadas de infra (não usar as do S3/render-api, que não têm CloudWatch/CE).
-// Em produção, deixe estas vazias e anexe uma IAM role à EC2 → o SDK usa a role automaticamente.
+// Credenciais dedicadas de infra. NÃO herdar as env vars AWS_* (que em prod são do
+// usuário render-api, só com acesso S3 e SEM CloudWatch/CE).
+//  - Local/dev: usa INFRA_AWS_* explícitas (profile claude).
+//  - Produção: força a IAM role da EC2 via instance metadata (ignora as env vars do render-api).
 const infraCreds =
   process.env.INFRA_AWS_ACCESS_KEY_ID && process.env.INFRA_AWS_SECRET_ACCESS_KEY
     ? {
@@ -27,7 +30,7 @@ const infraCreds =
           secretAccessKey: process.env.INFRA_AWS_SECRET_ACCESS_KEY,
         },
       }
-    : {};
+    : { credentials: fromInstanceMetadata({ timeout: 2000, maxRetries: 3 }) };
 
 const cfg = { region: REGION, ...infraCreds };
 const cw     = new CloudWatchClient(cfg);
