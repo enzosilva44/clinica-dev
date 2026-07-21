@@ -412,7 +412,7 @@ export async function handleWebhook(event) {
   // Pagamentos de subscription trazem payment.subscription (ID da assinatura),
   // que casa com User.asaasSubscriptionId. Reconcilia o status de acesso.
   if (payment.subscription) {
-    await reconcileSubscription(type, payment.subscription);
+    await reconcileSubscription(type, payment.subscription, payment);
     return; // eventos de subscription não têm externalReference de Transaction
   }
 
@@ -437,7 +437,7 @@ export async function handleWebhook(event) {
 // Sincroniza o status da assinatura SaaS a partir dos eventos de pagamento do
 // Asaas. active = em dia; past_due = venceu; suspended = cancelada por falta de
 // pagamento (Asaas expira a subscription após N tentativas).
-async function reconcileSubscription(type, subscriptionId) {
+async function reconcileSubscription(type, subscriptionId, payment) {
   const map = {
     PAYMENT_CONFIRMED: "active",
     PAYMENT_RECEIVED: "active",
@@ -468,7 +468,76 @@ async function reconcileSubscription(type, subscriptionId) {
   });
   if (res.count === 0) {
     console.warn(`[webhook] subscription ${subscriptionId} sem clínica correspondente (evento ${type}).`);
+    return;
+  }
+  console.log(`[webhook] assinatura ${subscriptionId} → status=${status} (${res.count} clínica[s]).`);
+
+  // Baixa no Faturamento (Admin) — regime de caixa: só quando o dinheiro cai
+  // (PAYMENT_RECEIVED). Uma entrada efetivada por pagamento.
+  if (type === "PAYMENT_RECEIVED") {
+    await settleSubscriptionPayment(subscriptionId, payment);
+  }
+}
+
+// Cria (ou efetiva) o lançamento de receita da mensalidade no Faturamento.
+// Idempotente: usa recorrenciaRef = ID do pagamento Asaas para não duplicar se
+// o webhook reenviar o mesmo evento. Na 1ª cobrança, reaproveita o lançamento
+// "pendente" criado na contratação; nos meses seguintes, cria um novo.
+async function settleSubscriptionPayment(subscriptionId, payment) {
+  const paymentId = payment?.id;
+  if (!paymentId) return;
+
+  // Já lançado? (reenvio do webhook)
+  const dup = await prisma.adminFinancialEntry.findFirst({
+    where: { recorrenciaRef: paymentId },
+    select: { id: true },
+  });
+  if (dup) {
+    console.log(`[webhook] pagamento ${paymentId} já lançado no Faturamento — ignorado.`);
+    return;
+  }
+
+  const clinic = await prisma.user.findFirst({
+    where: { asaasSubscriptionId: subscriptionId },
+    select: { id: true, clinicName: true, name: true, plan: true },
+  });
+  if (!clinic) return;
+
+  const paidAt = payment.clientPaymentDate || payment.paymentDate || payment.confirmedDate;
+  const settled = {
+    status: "aprovado",
+    paidAt: paidAt ? new Date(paidAt) : new Date(),
+    paymentMethod: (payment.billingType || "").toLowerCase() || undefined,
+    recorrenciaRef: paymentId, // marca de idempotência
+    approvedBy: "Sistema (Asaas)",
+    approvedAt: new Date(),
+  };
+
+  // 1ª cobrança: reaproveita o lançamento pendente da contratação (sem ref ainda).
+  const pending = await prisma.adminFinancialEntry.findFirst({
+    where: { clinicId: clinic.id, category: "assinatura", status: "pendente", recorrenciaRef: null },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (pending) {
+    await prisma.adminFinancialEntry.update({ where: { id: pending.id }, data: settled });
+    console.log(`[webhook] Faturamento: mensalidade de ${clinic.clinicName || clinic.name} efetivada (pagamento ${paymentId}).`);
   } else {
-    console.log(`[webhook] assinatura ${subscriptionId} → status=${status} (${res.count} clínica[s]).`);
+    await prisma.adminFinancialEntry.create({
+      data: {
+        type: "receita",
+        description: `Mensalidade Iasoclin — ${clinic.clinicName || clinic.name}`,
+        amount: payment.value ?? 0,
+        category: "assinatura",
+        planType: clinic.plan,
+        clinicId: clinic.id,
+        clinicName: clinic.clinicName || clinic.name,
+        recorrente: true,
+        recorrencia: "mensal",
+        createdBy: "Sistema (Asaas)",
+        ...settled,
+      },
+    });
+    console.log(`[webhook] Faturamento: nova baixa de ${clinic.clinicName || clinic.name} (pagamento ${paymentId}).`);
   }
 }

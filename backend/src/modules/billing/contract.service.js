@@ -88,10 +88,10 @@ async function registerFinancialEntry(user, plan, price) {
       clinicName: user.clinicName || user.name,
       recorrente: true,
       recorrencia: "mensal",
-      status: "aprovado",
+      // Nasce como PREVISÃO (pendente). A baixa efetiva vem do webhook quando o
+      // Asaas confirma o recebimento (PAYMENT_RECEIVED) — regime de caixa.
+      status: "pendente",
       createdBy: "Sistema (self-service)",
-      approvedBy: "Sistema (self-service)",
-      approvedAt: new Date(),
     },
   }).catch((e) => console.error("[contratar] registerFinancialEntry:", e.message));
 }
