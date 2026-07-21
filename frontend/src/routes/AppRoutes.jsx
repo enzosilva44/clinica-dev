@@ -28,6 +28,7 @@ import AnamneseModelos from "../pages/AnamneseModelos";
 import Mais from "../pages/Mais";
 import ComeceAgora from "../pages/ComeceAgora";
 import Contratar from "../pages/Contratar";
+import AcessoBloqueado from "../pages/AcessoBloqueado";
 
 export default function AppRoutes() {
   return (
@@ -46,6 +47,9 @@ export default function AppRoutes() {
 
       {/* ── Contratação self-service (a partir da demo) ── */}
       <Route path="/contratar"         element={<PrivateRoute><Contratar /></PrivateRoute>} />
+
+      {/* ── Acesso suspenso por inadimplência (após carência) ── */}
+      <Route path="/acesso-bloqueado"  element={<PrivateRoute allowBlocked><AcessoBloqueado /></PrivateRoute>} />
 
       {/* ── Sistema clínica ── */}
       <Route path="/dashboard"         element={<PrivateRoute><Dashboard /></PrivateRoute>} />

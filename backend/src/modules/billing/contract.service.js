@@ -15,15 +15,15 @@ function iasoKey() {
   return key;
 }
 
-function firstChargeDate() {
+function trialEndDate() {
   const d = new Date();
   d.setDate(d.getDate() + TRIAL_DAYS + 1); // 15º dia
-  return d.toISOString().slice(0, 10); // YYYY-MM-DD
+  return d;
 }
 
 // Cria (ou reusa) o customer da clínica na conta Asaas da Iaso e abre a
 // assinatura recorrente mensal do plano contratado.
-async function createSubscription(user, plan, card) {
+async function createSubscription(user, plan, card, trialEnd) {
   const key = iasoKey();
   const price = PLAN_PRICE[plan] ?? PLAN_PRICE.solo;
 
@@ -34,32 +34,43 @@ async function createSubscription(user, plan, card) {
     cpfCnpj: (user.cpf || user.cnpj || "").replace(/\D/g, "") || undefined,
   }, key);
 
-  const [expMonth, expYear] = (card.expiry || "").split("/");
-  const subscription = await asaas("POST", "/subscriptions", {
+  const cpfCnpj = (user.cpf || user.cnpj || "").replace(/\D/g, "") || undefined;
+  const hasCard = !!(card?.number && card?.holderName && card?.expiry && card?.cvv);
+
+  // Sem cartão: billingType UNDEFINED — o cliente escolhe PIX/cartão/boleto no
+  // checkout da 1ª cobrança (emitida pelo Asaas no fim do trial). Com cartão:
+  // débito automático recorrente já tokenizado.
+  const body = {
     customer: customer.id,
-    billingType: "CREDIT_CARD",
+    billingType: hasCard ? "CREDIT_CARD" : "UNDEFINED",
     value: price,
-    nextDueDate: firstChargeDate(),
+    nextDueDate: trialEnd.toISOString().slice(0, 10),
     cycle: "MONTHLY",
     description: `Iasoclin — plano ${plan}`,
-    creditCard: {
+  };
+
+  if (hasCard) {
+    const [expMonth, expYear] = (card.expiry || "").split("/");
+    body.creditCard = {
       holderName: card.holderName,
       number: card.number,
       expiryMonth: expMonth,
       expiryYear: expYear?.length === 2 ? `20${expYear}` : expYear,
       ccv: card.cvv,
-    },
-    creditCardHolderInfo: {
+    };
+    body.creditCardHolderInfo = {
       name: card.holderName,
       email: user.email,
-      cpfCnpj: (user.cpf || user.cnpj || "").replace(/\D/g, "") || undefined,
+      cpfCnpj,
       postalCode: (user.zipCode || "").replace(/\D/g, "") || undefined,
       addressNumber: user.addressNumber || "0",
       phone: (user.phone || "").replace(/\D/g, "") || undefined,
-    },
-  }, key);
+    };
+  }
 
-  return { subscription, price };
+  const subscription = await asaas("POST", "/subscriptions", body, key);
+
+  return { subscription, price, hasCard };
 }
 
 // Registra a mensalidade no Financeiro do Admin (aba Faturamento) como
@@ -128,15 +139,19 @@ export async function contratar(userId, payload) {
   const { plan, lgpdVersion, contractVersion, card, acquisitionChannel } = payload;
 
   if (!PLAN_PRICE[plan]) throw new Error("Plano inválido.");
-  if (!card?.number || !card?.holderName || !card?.expiry || !card?.cvv) {
+  // Cartão é opcional: sem ele, a assinatura sai como UNDEFINED e o cliente
+  // escolhe a forma de pagamento (PIX/cartão/boleto) na 1ª cobrança do trial.
+  const hasCardInput = !!(card?.number || card?.holderName || card?.expiry || card?.cvv);
+  if (hasCardInput && !(card.number && card.holderName && card.expiry && card.cvv)) {
     throw new Error("Dados do cartão incompletos.");
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error("Usuário não encontrado.");
 
-  // 1. Assinatura recorrente Asaas (D+15).
-  const { subscription, price } = await createSubscription(user, plan, card);
+  // 1. Assinatura recorrente Asaas — 1ª cobrança no fim do trial (D+15).
+  const trialEnd = trialEndDate();
+  const { subscription, price, hasCard } = await createSubscription(user, plan, card, trialEnd);
 
   // 2. Promove a conta demo → real, grava aceites e limpa a expiração.
   const updated = await prisma.user.update({
@@ -151,14 +166,16 @@ export async function contratar(userId, payload) {
       contractAcceptedAt: new Date(),
       contractVersion: contractVersion || null,
       asaasSubscriptionId: subscription.id,
+      subscriptionStatus: "trialing", // vira "active" no 1º pagamento confirmado (webhook)
+      trialEndsAt: trialEnd,
       // conta passa a ser ativa/em uso — alimenta o score de CS (loginCount/lastLoginAt)
       lastLoginAt: new Date(),
       loginCount: user.loginCount > 0 ? undefined : 1,
       // guarda só os dados de exibição do cartão (não o número completo)
-      cardBrand: subscription.creditCard?.creditCardBrand || null,
-      cardLast4: subscription.creditCard?.creditCardNumber?.slice(-4) || card.number.slice(-4),
-      cardHolderName: card.holderName,
-      cardExpiry: card.expiry,
+      cardBrand: hasCard ? (subscription.creditCard?.creditCardBrand || null) : null,
+      cardLast4: hasCard ? (subscription.creditCard?.creditCardNumber?.slice(-4) || card.number.slice(-4)) : null,
+      cardHolderName: hasCard ? card.holderName : null,
+      cardExpiry: hasCard ? card.expiry : null,
     },
   });
 

@@ -404,7 +404,18 @@ export async function sendPaymentLink(userId, chargeId) {
 
 export async function handleWebhook(event) {
   const { event: type, payment } = event;
-  if (!payment?.externalReference) return;
+  if (!payment) return;
+
+  // ── Assinatura SaaS (mensalidade Iaso → clínica) ──────────────────────────
+  // Pagamentos de subscription trazem payment.subscription (ID da assinatura),
+  // que casa com User.asaasSubscriptionId. Reconcilia o status de acesso.
+  if (payment.subscription) {
+    await reconcileSubscription(type, payment.subscription);
+    return; // eventos de subscription não têm externalReference de Transaction
+  }
+
+  // ── Cobrança avulsa (Financeiro da clínica → paciente) ────────────────────
+  if (!payment.externalReference) return;
 
   if (type === "PAYMENT_CONFIRMED" || type === "PAYMENT_RECEIVED") {
     await prisma.transaction.updateMany({
@@ -418,5 +429,42 @@ export async function handleWebhook(event) {
       where: { id: payment.externalReference, status: "pendente" },
       data: { status: "pendente" }, // mantém pendente, frontend filtra vencidos por dueDate
     });
+  }
+}
+
+// Sincroniza o status da assinatura SaaS a partir dos eventos de pagamento do
+// Asaas. active = em dia; past_due = venceu; suspended = cancelada por falta de
+// pagamento (Asaas expira a subscription após N tentativas).
+async function reconcileSubscription(type, subscriptionId) {
+  const map = {
+    PAYMENT_CONFIRMED: "active",
+    PAYMENT_RECEIVED: "active",
+    PAYMENT_OVERDUE: "past_due",
+    PAYMENT_DELETED: "canceled",
+    PAYMENT_REFUNDED: "past_due",
+  };
+  const status = map[type];
+  if (!status) return; // evento sem impacto no acesso
+
+  const data = { subscriptionStatus: status };
+  if (status === "active") {
+    // Pagou: trial virou assinatura paga e zera qualquer atraso pendente.
+    data.trialEndsAt = null;
+    data.overdueSince = null;
+  } else if (status === "past_due") {
+    // Marca o início do atraso só uma vez (a carência de 10 dias conta daqui).
+    const u = await prisma.user.findFirst({
+      where: { asaasSubscriptionId: subscriptionId },
+      select: { overdueSince: true },
+    });
+    if (u && !u.overdueSince) data.overdueSince = new Date();
+  }
+
+  const res = await prisma.user.updateMany({
+    where: { asaasSubscriptionId: subscriptionId },
+    data,
+  });
+  if (res.count === 0) {
+    console.warn(`[webhook] subscription ${subscriptionId} sem clínica correspondente (evento ${type}).`);
   }
 }

@@ -5,6 +5,7 @@ import HelpChat from "../components/ai/HelpChat";
 import { useIsMobile } from "../hooks/useIsMobile";
 import MobileTabBar from "../components/mobile/MobileTabBar";
 import DemoBanner from "../components/demo/DemoBanner";
+import OverdueBanner from "../components/billing/OverdueBanner";
 
 export default function MainLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -15,6 +16,7 @@ export default function MainLayout({ children }) {
     return (
       <div className="min-h-screen bg-creme-50 text-[#1F2937]">
         <DemoBanner />
+        <OverdueBanner />
         <main className="min-h-screen pb-20">{children}</main>
         <MobileTabBar />
       </div>
@@ -35,6 +37,7 @@ export default function MainLayout({ children }) {
 
       <main className="flex-1 min-w-0 overflow-x-hidden">
         <DemoBanner />
+        <OverdueBanner />
         <div className="p-4 sm:p-6 lg:p-8">
         {/* Mobile top bar */}
         <div className="flex items-center gap-3 mb-4 lg:hidden">

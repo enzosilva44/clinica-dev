@@ -29,3 +29,12 @@ set -e
 } > backend/.env
 
 echo "backend/.env gerado com $(wc -l < backend/.env) linhas"
+
+# Frontend (Vite lê VITE_* no momento do build). Valores não-secretos.
+{
+  echo "VITE_API_URL=${VITE_API_URL}"
+  echo "VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}"
+  echo "VITE_WHATSAPP_COMMERCIAL=${VITE_WHATSAPP_COMMERCIAL:-5516993427085}"
+} > frontend/.env.production
+
+echo "frontend/.env.production gerado com $(wc -l < frontend/.env.production) linhas"

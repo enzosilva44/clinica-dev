@@ -80,6 +80,8 @@ export default function Contratar() {
   const [lgpdOk, setLgpdOk] = useState(false);
   const [contractOk, setContractOk] = useState(false);
   const [plan, setPlan] = useState(user?.plan === "clinica" ? "clinica" : "solo");
+  // "choose" = decide na 1ª cobrança (PIX/cartão/boleto) | "card" = débito automático
+  const [payMode, setPayMode] = useState("choose");
   const [card, setCard] = useState({ number: "", name: "", expiry: "", cvv: "" });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -95,7 +97,7 @@ export default function Contratar() {
   }
 
   async function finalizar() {
-    if (!card.number || !card.name || !card.expiry || !card.cvv) {
+    if (payMode === "card" && (!card.number || !card.name || !card.expiry || !card.cvv)) {
       return toast.error("Preencha os dados do cartão.");
     }
     setLoading(true);
@@ -105,12 +107,14 @@ export default function Contratar() {
         plan,
         lgpdVersion: LGPD_VERSION,
         contractVersion: CONTRACT_VERSION,
-        card: {
+        // Sem cartão: backend abre a assinatura como UNDEFINED e o cliente
+        // escolhe PIX/cartão/boleto na 1ª cobrança (fim do trial).
+        card: payMode === "card" ? {
           number: card.number.replace(/\s/g, ""),
           holderName: card.name,
           expiry: card.expiry,
           cvv: card.cvv,
-        },
+        } : null,
         acquisitionChannel: origin?.acquisitionChannel || null,
       });
       // Atualiza o usuário logado (agora conta real, plano contratado).
@@ -191,26 +195,46 @@ export default function Contratar() {
                 ))}
               </div>
 
-              <label className={LABEL}>Número do cartão</label>
-              <input className={INPUT} inputMode="numeric" placeholder="0000 0000 0000 0000"
-                value={card.number} onChange={(e) => setCard({ ...card, number: maskCard(e.target.value) })} />
-
-              <label className={`${LABEL} mt-4`}>Nome impresso no cartão</label>
-              <input className={INPUT} placeholder="Como está no cartão"
-                value={card.name} onChange={(e) => setCard({ ...card, name: e.target.value.toUpperCase() })} />
-
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <div>
-                  <label className={LABEL}>Validade</label>
-                  <input className={INPUT} inputMode="numeric" placeholder="MM/AA"
-                    value={card.expiry} onChange={(e) => setCard({ ...card, expiry: maskExpiry(e.target.value) })} />
-                </div>
-                <div>
-                  <label className={LABEL}>CVV</label>
-                  <input className={INPUT} inputMode="numeric" placeholder="000"
-                    value={card.cvv} onChange={(e) => setCard({ ...card, cvv: maskCvv(e.target.value) })} />
-                </div>
+              <label className={LABEL}>Forma de pagamento</label>
+              <div className="grid grid-cols-1 gap-2.5 mb-5">
+                <button onClick={() => setPayMode("choose")}
+                  className={`text-left border rounded-xl px-4 py-3 transition ${
+                    payMode === "choose" ? "border-verde bg-verde/5" : "border-creme-200 hover:border-creme-300"
+                  }`}>
+                  <p className="font-bold text-sm text-[#141414]">Escolher na primeira cobrança</p>
+                  <p className="text-xs text-gray-400">Nada agora. No 15º dia você recebe a cobrança e paga por PIX, cartão ou boleto.</p>
+                </button>
+                <button onClick={() => setPayMode("card")}
+                  className={`text-left border rounded-xl px-4 py-3 transition ${
+                    payMode === "card" ? "border-verde bg-verde/5" : "border-creme-200 hover:border-creme-300"
+                  }`}>
+                  <p className="font-bold text-sm text-[#141414]">Cadastrar cartão agora</p>
+                  <p className="text-xs text-gray-400">Débito automático todo mês, sem precisar lembrar de pagar.</p>
+                </button>
               </div>
+
+              {payMode === "card" && (<>
+                <label className={LABEL}>Número do cartão</label>
+                <input className={INPUT} inputMode="numeric" placeholder="0000 0000 0000 0000"
+                  value={card.number} onChange={(e) => setCard({ ...card, number: maskCard(e.target.value) })} />
+
+                <label className={`${LABEL} mt-4`}>Nome impresso no cartão</label>
+                <input className={INPUT} placeholder="Como está no cartão"
+                  value={card.name} onChange={(e) => setCard({ ...card, name: e.target.value.toUpperCase() })} />
+
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div>
+                    <label className={LABEL}>Validade</label>
+                    <input className={INPUT} inputMode="numeric" placeholder="MM/AA"
+                      value={card.expiry} onChange={(e) => setCard({ ...card, expiry: maskExpiry(e.target.value) })} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>CVV</label>
+                    <input className={INPUT} inputMode="numeric" placeholder="000"
+                      value={card.cvv} onChange={(e) => setCard({ ...card, cvv: maskCvv(e.target.value) })} />
+                  </div>
+                </div>
+              </>)}
 
               <p className="text-[11px] text-gray-400 mt-4">
                 14 dias grátis. A primeira cobrança acontece no 15º dia. Cancele quando quiser.

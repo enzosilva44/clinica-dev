@@ -9,6 +9,7 @@ import { seedDefaultFolders } from "../../shared/defaultFolders.js";
 import { saveFile } from "../../providers/storage/index.js";
 import { buildStorageKey } from "../../providers/storage/storageKey.js";
 import { solidPng, DEMO_PORTFOLIO_COLORS } from "./demoImage.js";
+import { accessState } from "../billing/access.js";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -41,6 +42,11 @@ function publicUser(user) {
     authProvider: user.authProvider,
     mustChangePassword: user.mustChangePassword ?? false,
     demoExpiresAt: user.demoExpiresAt ?? null,
+    // Situação de pagamento (frontend mostra aviso em "grace" / tela em "blocked").
+    ...(() => {
+      const a = accessState(user);
+      return { accessState: a.state, graceDaysLeft: a.daysLeft, subscriptionStatus: user.subscriptionStatus ?? null };
+    })(),
   };
 }
 

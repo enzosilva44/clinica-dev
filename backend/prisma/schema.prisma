@@ -60,6 +60,9 @@ model User {
   asaasAccountId        String?
   asaasAccountStatus    String?
   asaasSubscriptionId   String?   // assinatura recorrente Asaas (mensalidade SaaS)
+  subscriptionStatus    String?   // trialing | active | past_due | suspended | canceled
+  trialEndsAt           DateTime? // fim do trial (1ª cobrança acontece nesta data)
+  overdueSince          DateTime? // início do atraso; após GRACE dias sem pagar, acesso bloqueia
   // Ciclo de vida self-service
   demoExpiresAt         DateTime? // conta demo temporária expira nesta data (cron limpa)
   leadSource            String?   // "self-service" | "assistido"

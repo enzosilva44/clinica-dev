@@ -5,6 +5,7 @@ import { authRoutes } from "./modules/auth/auth.routes.js";
 import { prisma } from "./config/prisma.js";
 import { authMiddleware } from "./middlewares/auth.middleware.js";
 import { requireFeature } from "./middlewares/feature.middleware.js";
+import { blockOverdue } from "./middlewares/billing.middleware.js";
 import patientsRoutes from "./modules/patients/patient.routes.js";
 import appointmentRoutes from "./modules/appointments/appointment.routes.js";
 import evolutionRoutes from "./modules/evolutions/evolution.routes.js";
@@ -47,6 +48,9 @@ app.use(
   })
 );
 app.use("/uploads", express.static(uploadsDir));
+// Bloqueio global por inadimplência (após carência). Isenta /auth /billing
+// /profile para a clínica conseguir logar e regularizar o pagamento.
+app.use(blockOverdue);
 app.use("/auth", authRoutes);
 app.use("/patients", patientsRoutes);
 app.use("/appointments", appointmentRoutes);
