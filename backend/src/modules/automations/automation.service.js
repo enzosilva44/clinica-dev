@@ -1,5 +1,6 @@
 import { prisma } from "../../config/prisma.js";
 import { sendWhatsAppMessage, sendWhatsAppTemplate } from "../whatsapp/whatsapp.provider.js";
+import { checkQuota, consumeQuota } from "../billing/quota.service.js";
 
 const DEFAULT_TEMPLATES = {
   birthday: {
@@ -20,6 +21,15 @@ const DEFAULT_TEMPLATES = {
     metaTemplateName: "lembrete_consulta",
     metaLanguage: "pt_BR",
     metaVariables: ["nome", "data", "hora"],
+  },
+  payment_link: {
+    name: "Link de pagamento",
+    // O link vai como VARIÁVEL {{link}} — 1 único template aprovado (categoria
+    // Utility na Meta) serve p/ qualquer cobrança; a URL nunca muda o template.
+    body: "Olá {{nome}}! 💳 Segue o link para pagamento da sua cobrança no valor de {{valor}}:\n\n{{link}}\n\nQualquer dúvida, estamos à disposição!",
+    metaTemplateName: "link_pagamento",
+    metaLanguage: "pt_BR",
+    metaVariables: ["nome", "valor", "link"],
   },
 };
 
@@ -51,11 +61,13 @@ export async function ensureDefaultTemplates(userId) {
   }
 }
 
-async function getActiveTemplate(userId, type) {
+export async function getActiveTemplate(userId, type) {
   return prisma.automationTemplate.findFirst({
     where: { userId, type, isActive: true },
   });
 }
+
+export { interpolate };
 
 async function logAndSend({ userId, patientId, patientName, phone, type, message, scheduledFor, templateId, tpl, vars }) {
   if (!phone) return;
@@ -77,6 +89,16 @@ async function logAndSend({ userId, patientId, patientName, phone, type, message
     return;
   }
 
+  // Cota de WhatsApp esgotada: NÃO quebra o lote de automações (podem rodar em loop),
+  // só pula este envio e registra como skipped. A gestão segue funcionando.
+  const quota = await checkQuota(userId, "whatsapp");
+  if (!quota.ok) {
+    await prisma.automationLog.create({
+      data: { userId, patientId, patientName, phone, type, message, scheduledFor, templateId, status: "skipped", error: "quota_exceeded" },
+    });
+    return;
+  }
+
   const log = await prisma.automationLog.create({
     data: { userId, patientId, patientName, phone, type, message, scheduledFor, templateId, status: "pending" },
   });
@@ -92,6 +114,8 @@ async function logAndSend({ userId, patientId, patientName, phone, type, message
     } else {
       await sendWhatsAppMessage(phone, message, config);
     }
+    // Debita 1 mensagem só após o envio confirmado pela Meta.
+    await consumeQuota(userId, "whatsapp", 1, { type, templateId: templateId ?? null });
     await prisma.automationLog.update({
       where: { id: log.id },
       data: { status: "sent", sentAt: new Date() },

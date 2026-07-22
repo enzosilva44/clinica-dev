@@ -50,6 +50,16 @@ router.use(async (req, res, next) => {
 });
 
 function sendAiError(res, error, context) {
+  // Cota de IA esgotada: não bloqueia gestão, só pausa o recurso e sinaliza top-up.
+  if (error?.name === "QuotaExceededError") {
+    console.warn(`[ai:${context}] quota_exceeded`, { resource: error.resource });
+    return res.status(402).json({
+      error: "Sua cota de ações de IA deste mês acabou.",
+      resource: error.resource,
+      reason: "quota_exceeded",
+    });
+  }
+
   const message = error?.message || "Erro ao processar IA.";
   const status = message.includes("ANTHROPIC_API_KEY")
     ? 500
@@ -97,7 +107,7 @@ router.get("/patient-summary/:patientId", async (req, res) => {
 // 2. Geração de rascunho de evolução
 router.post("/evolution-draft", async (req, res) => {
   try {
-    const draft = await generateEvolutionDraft(req.body);
+    const draft = await generateEvolutionDraft({ ...req.body, userId: req.user.id });
     res.json({ draft });
   } catch (error) {
     sendAiError(res, error, "evolution-draft");
@@ -121,7 +131,7 @@ router.post("/chat", async (req, res) => {
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "messages obrigatório" });
     }
-    const reply = await chatHelp(messages);
+    const reply = await chatHelp(messages, req.user.id);
     res.json({ reply });
   } catch (error) {
     sendAiError(res, error, "chat");

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "../../config/prisma.js";
+import { consumeQuota } from "../billing/quota.service.js";
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
 
@@ -11,7 +12,13 @@ function getClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 }
 
-async function createMessage(payload) {
+// userId debita 1 ação da cota de IA ANTES da chamada (choke-point único das 8 fns).
+// Se a cota estourar, consumeQuota lança QuotaExceededError e nem chega na Anthropic.
+// meta opcional identifica a função de origem no log de eventos.
+async function createMessage(payload, userId, meta = null) {
+  if (userId) {
+    await consumeQuota(userId, "ai", 1, meta);
+  }
   try {
     return await getClient().messages.create(payload);
   } catch (error) {
@@ -99,13 +106,13 @@ export async function generatePatientSummary(patientId, userId) {
         content: `Com base no histórico abaixo, gere um resumo clínico conciso (3 a 5 frases) para ser lido rapidamente antes de uma consulta. Inclua: procedimentos realizados, datas relevantes, padrão de resposta e qualquer ponto de atenção. Seja direto e técnico.\n\n${historico}`,
       },
     ],
-  });
+  }, userId, { fn: "generatePatientSummary", patientId });
 
   return response.content[0].text;
 }
 
 export async function generateEvolutionDraft(data) {
-  const { procedureName, dose, region, notes, patientName } = data;
+  const { procedureName, dose, region, notes, patientName, userId } = data;
 
   const response = await createMessage({
     model: MODEL,
@@ -125,7 +132,7 @@ ${region ? `Região: ${region}` : ""}
 ${notes ? `Observações do profissional: ${notes}` : ""}`,
       },
     ],
-  });
+  }, userId, { fn: "generateEvolutionDraft" });
 
   return response.content[0].text;
 }
@@ -352,7 +359,7 @@ DADOS:
 ${JSON.stringify(findings, null, 2)}`,
       },
     ],
-  });
+  }, userId, { fn: "analyzeFinancialHealth" });
 
   try {
     return extractJson(response.content[0].text);
@@ -519,7 +526,7 @@ DADOS:
 ${JSON.stringify(findings, null, 2)}`,
       },
     ],
-  });
+  }, userId, { fn: "analyzeProductHealth" });
 
   try {
     return extractJson(response.content[0].text);
@@ -748,7 +755,7 @@ Data de hoje: ${today}.`,
       system: [systemPrompt],
       tools: REPORT_TOOLS,
       messages: allMessages,
-    });
+    }, userId, { fn: "chatReports" });
 
     if (response.stop_reason === "end_turn") {
       const text = response.content.find((b) => b.type === "text");
@@ -778,7 +785,7 @@ Data de hoje: ${today}.`,
   return "Não consegui processar sua pergunta. Tente novamente.";
 }
 
-export async function chatHelp(messages) {
+export async function chatHelp(messages, userId) {
   const systemPrompt = {
     type: "text",
     text: `Você é o assistente de suporte do Iasoclin, um sistema de gestão para clínicas de harmonização facial e estética.
@@ -804,7 +811,7 @@ Se a pergunta não for sobre o sistema, responda: "Posso ajudar apenas com dúvi
     max_tokens: 400,
     system: [systemPrompt],
     messages: messages.map((m) => ({ role: m.role, content: m.content })),
-  });
+  }, userId, { fn: "chatHelp" });
 
   return response.content[0].text;
 }
@@ -856,7 +863,7 @@ Retorne apenas a frase, sem mais nada.`;
     model: MODEL,
     max_tokens: 80,
     messages: [{ role: "user", content: prompt }],
-  });
+  }, userId, { fn: "generateDailyInsight" });
 
   return response.content[0].text.trim().replace(/^["']|["']$/g, "");
 }

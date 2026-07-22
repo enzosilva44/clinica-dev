@@ -5,9 +5,11 @@ import {
   createCharge, listCharges, getCharge, cancelCharge, simulatePayment,
   getBalance, createTransfer, listTransfers,
   saveConfig, getConfig, handleWebhook, sendPaymentLink,
-  createSubaccount,
+  createSubaccount, syncIasopayWallet, getIasopayWalletId,
 } from "./billing.service.js";
 import { contratar } from "./contract.service.js";
+import { getUsage } from "./quota.service.js";
+import { createTopupCharge } from "./usage.service.js";
 
 const router = Router();
 
@@ -49,6 +51,44 @@ router.post("/contratar", authMiddleware, async (req, res) => {
     console.error("[/billing/contratar]", e.message);
     res.status(400).json({ error: e.message });
   }
+});
+
+// ── cotas de uso (todos os planos têm; NÃO exige faturamento) ───────────────────
+// Medidor de consumo (IA/WhatsApp/…) para o app e para o painel admin.
+router.get("/usage", authMiddleware, async (req, res) => {
+  try {
+    const usage = await getUsage(req.user.id);
+    res.json(usage);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// Compra de top-up avulso (gera cobrança PIX na conta RAIZ da Iaso; crédito no webhook).
+router.post("/usage/topup", authMiddleware, async (req, res) => {
+  try {
+    const { resource, pack } = req.body;
+    if (!resource || !pack) return res.status(400).json({ error: "resource e pack são obrigatórios." });
+    const result = await createTopupCharge(req.user.id, resource, pack);
+    res.json(result);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── IASOPay (plataforma / admin) ────────────────────────────────────────────────
+// walletId da conta RAIZ que recebe a comissão do Split. Operação de plataforma:
+// exige ADMIN, fora do escopo de "faturamento" (que é por clínica).
+router.get("/iasopay-wallet", authMiddleware, async (req, res) => {
+  if (req.user.role !== "ADMIN") return res.status(403).json({ error: "Acesso negado." });
+  try {
+    const walletId = await getIasopayWalletId();
+    res.json({ walletId, configured: !!walletId });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+router.post("/iasopay-wallet/sync", authMiddleware, async (req, res) => {
+  if (req.user.role !== "ADMIN") return res.status(403).json({ error: "Acesso negado." });
+  try {
+    const result = await syncIasopayWallet(req.user?.name ?? "Admin");
+    res.json(result);
+  } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 router.use(authMiddleware, requireFeature("faturamento"));
@@ -93,7 +133,15 @@ router.post("/charges/:id/send-link", async (req, res) => {
   try {
     const result = await sendPaymentLink(req.user.id, req.params.id);
     res.json(result);
-  } catch (e) { res.status(400).json({ error: e.message }); }
+  } catch (e) {
+    if (e?.name === "QuotaExceededError") {
+      return res.status(402).json({
+        error: "Sua cota de mensagens de WhatsApp deste mês acabou.",
+        resource: "whatsapp", reason: "quota_exceeded",
+      });
+    }
+    res.status(400).json({ error: e.message });
+  }
 });
 
 // ── saldo & transferências ─────────────────────────────────────────────────────

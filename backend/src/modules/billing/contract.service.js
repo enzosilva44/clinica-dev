@@ -112,7 +112,7 @@ async function notifyCS(user) {
 
 // Card no CRM entra automaticamente em "fechado". Reaproveita o Lead criado
 // na demo (casado por telefone), promovendo "demo" → "fechado".
-async function upsertLead(user, acquisitionChannel) {
+async function upsertLead(user, acquisitionChannel, value) {
   // e-mail de login da demo é sintético (demo+...@demo.iasoclin); casa por telefone.
   const existing = user.phone
     ? await prisma.lead.findFirst({ where: { phone: user.phone }, orderBy: { createdAt: "desc" } })
@@ -124,6 +124,7 @@ async function upsertLead(user, acquisitionChannel) {
     clinicName: user.clinicName || null,
     source: "self-service",
     status: "fechado",
+    value: value ?? null, // MRR do plano contratado — alimenta "Fechados (MRR)" no kanban
   };
   if (existing) {
     // preserva o e-mail real coletado na demo, se houver
@@ -181,7 +182,7 @@ export async function contratar(userId, payload) {
 
   // 3. Efeitos colaterais (não bloqueiam a resposta de sucesso).
   await registerFinancialEntry(updated, plan, price);
-  await upsertLead(updated, acquisitionChannel);
+  await upsertLead(updated, acquisitionChannel, price);
   await notifyCS(updated);
   await sendAccessEmail(updated.email, { name: updated.name }).catch((e) =>
     console.error("[contratar] sendAccessEmail:", e.message)

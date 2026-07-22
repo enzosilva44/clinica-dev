@@ -8,6 +8,7 @@ import {
 } from "./automation.service.js";
 import { prisma } from "../../config/prisma.js";
 import { sendWhatsAppMessage } from "../whatsapp/whatsapp.provider.js";
+import { checkQuota, consumeQuota } from "../billing/quota.service.js";
 
 export async function getTemplates(req, res) {
   await ensureDefaultTemplates(req.user.id);
@@ -36,6 +37,16 @@ export async function notifyCustom(req, res) {
   const { phone, message, patientId, patientName, type = "confirmation" } = req.body;
   if (!phone || !message) return res.status(400).json({ error: "phone e message são obrigatórios" });
 
+  // Cota de WhatsApp esgotada: pausa o envio e oferece top-up (não afeta demais módulos).
+  const quota = await checkQuota(req.user.id, "whatsapp");
+  if (!quota.ok) {
+    return res.status(402).json({
+      error: "Sua cota de mensagens de WhatsApp deste mês acabou.",
+      resource: "whatsapp",
+      reason: "quota_exceeded",
+    });
+  }
+
   const log = await prisma.automationLog.create({
     data: {
       userId: req.user.id,
@@ -49,6 +60,7 @@ export async function notifyCustom(req, res) {
 
   try {
     await sendWhatsAppMessage(phone, message);
+    await consumeQuota(req.user.id, "whatsapp", 1, { type, source: "notifyCustom" });
     await prisma.automationLog.update({ where: { id: log.id }, data: { status: "sent", sentAt: new Date() } });
     res.json({ ok: true });
   } catch (err) {

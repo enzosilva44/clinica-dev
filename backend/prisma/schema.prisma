@@ -101,7 +101,43 @@ model User {
   anamnesisResponses    AnamnesisResponse[]
   cardFees              CardFee[]
   portfolioCases        PortfolioCase[]
+  usageCounters         UsageCounter[]
+  usageEvents           UsageEvent[]
   clinic                Clinic?              @relation(fields: [clinicId], references: [id])
+}
+
+// Saldo/consumo do ciclo atual por tenant (User) e por recurso medido.
+// Uma linha por userId × resource × mês. limit copiado do plano no nascimento da
+// linha (mudança de plano no meio do mês não reescreve retroativo). Reset é lazy:
+// a linha do próximo mês nasce zerada na 1ª ação do novo período.
+model UsageCounter {
+  id          String   @id @default(cuid())
+  userId      String
+  resource    String   // "ai" | "whatsapp" | futuros (string livre)
+  periodStart DateTime // 1º dia do mês (UTC), âncora do ciclo
+  limit       Int?     // null = ilimitado (plano dev/enterprise ou recurso sem cota)
+  used        Int      @default(0)
+  topup       Int      @default(0) // avulso comprado no ciclo
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, resource, periodStart])
+  @@index([userId, resource])
+}
+
+// Log append-only de cada débito — fonte de verdade p/ auditoria, dashboard de
+// consumo e conferência de margem/fatura. used do counter é só o agregado rápido.
+model UsageEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  resource  String
+  cost      Int      @default(1)
+  meta      Json?    // ex: { fn: "generatePatientSummary", patientId }
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, resource, createdAt])
 }
 
 model Patient {
@@ -532,6 +568,11 @@ model Transaction {
   feeAmount          Float?       // custo da taxa em R$ (amount * feePercent)
   netAmount          Float?       // valor líquido recebido (amount - feeAmount)
   settlementType     String?      // imediato | crediario — compensação do recebimento no cartão
+  // Split de pagamento (Asaas): comissão IASOPay retida na cobrança clínica→paciente.
+  splitApplied       Boolean      @default(false) // true se a cobrança saiu com split
+  splitType          String?      // PERCENTAGE | FIXED — tipo enviado ao Asaas
+  splitValue         Float?       // valor/percentual configurado no momento da cobrança
+  iasoRevenue        Float?       // R$ estimado da comissão IASOPay nesta cobrança
   appointment        Appointment? @relation(fields: [appointmentId], references: [id])
   budget             Budget?      @relation(fields: [budgetId], references: [id])
   patient            Patient?     @relation(fields: [patientId], references: [id])
@@ -885,4 +926,19 @@ model CardFee {
   user             User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+// Configuração do Split de Pagamentos por método (parametrizada no banco, sem
+// hardcode). Uma linha por paymentMethod. A aplicação decide entre percentualValue
+// (PERCENTAGE) e fixedValue (FIXED) na hora de montar o payload do Asaas.
+// paymentMethod: pix | credit_card | boleto   (mesmos labels internos do createCharge)
+// splitType:     PERCENTAGE | FIXED
+model SplitConfig {
+  id           String   @id @default(cuid())
+  paymentMethod String  @unique          // pix | credit_card | boleto
+  splitType    String                    // PERCENTAGE | FIXED
+  splitValue   Float                     // 0.20 (=0,20% se PERCENTAGE, =R$0,20 se FIXED)
+  active       Boolean  @default(true)    // false ⇒ não aplica split neste método
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
 }

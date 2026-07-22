@@ -1,4 +1,6 @@
 import { prisma } from "../../config/prisma.js";
+import { checkQuota, consumeQuota } from "./quota.service.js";
+import { buildSplit } from "./split.service.js";
 
 const BASE_URL = process.env.ASAAS_URL ?? "https://sandbox.asaas.com/api/v3";
 
@@ -120,6 +122,19 @@ export async function createCharge(userId, data) {
 
   const billingType = { pix: "PIX", credit_card: "CREDIT_CARD", boleto: "BOLETO" }[data.method] ?? "PIX";
 
+  // Split IASOPay: comissão retida na cobrança clínica→paciente. buildSplit decide
+  // percentual vs fixo pela config do banco e omite o split (applied=false) em
+  // qualquer caso inválido — a cobrança nunca quebra por causa do split.
+  const clinic = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { asaasWalletId: true },
+  });
+  const splitResult = await buildSplit({
+    paymentMethod: data.method,
+    amount: Number(data.amount),
+    clinicWalletId: clinic?.asaasWalletId,
+  });
+
   const payload = {
     customer: customer.id,
     billingType,
@@ -131,6 +146,7 @@ export async function createCharge(userId, data) {
       ? Number(data.installments) : undefined,
     installmentValue: billingType === "CREDIT_CARD" && data.installments > 1
       ? Math.round((Number(data.amount) / Number(data.installments)) * 100) / 100 : undefined,
+    split: splitResult.split, // undefined quando não se aplica → Asaas ignora
   };
 
   let charge;
@@ -142,10 +158,16 @@ export async function createCharge(userId, data) {
     throw err;
   }
 
-  // salva o ID do Asaas no notes para rastreabilidade bidirecional
+  // salva o ID do Asaas + o resultado do split no Transaction (rastreabilidade).
   await prisma.transaction.update({
     where: { id: transaction.id },
-    data: { notes: `asaas:${charge.id}` },
+    data: {
+      notes: `asaas:${charge.id}`,
+      splitApplied: splitResult.applied,
+      splitType:    splitResult.applied ? splitResult.config.splitType  : null,
+      splitValue:   splitResult.applied ? splitResult.config.splitValue : null,
+      iasoRevenue:  splitResult.applied ? splitResult.iasoRevenue       : null,
+    },
   });
 
   return { ...charge, transactionId: transaction.id };
@@ -347,11 +369,95 @@ export async function createSubaccount(userId, { incomeValue } = {}) {
     },
   });
 
+  // Registra o webhook NA subconta (com a apiKey dela) apontando de volta pro
+  // nosso endpoint. Não-bloqueante: se falhar, a subconta já está criada/salva —
+  // o webhook pode ser reconfigurado depois sem refazer a conta.
+  let webhook = null;
+  if (account.apiKey) {
+    try {
+      webhook = await registerSubaccountWebhook(account.apiKey);
+    } catch (err) {
+      console.warn(`[subaccount] webhook não registrado p/ ${account.id}: ${err.message}`);
+    }
+  }
+
   return {
     accountId: account.id,
     walletId:  account.walletId,
     status:    account.status || account.accountStatus || "pending",
+    webhookRegistered: !!webhook,
   };
+}
+
+// URL pública do nosso endpoint de webhook. Override explícito via
+// ASAAS_WEBHOOK_URL; senão deriva de APP_URL; senão o domínio padrão.
+function webhookEndpoint() {
+  if (process.env.ASAAS_WEBHOOK_URL) return process.env.ASAAS_WEBHOOK_URL;
+  const base = (process.env.APP_URL || "https://sistema.iasoclin.com.br").replace(/\/$/, "");
+  return `${base}/billing/webhook`;
+}
+
+// Cria o webhook na subconta (chamada feita COM a apiKey da subconta). Todos os
+// eventos de pagamento relevantes ao split são assinados. O authToken viaja no
+// header `asaas-access-token` — o mesmo que billing.routes valida.
+export async function registerSubaccountWebhook(subaccountApiKey) {
+  const url = webhookEndpoint();
+  const payload = {
+    name: "IASOPay",
+    url,
+    email: process.env.ASAAS_WEBHOOK_EMAIL || undefined,
+    enabled: true,
+    interrupted: false,
+    authToken: process.env.ASAAS_WEBHOOK_TOKEN || undefined,
+    sendType: "SEQUENTIALLY",
+    events: [
+      "PAYMENT_RECEIVED",
+      "PAYMENT_CONFIRMED",
+      "PAYMENT_REFUNDED",
+      "PAYMENT_DELETED",
+      "PAYMENT_OVERDUE",
+    ],
+  };
+  return asaas("POST", "/webhooks", payload, subaccountApiKey);
+}
+
+// ─── IASOPay: walletId da conta RAIZ (destino do Split) ──────────────────────
+// O Split do Asaas divide para uma walletId de destino, não para uma apiKey.
+// A comissão da IASO cai na wallet da conta root. Descobrimos 1x via GET /wallets
+// com a chave raiz e guardamos em AdminSetting (key-value, sem migração).
+
+const IASOPAY_WALLET_KEY = "iasopay_wallet_id";
+
+// Busca no Asaas a walletId da conta root e persiste. Idempotente: pode rodar
+// de novo para atualizar. Aceita override por env (ASAAS_ROOT_WALLET_ID) sem
+// bater na API.
+export async function syncIasopayWallet(updatedBy = "Sistema") {
+  const rootKey = process.env.ASAAS_API_KEY;
+  if (!rootKey) throw new Error("Chave raiz Asaas (ASAAS_API_KEY) não configurada no servidor.");
+
+  let walletId = process.env.ASAAS_ROOT_WALLET_ID;
+  if (!walletId) {
+    const res = await asaas("GET", "/wallets", null, rootKey);
+    // A conta root costuma ter uma única wallet; usa a primeira retornada.
+    walletId = res?.data?.[0]?.id;
+    if (!walletId) throw new Error("Não foi possível obter a walletId da conta raiz Asaas (GET /wallets vazio).");
+  }
+
+  await prisma.adminSetting.upsert({
+    where:  { key: IASOPAY_WALLET_KEY },
+    update: { value: { walletId }, updatedBy },
+    create: { key: IASOPAY_WALLET_KEY, value: { walletId }, updatedBy },
+  });
+
+  return { walletId };
+}
+
+// Lê a walletId root já sincronizada. Retorna null se ainda não configurada —
+// nesse caso o Split é omitido (cobrança segue 100% na clínica, sem quebrar).
+export async function getIasopayWalletId() {
+  if (process.env.ASAAS_ROOT_WALLET_ID) return process.env.ASAAS_ROOT_WALLET_ID;
+  const row = await prisma.adminSetting.findUnique({ where: { key: IASOPAY_WALLET_KEY } });
+  return row?.value?.walletId ?? null;
 }
 
 // ─── envio de link via WhatsApp ───────────────────────────────────────────────
@@ -375,7 +481,15 @@ export async function sendPaymentLink(userId, chargeId) {
 
   if (!phone) throw new Error("Paciente sem telefone cadastrado para envio do link.");
 
-  const { sendWhatsAppMessage } = await import("../whatsapp/whatsapp.provider.js");
+  const patientName = charge.externalReference
+    ? (await prisma.transaction.findUnique({
+        where: { id: charge.externalReference },
+        select: { patient: { select: { name: true } } },
+      }))?.patient?.name
+    : null;
+
+  const { sendWhatsAppMessage, sendWhatsAppTemplate } = await import("../whatsapp/whatsapp.provider.js");
+  const { getActiveTemplate, interpolate } = await import("../automations/automation.service.js");
 
   // Credenciais WhatsApp do usuário/clínica com fallback para env
   const userWa = await prisma.user.findUnique({
@@ -390,14 +504,38 @@ export async function sendPaymentLink(userId, chargeId) {
     throw new Error("WhatsApp não configurado. Acesse Automações → Conexão e salve suas credenciais.");
   }
 
+  // Cota de WhatsApp esgotada: bloqueia só o envio do link (controller traduz em 402).
+  const quota = await checkQuota(userId, "whatsapp");
+  if (!quota.ok) {
+    const { QuotaExceededError } = await import("./quota.service.js");
+    throw new QuotaExceededError("whatsapp", { used: quota.used, limit: quota.limit });
+  }
+
   const method = { PIX: "PIX", CREDIT_CARD: "Cartão de crédito", BOLETO: "Boleto" }[charge.billingType] ?? charge.billingType;
   const value  = Number(charge.value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const firstName = (patientName || "").split(" ")[0] || "tudo bem";
 
-  const message =
-    `Olá! Segue o link para pagamento da sua cobrança no valor de *${value}* (${method}):\n\n${link}\n\nEm caso de dúvidas, entre em contato conosco.`;
+  // Envio proativo (fora da janela de 24h) exige Message Template aprovado na Meta.
+  // O link vai como VARIÁVEL do template "link_pagamento" — 1 template serve p/
+  // toda cobrança. Se a clínica tem o template ativo, usa-o; senão, cai em texto
+  // livre (só entrega dentro da janela de 24h, mas mantém compatibilidade).
+  const tpl = await getActiveTemplate(userId, "payment_link");
+  if (tpl?.metaTemplateName) {
+    const vars = { nome: firstName, valor: `${value} (${method})`, link };
+    const params = (tpl.metaVariables || []).map((k) => vars[k] ?? "");
+    await sendWhatsAppTemplate(phone, tpl.metaTemplateName, params, {
+      ...waConfig,
+      language: tpl.metaLanguage || "pt_BR",
+    });
+  } else {
+    const message = tpl
+      ? interpolate(tpl.body, { nome: firstName, valor: `${value} (${method})`, link })
+      : `Olá! Segue o link para pagamento da sua cobrança no valor de *${value}* (${method}):\n\n${link}\n\nEm caso de dúvidas, entre em contato conosco.`;
+    await sendWhatsAppMessage(phone, message, waConfig);
+  }
 
-  await sendWhatsAppMessage(phone, message, waConfig);
-  return { ok: true, phone, link };
+  await consumeQuota(userId, "whatsapp", 1, { source: "sendPaymentLink", chargeId: charge.id });
+  return { ok: true, phone, link, viaTemplate: !!tpl?.metaTemplateName };
 }
 
 // ─── webhook ──────────────────────────────────────────────────────────────────
@@ -419,11 +557,44 @@ export async function handleWebhook(event) {
   // ── Cobrança avulsa (Financeiro da clínica → paciente) ────────────────────
   if (!payment.externalReference) return;
 
+  // Top-up de cota (CLÍNICA→IASO): externalReference = "topup:<user>:<res>:<amt>".
+  // Ao confirmar, credita as unidades avulsas no ciclo atual.
+  if (payment.externalReference.startsWith("topup:")) {
+    if (type === "PAYMENT_CONFIRMED" || type === "PAYMENT_RECEIVED") {
+      const { creditTopupFromWebhook } = await import("./usage.service.js");
+      await creditTopupFromWebhook(payment.externalReference);
+    }
+    return;
+  }
+
   if (type === "PAYMENT_CONFIRMED" || type === "PAYMENT_RECEIVED") {
     await prisma.transaction.updateMany({
       where: { id: payment.externalReference },
       data: { status: "pago", paidAt: new Date() },
     });
+    // Split: a comissão IASOPay já foi registrada no createCharge (iasoRevenue).
+    // O recebimento apenas confirma; não recalcula para não divergir do que o
+    // Asaas efetivamente reteve. Log de conciliação.
+    const tx = await prisma.transaction.findUnique({
+      where: { id: payment.externalReference },
+      select: { splitApplied: true, iasoRevenue: true },
+    });
+    if (tx?.splitApplied) {
+      console.log(`[webhook] cobrança ${payment.id} recebida com split — comissão IASOPay ≈ R$${tx.iasoRevenue ?? 0}.`);
+    }
+  }
+
+  // Estorno ou exclusão da cobrança: reverte a Transaction no Financeiro da clínica.
+  // O Asaas também estorna o split proporcionalmente; aqui só refletimos o status.
+  if (type === "PAYMENT_REFUNDED" || type === "PAYMENT_DELETED") {
+    const newStatus = type === "PAYMENT_REFUNDED" ? "estornado" : "cancelado";
+    const res = await prisma.transaction.updateMany({
+      where: { id: payment.externalReference },
+      data: { status: newStatus, paidAt: null },
+    });
+    if (res.count) {
+      console.log(`[webhook] cobrança ${payment.id} → ${newStatus} (Transaction ${payment.externalReference}).`);
+    }
   }
 
   if (type === "PAYMENT_OVERDUE") {

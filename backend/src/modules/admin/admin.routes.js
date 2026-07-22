@@ -205,6 +205,65 @@ router.get("/stats", async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
+// ── COTAS / CONSUMO (Tecnologia) ──────────────────────────────────────────────
+// Consumo do ciclo atual (IA/WhatsApp/…) por clínica, com totais agregados.
+// Alimenta o submódulo "Cotas & Consumo" do painel admin.
+router.get("/usage", async (req, res) => {
+  try {
+    const { QUOTA_RESOURCES, getResourceLimit } = await import("../../config/quotas.js");
+    const { currentPeriodStart } = await import("../billing/quota.service.js");
+    const periodStart = currentPeriodStart();
+
+    const counters = await prisma.usageCounter.findMany({
+      where: { periodStart },
+      select: { userId: true, resource: true, used: true, limit: true, topup: true },
+    });
+
+    const clinics = await prisma.user.findMany({
+      where: { role: "PROFESSIONAL" },
+      select: { id: true, name: true, email: true, plan: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const byUser = new Map();
+    for (const c of counters) {
+      if (!byUser.has(c.userId)) byUser.set(c.userId, {});
+      byUser.get(c.userId)[c.resource] = c;
+    }
+
+    const activeResources = Object.entries(QUOTA_RESOURCES)
+      .filter(([, m]) => m.active)
+      .map(([k, m]) => ({ resource: k, label: m.label, unit: m.unit }));
+
+    const totals = {};
+    for (const { resource } of activeResources) totals[resource] = { used: 0, limit: 0, topup: 0 };
+
+    const rows = clinics.map((clinic) => {
+      const usage = {};
+      for (const { resource } of activeResources) {
+        const counter = byUser.get(clinic.id)?.[resource];
+        // limite efetivo: o gravado na linha do ciclo, ou o do plano se ainda não houver linha
+        const planLimit = getResourceLimit(clinic.plan, resource);
+        const limit = counter?.limit ?? planLimit; // null = ilimitado
+        const used = counter?.used ?? 0;
+        const topup = counter?.topup ?? 0;
+        const cap = limit == null ? null : limit + topup;
+        usage[resource] = {
+          used, limit, topup,
+          remaining: cap == null ? null : Math.max(0, cap - used),
+          percent: cap && cap > 0 ? Math.min(100, Math.round((used / cap) * 100)) : null,
+        };
+        totals[resource].used += used;
+        if (limit != null) totals[resource].limit += limit;
+        totals[resource].topup += topup;
+      }
+      return { id: clinic.id, name: clinic.name, email: clinic.email, plan: clinic.plan, usage };
+    });
+
+    res.json({ periodStart, resources: activeResources, totals, clinics: rows });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
 // ── SAÚDE DO SISTEMA (Tecnologia) ─────────────────────────────────────────────
 router.get("/health", async (req, res) => {
   const checks = {};
