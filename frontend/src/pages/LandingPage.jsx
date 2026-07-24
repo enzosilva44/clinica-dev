@@ -72,7 +72,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <a href={ADMIN_URL} className="hidden sm:block text-sm text-gray-400 font-medium hover:text-verde transition">Área Admin</a>
             <button onClick={() => navigate("/login")} className="text-sm text-verde font-medium hover:opacity-70 transition">Entrar</button>
-            <button onClick={() => navigate("/cadastro")} className="bg-verde hover:bg-verde-900 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
+            <button onClick={() => navigate("/comece-agora")} className="bg-verde hover:bg-verde-900 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
               Começar grátis
             </button>
           </div>
@@ -94,7 +94,7 @@ export default function LandingPage() {
               Agenda, cobranças, anamnese e WhatsApp em um só lugar. A gente cuida da rotina com você — pra sua clínica crescer com previsibilidade, no controle.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <button onClick={() => navigate("/cadastro")}
+              <button onClick={() => navigate("/comece-agora")}
                 className="bg-verde hover:bg-verde-900 text-white px-6 py-3.5 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-verde/15">
                 Teste grátis por 14 dias <ChevronRight size={16} />
               </button>
@@ -255,7 +255,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <button onClick={() => navigate("/cadastro")}
+              <button onClick={() => navigate("/comece-agora")}
                 className={`w-full py-3 rounded-xl text-sm font-semibold transition ${
                   plan.highlight ? "bg-verde hover:bg-verde-900 text-white" : "border border-creme-200 text-verde hover:bg-creme-50"
                 }`}>
@@ -373,7 +373,7 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="flex flex-col sm:items-end gap-3">
-              <button onClick={() => navigate("/cadastro")}
+              <button onClick={() => navigate("/comece-agora")}
                 className="bg-white text-verde px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-creme-50 transition">
                 Criar conta grátis
               </button>
