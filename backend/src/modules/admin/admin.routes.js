@@ -654,8 +654,10 @@ router.delete("/leads/:id", async (req, res) => {
 });
 
 // ── FINANCEIRO ────────────────────────────────────────────────────────────────
-const PLAN_MRR = { solo: 97,   clinica: 197,   enterprise: 497,   dev: 0 };
-const PLAN_ARR = { solo: 970,  clinica: 1970,  enterprise: 4970,  dev: 0 }; // valor contratado anual
+// Preços oficiais (espelho de frontend/src/config/plans.js — manter em sincronia).
+// ARR = 12× mensal com 10% de desconto anual. Enterprise é sob consulta (0 no cálculo).
+const PLAN_MRR = { solo: 99,    clinica: 139,    pro: 159,    enterprise: 0,    dev: 0 };
+const PLAN_ARR = { solo: 1069.20, clinica: 1501.20, pro: 1717.20, enterprise: 0, dev: 0 }; // 12× mensal −10%
 
 // Sócios e proporção do rateio de despesas (conciliação de sociedade)
 const SOCIOS = [
@@ -737,8 +739,8 @@ router.get("/financial", async (req, res) => {
 });
 
 // ── BILLING (faturamento esperado por cliente) ────────────────────────────────
-const PLAN_MRR_VAL = { solo: 97,  clinica: 197,  enterprise: 497,  dev: 0 };
-const PLAN_ARR_VAL = { solo: 970, clinica: 1970, enterprise: 4970, dev: 0 };
+const PLAN_MRR_VAL = { solo: 99,    clinica: 139,    pro: 159,    enterprise: 0, dev: 0 };
+const PLAN_ARR_VAL = { solo: 1069.20, clinica: 1501.20, pro: 1717.20, enterprise: 0, dev: 0 };
 
 router.patch("/financial/billing/:id/cycle", async (req, res) => {
   try {

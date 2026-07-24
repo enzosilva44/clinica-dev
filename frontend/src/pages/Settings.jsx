@@ -5,6 +5,7 @@ import { Card } from "../components/ui";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useFeatures } from "../hooks/useFeatures";
+import { PLANS_BY_ID } from "../config/plans.js";
 import CardFeesSettings from "../components/settings/CardFeesSettings";
 import toast from "react-hot-toast";
 
@@ -17,12 +18,12 @@ const PLANS = {
 
 const PLAN_OPTIONS = [
   {
-    id: "solo", label: "Solo", price: "R$ 197", period: "/mês",
+    id: "solo", label: "Solo", price: PLANS_BY_ID.solo.priceMonthlyLabel, period: "/mês",
     desc: "Para profissionais autônomos",
     features: ["1 usuário","Pacientes ilimitados","Agenda + Evoluções","Mapa de procedimentos","Assinatura eletrônica (10/mês)","IA básica"],
   },
   {
-    id: "clinica", label: "Clínica", price: "R$ 447", period: "/mês",
+    id: "clinica", label: "Clínica", price: PLANS_BY_ID.clinica.priceMonthlyLabel, period: "/mês",
     desc: "Para clínicas em crescimento", highlight: true,
     features: ["Até 5 usuários","Tudo do Solo","WhatsApp Automações","Assinatura ilimitada","Faturamento + links","Guardião IA Financeiro","Analytics avançado"],
   },

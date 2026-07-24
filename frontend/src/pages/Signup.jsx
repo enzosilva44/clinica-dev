@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { mensagemDeErro } from "../lib/tomDeVoz";
 import { useAuth } from "../contexts/AuthContext";
 import { LogoMark } from "../components/ui/Logo.jsx";
+import { PLANS_BY_ID } from "../config/plans.js";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -28,12 +29,12 @@ const LABEL = "text-xs font-semibold text-gray-500 mb-1.5 block";
 
 const PLANS = [
   {
-    id: "solo", name: "Solo", price: "R$ 197", period: "/mês",
+    id: "solo", name: "Solo", price: PLANS_BY_ID.solo.priceMonthlyLabel, period: "/mês",
     desc: "Para profissionais autônomos",
     features: ["1 usuário","Pacientes ilimitados","Agenda + Evoluções","Mapa de procedimentos","Documentos + Assinatura (10/mês)","IA básica"],
   },
   {
-    id: "clinica", name: "Clínica", price: "R$ 447", period: "/mês",
+    id: "clinica", name: "Clínica", price: PLANS_BY_ID.clinica.priceMonthlyLabel, period: "/mês",
     desc: "Para clínicas em crescimento", highlight: true,
     features: ["Até 5 usuários","Tudo do Solo","WhatsApp Automações","Assinatura eletrônica ilimitada","Faturamento + links de pagamento","Guardião IA Financeiro","Analytics avançado"],
   },

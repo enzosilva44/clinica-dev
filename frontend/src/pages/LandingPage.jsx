@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CalendarCheck, CreditCard, FileSignature, MessageSquare, Sparkles,
-  BarChart2, Check, ChevronRight, Star, Quote,
+  CalendarCheck, Stethoscope, FileSignature, MessageSquare, Sparkles,
+  Wallet, Check, ChevronRight, Star, Quote, ShieldCheck, Package, RotateCcw,
   Target, Compass, Heart,
 } from "lucide-react";
 import { LogoMark } from "../components/ui/Logo.jsx";
+import { PLANS, ANNUAL_DISCOUNT, BRL } from "../config/plans.js";
 
 // URL da área administrativa (app separado)
 const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || "https://admin.iasoclin.com.br";
@@ -22,40 +24,24 @@ function Logo({ light = false }) {
 }
 
 const FEATURES = [
-  { icon: CalendarCheck, title: "Agenda inteligente",  desc: "Agendamento online com confirmação automática por WhatsApp. Bloqueios, recorrências e lembretes sem esforço." },
-  { icon: CreditCard,    title: "Cobranças via Asaas", desc: "Link de pagamento, boleto e PIX gerados automaticamente. Receita em dia e a acompanhar tudo no painel." },
-  { icon: FileSignature, title: "Anamnese digital",    desc: "Formulários completos com assinatura digital. Conformidade legal, sem impressão, sem papel perdido." },
-  { icon: MessageSquare, title: "WhatsApp integrado",  desc: "Mensagens automáticas de confirmação, lembrete e pós-atendimento. Ilimitado em todos os planos." },
-  { icon: Sparkles,      title: "IA assistente",       desc: "Identifica pacientes sumidos, sugere reagendamentos e gera mensagens personalizadas com um clique." },
-  { icon: BarChart2,     title: "Relatórios claros",   desc: "Faturamento, ticket médio, taxa de confirmação e histórico de pacientes. Dados que fazem sentido." },
+  { icon: CalendarCheck, title: "Agenda & sessões",        desc: "Agendamentos, pacotes de sessões e atendimentos avulsos, com confirmação automática por WhatsApp." },
+  { icon: Stethoscope,   title: "Prontuário clínico",      desc: "Ficha do paciente, evolução e mapa dos procedimentos realizados em cada região do corpo." },
+  { icon: FileSignature, title: "Documentos jurídicos",    desc: "Anamnese e termos assinados virtualmente, com validade jurídica. Conformidade sem papel." },
+  { icon: Wallet,        title: "Financeiro automatizado", desc: "Cada agendamento vira lançamento. Caixa, estoque e receita conversando sozinhos." },
+  { icon: MessageSquare, title: "Faturamento por WhatsApp",desc: "Link de cobrança enviado automaticamente conforme o status do agendamento. Receita em dia." },
+  { icon: Sparkles,      title: "Insights com IA",         desc: "Leituras do negócio e ações práticas: pacientes sumidos, tendências e oportunidades." },
 ];
 
-const PLANS = [
-  {
-    name: "Solo", price: "R$ 69", period: "/mês", sub: "para 1 profissional",
-    features: ["Agenda completa", "WhatsApp ilimitado", "Cobranças via Asaas", "500 créditos de IA / mês", "20 assinaturas digitais / mês", "10 GB de armazenamento"],
-    highlight: false,
-  },
-  {
-    name: "Clínica", price: "R$ 119", period: "/mês", sub: "até 3 profissionais",
-    features: ["Tudo do Solo", "1.500 créditos de IA / mês", "60 assinaturas digitais / mês", "30 GB de armazenamento", "Relatórios com 12 meses de histórico", "Parcelamento em até 6x"],
-    highlight: true,
-  },
-  {
-    name: "Pro", price: "R$ 189", period: "/mês", sub: "até 5 profissionais",
-    features: ["Tudo da Clínica", "5.000 créditos de IA / mês", "Assinaturas ilimitadas", "100 GB de armazenamento", "Histórico completo de analytics", "Parcelamento em até 12x"],
-    highlight: false,
-  },
-];
-
-const DEPOIMENTOS = [
-  { nome: "Marina Figueiredo", clinica: "Estúdio de Estética · São Paulo", texto: "Antes eu controlava tudo no caderno. Hoje a agenda confirma sozinha e eu recebo por PIX sem nem precisar cobrar ninguém." },
-  { nome: "Camila Lopes",      clinica: "Clínica de Harmonização · Curitiba", texto: "A IA me avisou que três pacientes estavam sumidas. Mandei mensagem e duas delas reagendaram no mesmo dia. Isso paga o plano." },
-  { nome: "Roberto Pires",     clinica: "Dermato · Belo Horizonte", texto: "Finalmente um sistema que não parece feito para hospital. É simples, bonito e funciona. Minhas clientes adoram o link de pagamento." },
+// Guardião IA — o diferencial em destaque
+const GUARDIAO = [
+  { icon: ShieldCheck, title: "Guardião do financeiro",  desc: "Detecta divergências no caixa antes que virem prejuízo." },
+  { icon: Package,     title: "Guardião do estoque",     desc: "Avisa reposição e consumo fora do padrão por procedimento." },
+  { icon: RotateCcw,   title: "Reativação de pacientes", desc: "Identifica quem sumiu e prepara a mensagem de retorno." },
 ];
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const [annual, setAnnual] = useState(false); // toggle mensal/anual da seção de planos
 
   return (
     <div className="min-h-screen bg-white font-sans text-[#1F2D2A]">
@@ -67,7 +53,7 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-7 text-sm text-gray-500">
             <a href="#features"    className="hover:text-verde transition">Funcionalidades</a>
             <a href="#planos"      className="hover:text-verde transition">Planos</a>
-            <a href="#depoimentos" className="hover:text-verde transition">Depoimentos</a>
+            <a href="#tracao" className="hover:text-verde transition">Clínicas</a>
           </div>
           <div className="flex items-center gap-3">
             <a href={ADMIN_URL} className="hidden sm:block text-sm text-gray-400 font-medium hover:text-verde transition">Área Admin</a>
@@ -91,7 +77,7 @@ export default function LandingPage() {
               <span className="italic font-serif text-verde">jeito certo.</span>
             </h1>
             <p className="text-gray-500 text-base leading-relaxed mb-8 max-w-md">
-              Agenda, cobranças, anamnese e WhatsApp em um só lugar. A gente cuida da rotina com você — pra sua clínica crescer com previsibilidade, no controle.
+              Agenda, atendimentos, prontuário, financeiro e WhatsApp em um só lugar — com IA cuidando da rotina junto com você, pra sua clínica crescer no controle.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button onClick={() => navigate("/comece-agora")}
@@ -113,7 +99,7 @@ export default function LandingPage() {
                 <div className="flex items-center gap-0.5 text-ambar">
                   {[...Array(5)].map((_, i) => <Star key={i} size={11} fill="#C4895A" />)}
                 </div>
-                <p className="text-[11px] text-gray-400">+200 clínicas com a gente por perto · sem fidelidade</p>
+                <p className="text-[11px] text-gray-400">+100 clínicas ativas · sem fidelidade</p>
               </div>
             </div>
           </div>
@@ -187,82 +173,116 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── POR DENTRO DO SISTEMA ── */}
-      <section className="bg-creme-50 border-y border-creme-100">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <p className="text-xs font-semibold text-ambar uppercase tracking-widest mb-3">Por dentro do sistema</p>
-          <h2 className="text-3xl md:text-4xl font-black text-[#141414] leading-tight mb-12">
-            Números que<br /><span className="italic font-serif">falam por si.</span>
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Gráfico faturamento */}
-            <div className="bg-white border border-creme-100 rounded-2xl p-6">
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Faturamento mensal</p>
-              <p className="font-bold text-[#141414] mb-1">Acompanhe o crescimento da clínica em tempo real.</p>
-              <p className="text-xs text-gray-400 mb-6">Cada procedimento registrado vira dado. Cada dado vira decisão.</p>
-              <div className="flex items-end gap-2 h-28">
-                {[35, 45, 40, 60, 55, 80, 95].map((h, i) => (
-                  <div key={i} className="flex-1 rounded-t-md" style={{ height: `${h}%`, backgroundColor: i >= 5 ? "#00704A" : i >= 3 ? "#6F9B8E" : "#CDDFD8" }} />
-                ))}
-              </div>
-            </div>
-            {/* Cards à direita */}
-            <div className="space-y-6">
-              <div className="bg-verde rounded-2xl p-6 text-white">
-                <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wide mb-2">Taxa de confirmação</p>
-                <p className="text-5xl font-black mb-2">87%</p>
-                <p className="text-sm text-white/70">dos agendamentos confirmados automaticamente via WhatsApp.</p>
-              </div>
-              <div className="bg-white border border-creme-100 rounded-2xl p-6">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Sparkles size={13} className="text-ambar" />
-                  <span className="text-[10px] font-semibold text-ambar uppercase tracking-wide">IA iasoclin</span>
+      {/* ── GUARDIÃO IA ── */}
+      <section className="bg-verde-900 border-y border-verde-900">
+        <div className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <span className="inline-flex items-center gap-2 bg-white/10 text-verde-100 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
+              <ShieldCheck size={12} /> Diferencial iasoclin
+            </span>
+            <h2 className="text-3xl md:text-4xl font-black text-white leading-tight mb-4">
+              O <span className="italic font-serif text-ambar">Guardião</span> que vigia<br />o que você não tem tempo de olhar.
+            </h2>
+            <p className="text-white/60 leading-relaxed max-w-md">
+              Uma camada de IA acompanha financeiro e estoque em tempo real: alerta quando um número foge do esperado, quando um produto está acabando e quando um paciente parou de voltar — com a ação certa já sugerida.
+            </p>
+          </div>
+          <div className="space-y-4">
+            {GUARDIAO.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="bg-white/6 border border-white/10 rounded-2xl p-5 flex gap-4">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
+                  <Icon size={18} className="text-verde-100" />
                 </div>
-                <p className="font-bold text-[#141414] mb-1">Pacientes que somem, a IA encontra.</p>
-                <p className="text-sm text-gray-500">Detecção automática de pacientes sem retorno com sugestão de mensagem personalizada.</p>
+                <div>
+                  <h3 className="font-bold text-white mb-1">{title}</h3>
+                  <p className="text-sm text-white/55 leading-relaxed">{desc}</p>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ── PLANOS ── */}
       <section id="planos" className="max-w-6xl mx-auto px-6 py-20">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <p className="text-xs font-semibold text-ambar uppercase tracking-widest mb-3">Planos</p>
           <h2 className="text-3xl md:text-4xl font-black text-[#141414] mb-2">Simples assim.</h2>
           <p className="text-gray-500">Todos os recursos em todos os planos. Você escolhe pelo tamanho da sua clínica — a gente cresce junto.</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-5 items-start">
-          {PLANS.map((plan) => (
-            <div key={plan.name}
-              className={`rounded-2xl border p-6 relative ${plan.highlight ? "border-verde shadow-xl shadow-verde/10 bg-white" : "border-creme-100 bg-white"}`}>
-              {plan.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-verde text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                  Mais escolhido
-                </span>
-              )}
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{plan.name}</p>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-3xl font-black text-verde">{plan.price}</span>
-                <span className="text-sm text-gray-400">{plan.period}</span>
+
+        {/* Toggle mensal / anual */}
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <span className={`text-sm font-medium transition ${!annual ? "text-[#141414]" : "text-gray-400"}`}>Mensal</span>
+          <button
+            role="switch"
+            aria-checked={annual}
+            onClick={() => setAnnual((v) => !v)}
+            className="relative w-13 h-7 rounded-full transition-colors"
+            style={{ background: annual ? "var(--verde)" : "var(--creme-300)" }}
+          >
+            <span className="absolute top-0.75 w-5.5 h-5.5 rounded-full bg-white shadow transition-all"
+              style={{ left: annual ? "27px" : "3px" }} />
+          </button>
+          <span className={`text-sm font-medium transition ${annual ? "text-[#141414]" : "text-gray-400"}`}>
+            Anual <span className="text-verde font-bold">−{Math.round(ANNUAL_DISCOUNT * 100)}%</span>
+          </span>
+        </div>
+        <p className="text-center text-xs text-gray-400 mb-12">
+          {annual ? "Pague uma vez por ano e economize 10% em qualquer plano." : "Sem fidelidade. Cancele quando quiser."}
+        </p>
+
+        <div className="grid md:grid-cols-4 gap-4 items-start">
+          {PLANS.map((plan) => {
+            const isEnterprise = plan.monthly == null;
+            const price = annual ? plan.priceAnnualLabel : plan.priceMonthlyLabel;
+            return (
+              <div key={plan.id}
+                className={`rounded-2xl border p-6 relative ${plan.highlight ? "border-verde shadow-xl shadow-verde/10 bg-white" : "border-creme-100 bg-white"}`}>
+                {plan.highlight && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-verde text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                    Mais escolhido
+                  </span>
+                )}
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{plan.name}</p>
+
+                {isEnterprise ? (
+                  <div className="mb-1">
+                    <span className="text-2xl font-black text-verde">Sob consulta</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <span className="text-3xl font-black text-verde">{price}</span>
+                      <span className="text-sm text-gray-400">/mês</span>
+                    </div>
+                    {annual ? (
+                      <p className="text-[11px] text-verde font-semibold mb-1">
+                        Economize {BRL(plan.savings)}/ano
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-gray-300 mb-1">&nbsp;</p>
+                    )}
+                  </>
+                )}
+                <p className="text-xs text-gray-400 mb-5">{plan.sub}</p>
+
+                <ul className="space-y-2.5 mb-6">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-gray-600">
+                      <Check size={15} className="text-verde shrink-0 mt-0.5" /> {f}
+                    </li>
+                  ))}
+                </ul>
+                <button onClick={() => navigate(isEnterprise ? "/comece-agora" : "/comece-agora")}
+                  className={`w-full py-3 rounded-xl text-sm font-semibold transition ${
+                    plan.highlight ? "bg-verde hover:bg-verde-900 text-white" : "border border-creme-200 text-verde hover:bg-creme-50"
+                  }`}>
+                  {isEnterprise ? "Falar com a gente" : "Começar grátis"}
+                </button>
               </div>
-              <p className="text-xs text-gray-400 mb-5">{plan.sub}</p>
-              <ul className="space-y-2.5 mb-6">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-gray-600">
-                    <Check size={15} className="text-verde shrink-0 mt-0.5" /> {f}
-                  </li>
-                ))}
-              </ul>
-              <button onClick={() => navigate("/comece-agora")}
-                className={`w-full py-3 rounded-xl text-sm font-semibold transition ${
-                  plan.highlight ? "bg-verde hover:bg-verde-900 text-white" : "border border-creme-200 text-verde hover:bg-creme-50"
-                }`}>
-                Começar grátis
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -297,27 +317,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── TIME FUNDADOR ── */}
+      {/* ── PROPÓSITO ── */}
       <section className="max-w-6xl mx-auto px-6 py-20">
-        <p className="text-xs font-semibold text-ambar uppercase tracking-widest mb-3">Time fundador</p>
-        <h2 className="text-3xl md:text-4xl font-black text-[#141414] mb-10">Quem está por trás.</h2>
-        <div className="bg-white border border-creme-100 rounded-2xl p-6 flex flex-col md:flex-row gap-6 mb-12">
-          <div className="w-full md:w-44 h-36 bg-verde rounded-2xl flex items-center justify-center shrink-0">
-            <span className="text-3xl font-black text-white/90">EO</span>
-          </div>
-          <div className="flex-1">
-            <p className="font-bold text-[#141414] text-lg">Enzo Oliveira</p>
-            <p className="text-[10px] font-semibold text-ambar uppercase tracking-wide mb-3">Tecnologia & Produto</p>
-            <p className="text-sm text-gray-500 leading-relaxed mb-3">
-              Engenheiro de software e AWS Partner com experiência em infraestrutura cloud, FinOps e produtos SaaS. No iasoclin, cuida de toda a arquitetura técnica, produto e estratégia de plataforma.
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {["AWS", "Backend", "FinOps", "Produto"].map((t) => (
-                <span key={t} className="text-[10px] font-medium bg-creme-50 text-gray-500 px-2 py-1 rounded-full">{t}</span>
-              ))}
-            </div>
-          </div>
-        </div>
+        <p className="text-xs font-semibold text-ambar uppercase tracking-widest mb-3">Nosso propósito</p>
+        <h2 className="text-3xl md:text-4xl font-black text-[#141414] leading-tight mb-10 max-w-2xl">
+          Tornar o mercado de estética organizado operacionalmente e <span className="italic font-serif text-verde">alinhado à tecnologia.</span>
+        </h2>
         <div className="grid md:grid-cols-3 gap-6">
           {[
             { icon: Compass, t: "Visão",   d: "Ser a plataforma de gestão mais usada por clínicas de estética no Brasil." },
@@ -333,26 +338,25 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── DEPOIMENTOS ── */}
-      <section id="depoimentos" className="bg-creme-50 border-y border-creme-100">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <h2 className="text-3xl md:text-4xl font-black text-[#141414] mb-10">Quem usa, recomenda.</h2>
-          <div className="grid md:grid-cols-3 gap-5">
-            {DEPOIMENTOS.map((d) => (
-              <div key={d.nome} className="bg-white border border-creme-100 rounded-2xl p-6">
-                <div className="flex items-center gap-0.5 text-ambar mb-3">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={13} fill="#C4895A" />)}
-                </div>
-                <p className="text-sm text-gray-600 leading-relaxed mb-5">"{d.texto}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-verde text-white text-[10px] font-bold flex items-center justify-center">
-                    {d.nome.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-[#141414]">{d.nome}</p>
-                    <p className="text-[10px] text-gray-400">{d.clinica}</p>
-                  </div>
-                </div>
+      {/* ── TRAÇÃO ── */}
+      <section id="tracao" className="bg-creme-50 border-y border-creme-100">
+        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+          <p className="text-xs font-semibold text-ambar uppercase tracking-widest mb-3">Onde estamos</p>
+          <h2 className="text-3xl md:text-4xl font-black text-[#141414] mb-3">
+            <span className="text-verde">+100 clínicas</span> já ativas.
+          </h2>
+          <p className="text-gray-500 max-w-lg mx-auto mb-12">
+            Antes mesmo do lançamento oficial, mais de 100 profissionais já organizam a rotina da clínica com o iasoclin todos os dias.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            {[
+              { v: "+100", l: "clínicas ativas no dia a dia" },
+              { v: "6", l: "módulos integrados num só sistema" },
+              { v: "< 1", l: "tarde para colocar a clínica no ar" },
+            ].map((s) => (
+              <div key={s.l} className="bg-white border border-creme-100 rounded-2xl p-6">
+                <p className="text-4xl font-black text-verde mb-2">{s.v}</p>
+                <p className="text-sm text-gray-500 leading-relaxed">{s.l}</p>
               </div>
             ))}
           </div>
@@ -397,7 +401,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-6 text-xs text-gray-400">
             <a href="#features" className="hover:text-verde transition">Funcionalidades</a>
             <a href="#planos" className="hover:text-verde transition">Planos</a>
-            <a href="#depoimentos" className="hover:text-verde transition">Depoimentos</a>
+            <a href="#tracao" className="hover:text-verde transition">Clínicas</a>
             <a href={ADMIN_URL} className="hover:text-verde transition">Admin</a>
           </div>
           <p className="text-xs text-gray-300">© 2026 iasoclin · França, SP</p>

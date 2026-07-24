@@ -7,6 +7,7 @@ import {
 import toast from "react-hot-toast";
 import { mensagemDeErro } from "../lib/tomDeVoz";
 import { LogoMark } from "../components/ui/Logo.jsx";
+import { PLANS_BY_ID } from "../config/plans.js";
 import { useAuth } from "../contexts/AuthContext";
 import { getLeadOrigin } from "../lib/leadOrigin.js";
 import api from "../services/api.js";
@@ -28,10 +29,10 @@ const STEPS = [
   { id: 3, icon: CreditCard,  label: "Pagamento" },
 ];
 
-const PLANS = [
-  { id: "solo",    name: "Solo",    price: "R$ 197/mês" },
-  { id: "clinica", name: "Clínica", price: "R$ 447/mês" },
-];
+const PLANS = ["solo", "clinica", "pro"].map((id) => {
+  const p = PLANS_BY_ID[id];
+  return { id, name: p.name, price: `${p.priceMonthlyLabel}/mês` };
+});
 
 function StepIndicator({ current }) {
   return (
