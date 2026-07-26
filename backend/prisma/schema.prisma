@@ -21,7 +21,7 @@ model User {
   email                 String               @unique
   role                  Role                 @default(PROFESSIONAL)
   clinicId              String?
-  billingCycle          String    @default("mensal")
+  billingCycle          String               @default("mensal")
   canceledAt            DateTime?
   lastLoginAt           DateTime?
   loginCount            Int                  @default(0)
@@ -59,14 +59,14 @@ model User {
   asaasWalletId         String?
   asaasAccountId        String?
   asaasAccountStatus    String?
-  asaasSubscriptionId   String?   // assinatura recorrente Asaas (mensalidade SaaS)
-  subscriptionStatus    String?   // trialing | active | past_due | suspended | canceled
+  asaasSubscriptionId   String? // assinatura recorrente Asaas (mensalidade SaaS)
+  subscriptionStatus    String? // trialing | active | past_due | suspended | canceled
   trialEndsAt           DateTime? // fim do trial (1ª cobrança acontece nesta data)
   overdueSince          DateTime? // início do atraso; após GRACE dias sem pagar, acesso bloqueia
   // Ciclo de vida self-service
   demoExpiresAt         DateTime? // conta demo temporária expira nesta data (cron limpa)
-  leadSource            String?   // "self-service" | "assistido"
-  acquisitionChannel    String?   // ads | influencer | cupom (UTM/origem)
+  leadSource            String? // "self-service" | "assistido"
+  acquisitionChannel    String? // ads | influencer | cupom (UTM/origem)
   lgpdAcceptedAt        DateTime?
   lgpdVersion           String?
   contractAcceptedAt    DateTime?
@@ -75,7 +75,7 @@ model User {
   whatsappPhoneNumberId String?
   whatsappWabaId        String?
   whatsappBusinessId    String?
-  whatsappStatus        String?   // null | "connected" | "pending" | "error"
+  whatsappStatus        String? // null | "connected" | "pending" | "error"
   whatsappConnectedAt   DateTime?
   appointments          Appointment[]
   automationLogs        AutomationLog[]
@@ -103,6 +103,8 @@ model User {
   portfolioCases        PortfolioCase[]
   usageCounters         UsageCounter[]
   usageEvents           UsageEvent[]
+  iosMemberships        IosMembership[]
+  iosPositions          IosPosition[]        @relation("IosPositionOccupant")
   clinic                Clinic?              @relation(fields: [clinicId], references: [id])
 }
 
@@ -113,9 +115,9 @@ model User {
 model UsageCounter {
   id          String   @id @default(cuid())
   userId      String
-  resource    String   // "ai" | "whatsapp" | futuros (string livre)
+  resource    String // "ai" | "whatsapp" | futuros (string livre)
   periodStart DateTime // 1º dia do mês (UTC), âncora do ciclo
-  limit       Int?     // null = ilimitado (plano dev/enterprise ou recurso sem cota)
+  limit       Int? // null = ilimitado (plano dev/enterprise ou recurso sem cota)
   used        Int      @default(0)
   topup       Int      @default(0) // avulso comprado no ciclo
   createdAt   DateTime @default(now())
@@ -133,7 +135,7 @@ model UsageEvent {
   userId    String
   resource  String
   cost      Int      @default(1)
-  meta      Json?    // ex: { fn: "generatePatientSummary", patientId }
+  meta      Json? // ex: { fn: "generatePatientSummary", patientId }
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -141,60 +143,60 @@ model UsageEvent {
 }
 
 model Patient {
-  id               String            @id @default(cuid())
-  name             String
-  email            String?
-  phone            String
-  birthDate        DateTime?
-  document         String?
-  observations     String?
-  alertLevel       String?           @default("none")
-  aiSummary        String?
-  aiSummaryAt      DateTime?
-  clinicId         String?
-  userId           String
-  createdAt        DateTime          @default(now())
-  isActive         Boolean           @default(true)
-  city             String?
-  country          String?
-  cpf              String?
-  rg               String?
-  state            String?
-  street           String?
-  zipCode          String?
-  appointments     Appointment[]
-  automationLogs   AutomationLog[]
-  budgets          Budget[]
-  clubMemberships  ClubMember[]
-  evolutions       Evolution[]
-  clinic           Clinic?           @relation(fields: [clinicId], references: [id])
-  user             User              @relation(fields: [userId], references: [id])
-  patientDocuments PatientDocument[]
-  photos           PatientPhoto[]
-  procedureMaps    ProcedureMap[]
-  transactions     Transaction[]
+  id                 String              @id @default(cuid())
+  name               String
+  email              String?
+  phone              String
+  birthDate          DateTime?
+  document           String?
+  observations       String?
+  alertLevel         String?             @default("none")
+  aiSummary          String?
+  aiSummaryAt        DateTime?
+  clinicId           String?
+  userId             String
+  createdAt          DateTime            @default(now())
+  isActive           Boolean             @default(true)
+  city               String?
+  country            String?
+  cpf                String?
+  rg                 String?
+  state              String?
+  street             String?
+  zipCode            String?
+  appointments       Appointment[]
+  automationLogs     AutomationLog[]
+  budgets            Budget[]
+  clubMemberships    ClubMember[]
+  evolutions         Evolution[]
+  clinic             Clinic?             @relation(fields: [clinicId], references: [id])
+  user               User                @relation(fields: [userId], references: [id])
+  patientDocuments   PatientDocument[]
+  photos             PatientPhoto[]
+  procedureMaps      ProcedureMap[]
+  transactions       Transaction[]
   anamnesisResponses AnamnesisResponse[]
-  portfolioCases   PortfolioCase[]
+  portfolioCases     PortfolioCase[]
 }
 
 model Budget {
-  id             String        @id @default(cuid())
+  id             String          @id @default(cuid())
   title          String
   validUntil     DateTime?
-  subtotal       Float         @default(0)
-  discount       Float         @default(0)
-  total          Float         @default(0)
+  subtotal       Float           @default(0)
+  discount       Float           @default(0)
+  total          Float           @default(0)
   observations   String?
-  status         String        @default("rascunho") // rascunho | aprovado | concluido
-  isPackage      Boolean       @default(false) // true = pacote de sessoes (aparece em /sessoes); false = avulso
-  sessionCount   Int           @default(1) // nº de sessões do pacote (uma sessão pode ter vários procedimentos)
-  idempotencyKey String?       @unique
+  status         String          @default("rascunho") // rascunho | aprovado | concluido
+  isPackage      Boolean         @default(false) // true = pacote de sessoes (aparece em /sessoes); false = avulso
+  sessionCount   Int             @default(1) // nº de sessões do pacote (uma sessão pode ter vários procedimentos)
+  idempotencyKey String?         @unique
   patientId      String
   userId         String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  patient        Patient       @relation(fields: [patientId], references: [id])
-  user           User          @relation(fields: [userId], references: [id])
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  patient        Patient         @relation(fields: [patientId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
   items          BudgetItem[]
   sessions       BudgetSession[]
   transactions   Transaction[]
@@ -225,7 +227,7 @@ model BudgetSession {
   budgetId      String
   appointmentId String?
   performedAt   DateTime     @default(now())
-  procedures    Json?        // [{ procedureId?, procedureName }] feitos nesta sessão
+  procedures    Json? // [{ procedureId?, procedureName }] feitos nesta sessão
   notes         String?
   createdAt     DateTime     @default(now())
   budget        Budget       @relation(fields: [budgetId], references: [id], onDelete: Cascade)
@@ -247,7 +249,7 @@ model Protocol {
   name          String
   description   String?
   useFixedPrice Boolean           @default(false) // true = usa fixedPrice; false = soma dos procedimentos
-  fixedPrice    Float?            // preço fechado do pacote (quando useFixedPrice)
+  fixedPrice    Float? // preço fechado do pacote (quando useFixedPrice)
   isActive      Boolean           @default(true)
   userId        String
   createdAt     DateTime          @default(now())
@@ -264,7 +266,7 @@ model ProtocolSession {
   id         String              @id @default(cuid())
   protocolId String
   position   Int                 @default(0) // ordem/índice da sessão (0-based)
-  label      String?             // rótulo opcional (ex.: "Sessão de manutenção")
+  label      String? // rótulo opcional (ex.: "Sessão de manutenção")
   createdAt  DateTime            @default(now())
   protocol   Protocol            @relation(fields: [protocolId], references: [id], onDelete: Cascade)
   procedures ProtocolProcedure[]
@@ -276,8 +278,8 @@ model ProtocolSession {
 model ProtocolProcedure {
   id            String            @id @default(cuid())
   sessionId     String
-  procedureId   String?           // referência ao catálogo (nullable p/ histórico)
-  procedureName String            // snapshot do nome
+  procedureId   String? // referência ao catálogo (nullable p/ histórico)
+  procedureName String // snapshot do nome
   unitPrice     Float             @default(0) // preço puxado do procedimento, editável
   quantity      Int               @default(1)
   position      Int               @default(0) // ordem de exibição dentro da sessão
@@ -294,8 +296,8 @@ model ProtocolProcedure {
 model ProtocolProduct {
   id                  String            @id @default(cuid())
   protocolProcedureId String
-  productId           String?           // nullable: material avulso/custom
-  customName          String?           // nome livre quando não é produto do catálogo
+  productId           String? // nullable: material avulso/custom
+  customName          String? // nome livre quando não é produto do catálogo
   quantity            Float             @default(1)
   createdAt           DateTime          @default(now())
   protocolProcedure   ProtocolProcedure @relation(fields: [protocolProcedureId], references: [id], onDelete: Cascade)
@@ -304,36 +306,36 @@ model ProtocolProduct {
 }
 
 model Appointment {
-  id             String       @id @default(cuid())
-  title          String
-  description    String?
-  startsAt       DateTime
-  endsAt         DateTime
-  patientId      String?
-  userId         String
-  createdAt      DateTime     @default(now())
-  color          String?
-  notes          String?
-  procedureType  String?
-  professional   String?
-  status         String       @default("SCHEDULED")
-  idempotencyKey String?      @unique
-  category       String       @default("consulta") // consulta | retorno | lembrete | compromisso
-  isAllDay       Boolean      @default(false)
-  recurrenceRule String?      // RRULE (ex: FREQ=WEEKLY;INTERVAL=1) p/ compromissos recorrentes
-  parentAppointmentId String?  // liga o retorno ao agendamento de origem
+  id                  String                 @id @default(cuid())
+  title               String
+  description         String?
+  startsAt            DateTime
+  endsAt              DateTime
+  patientId           String?
+  userId              String
+  createdAt           DateTime               @default(now())
+  color               String?
+  notes               String?
+  procedureType       String?
+  professional        String?
+  status              String                 @default("SCHEDULED")
+  idempotencyKey      String?                @unique
+  category            String                 @default("consulta") // consulta | retorno | lembrete | compromisso
+  isAllDay            Boolean                @default(false)
+  recurrenceRule      String? // RRULE (ex: FREQ=WEEKLY;INTERVAL=1) p/ compromissos recorrentes
+  parentAppointmentId String? // liga o retorno ao agendamento de origem
   // Vínculo opcional com um pacote de sessões (item 6/7). Ao concluir o
   // agendamento, consome 1 sessão do pacote correspondente.
-  packageOrigin  String?      // "club" | "budget"
-  packageItemId  String?      // planItemId (club) ou budgetId (budget)
-  packageMemberId String?     // memberId (só club)
-  patient        Patient?     @relation(fields: [patientId], references: [id])
-  user           User         @relation(fields: [userId], references: [id])
-  transaction    Transaction?
-  procedures     AppointmentProcedure[]
-  budgetSessions   BudgetSession[]
-  clubApplications ClubApplication[]
-  procedureMaps    ProcedureMap[]
+  packageOrigin       String? // "club" | "budget"
+  packageItemId       String? // planItemId (club) ou budgetId (budget)
+  packageMemberId     String? // memberId (só club)
+  patient             Patient?               @relation(fields: [patientId], references: [id])
+  user                User                   @relation(fields: [userId], references: [id])
+  transaction         Transaction?
+  procedures          AppointmentProcedure[]
+  budgetSessions      BudgetSession[]
+  clubApplications    ClubApplication[]
+  procedureMaps       ProcedureMap[]
 }
 
 // Um procedimento dentro de um agendamento (permite vários por atendimento).
@@ -342,8 +344,8 @@ model Appointment {
 model AppointmentProcedure {
   id            String      @id @default(cuid())
   appointmentId String
-  procedureId   String?     // nullable: procedimento pode ter sido removido do catálogo
-  procedureName String      // snapshot do nome (compat + histórico)
+  procedureId   String? // nullable: procedimento pode ter sido removido do catálogo
+  procedureName String // snapshot do nome (compat + histórico)
   quantity      Int         @default(1)
   unitPrice     Float       @default(0)
   total         Float       @default(0)
@@ -355,7 +357,7 @@ model AppointmentProcedure {
 
 model Evolution {
   id                String     @id @default(cuid())
-  name              String?    // título/nome da evolução (ex.: "Sessão de limpeza de pele")
+  name              String? // título/nome da evolução (ex.: "Sessão de limpeza de pele")
   content           String?
   photoUrl          String?
   patientId         String
@@ -407,9 +409,9 @@ model Product {
   id                String             @id @default(cuid())
   name              String
   description       String?
-  category          String?            // ex: descartaveis | insumos (texto livre)
-  supplier          String?            // fornecedor (ex: Mercado Livre, Galderma)
-  unitPrice         Float?             // preço unitário de compra (R$)
+  category          String? // ex: descartaveis | insumos (texto livre)
+  supplier          String? // fornecedor (ex: Mercado Livre, Galderma)
+  unitPrice         Float? // preço unitário de compra (R$)
   stock             Float?             @default(0)
   unit              String?
   userId            String
@@ -450,14 +452,14 @@ model ProductMovement {
 }
 
 model ProcedureMap {
-  id                String    @id @default(cuid())
+  id                String         @id @default(cuid())
   title             String?
-  date              DateTime  @default(now())
-  markers           Json      @default("[]")
-  products          Json      @default("[]") // [{id, productId?, productName, lotNumber?, expiryDate?, dilutionDate?, dilutionVolume?, vialQuantity?, vialUnit?}] — marker.productId aponta p/ um destes
+  date              DateTime       @default(now())
+  markers           Json           @default("[]")
+  products          Json           @default("[]") // [{id, productId?, productName, lotNumber?, expiryDate?, dilutionDate?, dilutionVolume?, vialQuantity?, vialUnit?}] — marker.productId aponta p/ um destes
   patientId         String
   userId            String
-  createdAt         DateTime  @default(now())
+  createdAt         DateTime       @default(now())
   backgroundPhotoId String?
   baseImage         String?
   applicationDate   DateTime?
@@ -563,16 +565,16 @@ model Transaction {
   installmentNumber  Int?
   installments       Int?
   notes              String?
-  cardBrand          String?      // bandeira usada, quando pagamento no cartão
-  feePercent         Float?       // % de taxa da maquininha aplicada
-  feeAmount          Float?       // custo da taxa em R$ (amount * feePercent)
-  netAmount          Float?       // valor líquido recebido (amount - feeAmount)
-  settlementType     String?      // imediato | crediario — compensação do recebimento no cartão
+  cardBrand          String? // bandeira usada, quando pagamento no cartão
+  feePercent         Float? // % de taxa da maquininha aplicada
+  feeAmount          Float? // custo da taxa em R$ (amount * feePercent)
+  netAmount          Float? // valor líquido recebido (amount - feeAmount)
+  settlementType     String? // imediato | crediario — compensação do recebimento no cartão
   // Split de pagamento (Asaas): comissão IASOPay retida na cobrança clínica→paciente.
   splitApplied       Boolean      @default(false) // true se a cobrança saiu com split
-  splitType          String?      // PERCENTAGE | FIXED — tipo enviado ao Asaas
-  splitValue         Float?       // valor/percentual configurado no momento da cobrança
-  iasoRevenue        Float?       // R$ estimado da comissão IASOPay nesta cobrança
+  splitType          String? // PERCENTAGE | FIXED — tipo enviado ao Asaas
+  splitValue         Float? // valor/percentual configurado no momento da cobrança
+  iasoRevenue        Float? // R$ estimado da comissão IASOPay nesta cobrança
   appointment        Appointment? @relation(fields: [appointmentId], references: [id])
   budget             Budget?      @relation(fields: [budgetId], references: [id])
   patient            Patient?     @relation(fields: [patientId], references: [id])
@@ -585,7 +587,7 @@ model PatientPhoto {
   filePath  String
   fileSize  Int?
   mimeType  String?
-  category  String?  // null = foto comum; "device" = foto do dispositivo/aparelho usado
+  category  String? // null = foto comum; "device" = foto do dispositivo/aparelho usado
   patientId String
   userId    String
   createdAt DateTime @default(now())
@@ -599,11 +601,11 @@ model PortfolioCase {
   id            String   @id @default(cuid())
   title         String?
   procedureName String?
-  caption       String?  // legenda/descrição do resultado
+  caption       String? // legenda/descrição do resultado
   featured      Boolean  @default(false)
   beforePhotoId String
   afterPhotoId  String
-  devicePhotoId String?  // foto do dispositivo/aparelho usado (PatientPhoto, opcional)
+  devicePhotoId String? // foto do dispositivo/aparelho usado (PatientPhoto, opcional)
   patientId     String
   userId        String
   createdAt     DateTime @default(now())
@@ -724,41 +726,43 @@ model AutomationTemplate {
 }
 
 model AutomationLog {
-  id           String              @id @default(cuid())
-  type         String
-  patientName  String
-  phone        String
-  message      String
-  status       String              @default("pending")
-  scheduledFor DateTime
-  sentAt       DateTime?
-  error        String?
-  templateId   String?
-  patientId    String?
-  userId       String
-  metaMessageId String?            // ID retornado pela Meta; casa com status do webhook
-  createdAt    DateTime            @default(now())
-  patient      Patient?            @relation(fields: [patientId], references: [id])
-  template     AutomationTemplate? @relation(fields: [templateId], references: [id])
-  user         User                @relation(fields: [userId], references: [id])
+  id            String              @id @default(cuid())
+  type          String
+  patientName   String
+  phone         String
+  message       String
+  status        String              @default("pending")
+  scheduledFor  DateTime
+  sentAt        DateTime?
+  error         String?
+  templateId    String?
+  patientId     String?
+  userId        String
+  metaMessageId String? // ID retornado pela Meta; casa com status do webhook
+  createdAt     DateTime            @default(now())
+  patient       Patient?            @relation(fields: [patientId], references: [id])
+  template      AutomationTemplate? @relation(fields: [templateId], references: [id])
+  user          User                @relation(fields: [userId], references: [id])
 }
 
 model AdminTask {
-  id          String             @id @default(cuid())
-  number      Int                @unique @default(autoincrement())
-  title       String
-  description String?
-  priority    String             @default("media")
-  status      String             @default("backlog")
-  area        String?
-  clinicId    String?
-  dueDate     DateTime?
-  reminderAt  DateTime?
-  assignees   Json?
-  attachments Json?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  comments    AdminTaskComment[]
+  id                 String                  @id @default(cuid())
+  number             Int                     @unique @default(autoincrement())
+  title              String
+  description        String?
+  priority           String                  @default("media")
+  status             String                  @default("backlog")
+  area               String?
+  clinicId           String?
+  dueDate            DateTime?
+  reminderAt         DateTime?
+  assignees          Json?
+  attachments        Json?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  comments           AdminTaskComment[]
+  iosInitiativeLinks IosInitiativeTaskLink[]
+  iosReleaseLinks    IosProductReleaseTask[]
 }
 
 model AdminTaskComment {
@@ -772,57 +776,73 @@ model AdminTaskComment {
 }
 
 model Lead {
-  id           String    @id @default(cuid())
-  name         String
-  email        String?
-  phone        String?
-  clinicName   String?
-  source       String?
-  status       String    @default("prospecto")
-  value        Float?
-  notes        String?
-  nextFollowUp DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String             @id @default(cuid())
+  name           String
+  email          String?
+  phone          String?
+  clinicName     String?
+  source         String?
+  status         String             @default("prospecto")
+  value          Float?
+  notes          String?
+  nextFollowUp   DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  stageHistory   LeadStageHistory[]
+  iosCommissions IosCommission[]
+}
+
+model LeadStageHistory {
+  id        String   @id @default(cuid())
+  leadId    String
+  fromStage String?
+  toStage   String
+  changedBy String?
+  source    String   @default("admin")
+  changedAt DateTime @default(now())
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, changedAt])
+  @@index([toStage, changedAt])
 }
 
 model AdminFinancialEntry {
-  id             String    @id @default(cuid())
-  type           String
-  description    String
-  amount         Float
-  category       String?
-  status         String    @default("pendente")
-  clinicId       String?
-  clinicName     String?
-  planType       String?
-  paymentMethod  String?
-  dueDate        DateTime?
-  paidAt         DateTime?
-  notes          String?
-  recorrente     Boolean   @default(false)
-  recorrencia    String?
-  recorrenciaFim DateTime?
-  recorrenciaRef String?
-  createdBy      String
-  approvedBy     String?
-  approvedAt     DateTime?
+  id               String    @id @default(cuid())
+  type             String
+  description      String
+  amount           Float
+  category         String?
+  status           String    @default("pendente")
+  clinicId         String?
+  clinicName       String?
+  planType         String?
+  paymentMethod    String?
+  dueDate          DateTime?
+  paidAt           DateTime?
+  notes            String?
+  recorrente       Boolean   @default(false)
+  recorrencia      String?
+  recorrenciaFim   DateTime?
+  recorrenciaRef   String?
+  createdBy        String
+  approvedBy       String?
+  approvedAt       DateTime?
   societySettled   Boolean   @default(false) // despesa já acertada entre os sócios
   societySettledAt DateTime?
-  societyPaid      Json?     // { [socioKey]: valor já coberto por cada sócio }
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  societyPaid      Json? // { [socioKey]: valor já coberto por cada sócio }
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
 
 model AdminAuditLog {
   id         String   @id @default(cuid())
-  actorId    String   // id do admin que executou
+  actorId    String // id do admin que executou
   actorName  String?
-  action     String   // ex: "clinic.delete", "clinic.plan", "clinic.features"
-  targetType String?  // ex: "clinic"
+  action     String // ex: "clinic.delete", "clinic.plan", "clinic.features"
+  targetType String? // ex: "clinic"
   targetId   String?
   targetName String?
-  detail     Json?    // dados extras (plano antigo/novo, etc.)
+  detail     Json? // dados extras (plano antigo/novo, etc.)
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
@@ -850,20 +870,668 @@ model CsNote {
 
 // Estimativas salvas do Planejamento Financeiro (snapshot completo das premissas)
 model FinancialEstimate {
-  id         String   @id @default(cuid())
-  title      String
-  author     String
-  premissas  Json
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  title     String
+  author    String
+  premissas Json
+  createdAt DateTime @default(now())
 }
 
 // Configurações globais do admin (key-value). Ex.: premissas oficiais do
 // Planejamento Financeiro, compartilhadas entre todos os sócios.
 model AdminSetting {
-  key        String   @id
-  value      Json
-  updatedBy  String?
-  updatedAt  DateTime @updatedAt
+  key       String   @id
+  value     Json
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IASO Operating System (IOS)
+// Dados internos da empresa. O core continua sendo a fonte de verdade; o app
+// admin apenas consome estas entidades pelo gateway.
+
+model IosOrganization {
+  id                 String                       @id @default(cuid())
+  name               String
+  slug               String                       @unique
+  mission            String?
+  vision             String?
+  values             Json?
+  timezone           String                       @default("America/Sao_Paulo")
+  currency           String                       @default("BRL")
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+  memberships        IosMembership[]
+  cycles             IosStrategyCycle[]
+  metrics            IosMetricDefinition[]
+  decisions          IosDecision[]
+  auditLogs          IosAuditLog[]
+  businessEvents     IosBusinessEvent[]
+  scenarios          IosScenario[]
+  commercialChannels IosCommercialChannel[]
+  campaigns          IosCampaign[]
+  partners           IosPartner[]
+  commissions        IosCommission[]
+  productReleases    IosProductRelease[]
+  adoptionSnapshots  IosProductAdoptionSnapshot[]
+  positions          IosPosition[]
+}
+
+model IosMembership {
+  id               String                @id @default(cuid())
+  organizationId   String
+  userId           String
+  role             IosMembershipRole     @default(VIEWER)
+  capabilities     Json?
+  isActive         Boolean               @default(true)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  organization     IosOrganization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ownedCycles      IosStrategyCycle[]    @relation("IosCycleOwner")
+  ownedMetrics     IosMetricDefinition[] @relation("IosMetricOwner")
+  ownedObjectives  IosObjective[]        @relation("IosObjectiveOwner")
+  ownedKeyResults  IosKeyResult[]        @relation("IosKeyResultOwner")
+  ownedInitiatives IosInitiative[]       @relation("IosInitiativeOwner")
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model IosStrategyCycle {
+  id             String          @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  cadence        IosCycleCadence @default(QUARTERLY)
+  startDate      DateTime
+  endDate        DateTime
+  status         IosCycleStatus  @default(DRAFT)
+  ownerId        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   IosOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner          IosMembership?  @relation("IosCycleOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  objectives     IosObjective[]
+  initiatives    IosInitiative[]
+  decisions      IosDecision[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, status])
+  @@index([startDate, endDate])
+}
+
+model IosMetricDefinition {
+  id               String                 @id @default(cuid())
+  organizationId   String
+  code             String
+  name             String
+  description      String
+  unit             IosMetricUnit
+  direction        IosMetricDirection     @default(INCREASE)
+  frequency        IosMetricFrequency     @default(MONTHLY)
+  sourceType       IosMetricSourceType
+  sourceRef        String
+  formulaKey       String?
+  formulaVersion   String?
+  allowManualInput Boolean                @default(false)
+  ownerId          String?
+  isActive         Boolean                @default(true)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  organization     IosOrganization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner            IosMembership?         @relation("IosMetricOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  observations     IosMetricObservation[]
+  keyResults       IosKeyResult[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, isActive])
+}
+
+model IosMetricObservation {
+  id             String              @id @default(cuid())
+  metricId       String
+  periodStart    DateTime
+  periodEnd      DateTime
+  value          Decimal             @db.Decimal(20, 6)
+  sourceType     IosMetricSourceType
+  sourceRef      String
+  formulaVersion String?
+  inputs         Json?
+  note           String?
+  measuredAt     DateTime            @default(now())
+  createdBy      String
+  createdAt      DateTime            @default(now())
+  metric         IosMetricDefinition @relation(fields: [metricId], references: [id], onDelete: Cascade)
+
+  @@index([metricId, periodEnd])
+  @@index([measuredAt])
+}
+
+model IosObjective {
+  id          String             @id @default(cuid())
+  cycleId     String
+  title       String
+  description String?
+  status      IosObjectiveStatus @default(DRAFT)
+  ownerId     String?
+  sortOrder   Int                @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  cycle       IosStrategyCycle   @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  owner       IosMembership?     @relation("IosObjectiveOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  keyResults  IosKeyResult[]
+  initiatives IosInitiative[]
+  decisions   IosDecision[]
+
+  @@index([cycleId, status])
+}
+
+model IosKeyResult {
+  id          String              @id @default(cuid())
+  objectiveId String
+  metricId    String
+  title       String
+  baseline    Decimal             @db.Decimal(20, 6)
+  target      Decimal             @db.Decimal(20, 6)
+  startDate   DateTime
+  dueDate     DateTime
+  status      IosKeyResultStatus  @default(DRAFT)
+  ownerId     String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  objective   IosObjective        @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  metric      IosMetricDefinition @relation(fields: [metricId], references: [id], onDelete: Restrict)
+  owner       IosMembership?      @relation("IosKeyResultOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  @@index([objectiveId, status])
+  @@index([metricId])
+}
+
+model IosInitiative {
+  id          String                  @id @default(cuid())
+  cycleId     String
+  objectiveId String?
+  title       String
+  description String?
+  status      IosInitiativeStatus     @default(PLANNED)
+  priority    IosPriority             @default(MEDIUM)
+  ownerId     String?
+  startDate   DateTime?
+  dueDate     DateTime?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  cycle       IosStrategyCycle        @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  objective   IosObjective?           @relation(fields: [objectiveId], references: [id], onDelete: SetNull)
+  owner       IosMembership?          @relation("IosInitiativeOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  milestones  IosMilestone[]
+  taskLinks   IosInitiativeTaskLink[]
+
+  @@index([cycleId, status])
+  @@index([objectiveId])
+}
+
+model IosMilestone {
+  id           String             @id @default(cuid())
+  initiativeId String
+  title        String
+  status       IosMilestoneStatus @default(PENDING)
+  dueDate      DateTime?
+  completedAt  DateTime?
+  sortOrder    Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  initiative   IosInitiative      @relation(fields: [initiativeId], references: [id], onDelete: Cascade)
+
+  @@index([initiativeId, status])
+}
+
+model IosInitiativeTaskLink {
+  initiativeId String
+  taskId       String
+  linkedBy     String
+  linkedAt     DateTime      @default(now())
+  initiative   IosInitiative @relation(fields: [initiativeId], references: [id], onDelete: Cascade)
+  task         AdminTask     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([initiativeId, taskId])
+  @@index([taskId])
+}
+
+model IosDecision {
+  id             String            @id @default(cuid())
+  organizationId String
+  cycleId        String?
+  objectiveId    String?
+  title          String
+  context        String
+  decision       String
+  rationale      String?
+  alternatives   Json?
+  evidence       Json?
+  status         IosDecisionStatus @default(DRAFT)
+  reviewAt       DateTime?
+  createdBy      String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  organization   IosOrganization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cycle          IosStrategyCycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  objective      IosObjective?     @relation(fields: [objectiveId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([cycleId])
+}
+
+model IosAuditLog {
+  id             String          @id @default(cuid())
+  organizationId String
+  actorUserId    String
+  actorName      String?
+  action         String
+  entityType     String
+  entityId       String?
+  before         Json?
+  after          Json?
+  metadata       Json?
+  createdAt      DateTime        @default(now())
+  organization   IosOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action])
+}
+
+model IosBusinessEvent {
+  id             String             @id @default(cuid())
+  organizationId String
+  eventType      String
+  occurredAt     DateTime
+  sourceType     IosEventSourceType @default(INTERNAL)
+  sourceRef      String
+  idempotencyKey String
+  subjectType    String?
+  subjectId      String?
+  amount         Decimal?           @db.Decimal(20, 6)
+  currency       String?            @default("BRL")
+  payload        Json?
+  createdBy      String
+  createdAt      DateTime           @default(now())
+  organization   IosOrganization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, eventType, occurredAt])
+  @@index([subjectType, subjectId])
+}
+
+model IosScenario {
+  id             String                  @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  status         IosScenarioStatus       @default(DRAFT)
+  version        Int                     @default(1)
+  horizonStart   DateTime
+  horizonEnd     DateTime
+  basedOnId      String?
+  createdBy      String
+  publishedAt    DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  organization   IosOrganization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  basedOn        IosScenario?            @relation("IosScenarioVersion", fields: [basedOnId], references: [id], onDelete: SetNull)
+  versions       IosScenario[]           @relation("IosScenarioVersion")
+  assumptions    IosScenarioAssumption[]
+  runs           IosProjectionRun[]
+
+  @@unique([organizationId, name, version])
+  @@index([organizationId, status])
+}
+
+model IosScenarioAssumption {
+  id            String      @id @default(cuid())
+  scenarioId    String
+  key           String
+  label         String
+  value         Decimal?    @db.Decimal(20, 6)
+  textValue     String?
+  unit          String
+  justification String?
+  sourceRef     String?
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  scenario      IosScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, key])
+  @@index([scenarioId, sortOrder])
+}
+
+model IosProjectionRun {
+  id           String                 @id @default(cuid())
+  scenarioId   String
+  modelKey     String
+  modelVersion String
+  status       IosProjectionRunStatus @default(SUCCEEDED)
+  inputs       Json
+  outputs      Json
+  createdBy    String
+  executedAt   DateTime               @default(now())
+  scenario     IosScenario            @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@index([scenarioId, executedAt])
+}
+
+model IosCommercialChannel {
+  id             String          @id @default(cuid())
+  organizationId String
+  name           String
+  category       String?
+  status         IosRecordStatus @default(ACTIVE)
+  monthlyBudget  Decimal?        @db.Decimal(20, 2)
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   IosOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaigns      IosCampaign[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, status])
+}
+
+model IosCampaign {
+  id             String                @id @default(cuid())
+  organizationId String
+  channelId      String?
+  name           String
+  objective      String?
+  status         IosCampaignStatus     @default(DRAFT)
+  startDate      DateTime?
+  endDate        DateTime?
+  budget         Decimal?              @db.Decimal(20, 2)
+  notes          String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  organization   IosOrganization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  channel        IosCommercialChannel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([channelId])
+}
+
+model IosPartner {
+  id              String           @id @default(cuid())
+  organizationId  String
+  name            String
+  status          IosPartnerStatus @default(PROSPECT)
+  contactName     String?
+  contactEmail    String?
+  commissionType  String?
+  commissionValue Decimal?         @db.Decimal(20, 6)
+  notes           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  organization    IosOrganization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  commissions     IosCommission[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, status])
+}
+
+model IosCommission {
+  id             String              @id @default(cuid())
+  organizationId String
+  partnerId      String?
+  leadId         String?
+  description    String
+  amount         Decimal             @db.Decimal(20, 2)
+  status         IosCommissionStatus @default(PENDING)
+  dueDate        DateTime?
+  paidAt         DateTime?
+  notes          String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  organization   IosOrganization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  partner        IosPartner?         @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  lead           Lead?               @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([partnerId])
+  @@index([leadId])
+}
+
+model IosProductRelease {
+  id             String                  @id @default(cuid())
+  organizationId String
+  name           String
+  version        String?
+  description    String?
+  status         IosProductReleaseStatus @default(PLANNED)
+  plannedAt      DateTime?
+  releasedAt     DateTime?
+  createdBy      String
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  organization   IosOrganization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taskLinks      IosProductReleaseTask[]
+
+  @@index([organizationId, status])
+  @@index([plannedAt])
+}
+
+model IosProductReleaseTask {
+  releaseId String
+  taskId    String
+  linkedBy  String
+  linkedAt  DateTime          @default(now())
+  release   IosProductRelease @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  task      AdminTask         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([releaseId, taskId])
+  @@index([taskId])
+}
+
+model IosProductAdoptionSnapshot {
+  id             String          @id @default(cuid())
+  organizationId String
+  featureKey     String
+  featureName    String
+  periodStart    DateTime
+  periodEnd      DateTime
+  eligibleUsers  Int
+  activeUsers    Int
+  usageCount     Int             @default(0)
+  sourceRef      String
+  notes          String?
+  createdBy      String
+  measuredAt     DateTime        @default(now())
+  organization   IosOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, featureKey, periodStart, periodEnd])
+  @@index([organizationId, periodEnd])
+}
+
+model IosPosition {
+  id              String            @id @default(cuid())
+  organizationId  String
+  title           String
+  area            String
+  type            IosPositionType   @default(CURRENT)
+  status          IosPositionStatus @default(OPEN)
+  occupantUserId  String?
+  capacityPercent Int               @default(100)
+  monthlyCost     Decimal?          @db.Decimal(20, 2)
+  targetDate      DateTime?
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  organization    IosOrganization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  occupant        User?             @relation("IosPositionOccupant", fields: [occupantUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, area])
+  @@index([organizationId, status])
+  @@index([occupantUserId])
+}
+
+enum IosMembershipRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum IosCycleCadence {
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+  CUSTOM
+}
+
+enum IosCycleStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum IosMetricUnit {
+  NUMBER
+  BRL
+  PERCENTAGE
+  DAYS
+  MONTHS
+  SCORE
+}
+
+enum IosMetricDirection {
+  INCREASE
+  DECREASE
+  MAINTAIN
+}
+
+enum IosMetricFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+  ON_DEMAND
+}
+
+enum IosMetricSourceType {
+  MANUAL
+  CALCULATED
+  IMPORTED
+  EXTERNAL
+}
+
+enum IosObjectiveStatus {
+  DRAFT
+  ACTIVE
+  AT_RISK
+  COMPLETED
+  CANCELED
+}
+
+enum IosKeyResultStatus {
+  DRAFT
+  ACTIVE
+  AT_RISK
+  ACHIEVED
+  CANCELED
+}
+
+enum IosInitiativeStatus {
+  PLANNED
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  CANCELED
+}
+
+enum IosMilestoneStatus {
+  PENDING
+  COMPLETED
+  CANCELED
+}
+
+enum IosDecisionStatus {
+  DRAFT
+  DECIDED
+  REVIEWED
+  REVERSED
+}
+
+enum IosPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IosEventSourceType {
+  INTERNAL
+  MANUAL
+  IMPORTED
+  EXTERNAL
+}
+
+enum IosScenarioStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum IosProjectionRunStatus {
+  SUCCEEDED
+  FAILED
+}
+
+enum IosRecordStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum IosCampaignStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELED
+}
+
+enum IosPartnerStatus {
+  PROSPECT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum IosCommissionStatus {
+  PENDING
+  APPROVED
+  PAID
+  CANCELED
+}
+
+enum IosProductReleaseStatus {
+  PLANNED
+  IN_PROGRESS
+  RELEASED
+  CANCELED
+}
+
+enum IosPositionType {
+  CURRENT
+  PLANNED
+}
+
+enum IosPositionStatus {
+  OPEN
+  FILLED
+  ON_HOLD
+  CLOSED
 }
 
 enum Role {
@@ -894,19 +1562,19 @@ model AnamnesisTemplate {
 
 // Anamnese preenchida de um paciente. answers em JSON: { [questionId]: valor }
 model AnamnesisResponse {
-  id           String             @id @default(cuid())
+  id           String            @id @default(cuid())
   templateId   String
   patientId    String
   userId       String
   answers      Json
-  status       String             @default("draft") // draft | finalized
-  documentPath String?            // PDF gerado no S3 ao finalizar
+  status       String            @default("draft") // draft | finalized
+  documentPath String? // PDF gerado no S3 ao finalizar
   finalizedAt  DateTime?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  template     AnamnesisTemplate  @relation(fields: [templateId], references: [id])
-  patient      Patient            @relation(fields: [patientId], references: [id])
-  user         User               @relation(fields: [userId], references: [id])
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  template     AnamnesisTemplate @relation(fields: [templateId], references: [id])
+  patient      Patient           @relation(fields: [patientId], references: [id])
+  user         User              @relation(fields: [userId], references: [id])
 }
 
 // Taxa da maquininha de cartão, por bandeira e tipo/faixa de parcelas.
@@ -916,12 +1584,12 @@ model AnamnesisResponse {
 model CardFee {
   id               String   @id @default(cuid())
   userId           String
-  machineName      String?  // apelido da maquininha (clínicas com mais de uma)
+  machineName      String? // apelido da maquininha (clínicas com mais de uma)
   brand            String   @default("Geral") // Visa | Master | Elo | Amex | Hipercard | Geral
-  type             String   // debito | credito | credito_parcelado
-  installmentsFrom Int?     // início da faixa (só credito_parcelado)
-  installmentsTo   Int?     // fim da faixa (só credito_parcelado)
-  percent          Float    // % descontado pela maquininha
+  type             String // debito | credito | credito_parcelado
+  installmentsFrom Int? // início da faixa (só credito_parcelado)
+  installmentsTo   Int? // fim da faixa (só credito_parcelado)
+  percent          Float // % descontado pela maquininha
   createdAt        DateTime @default(now())
   user             User     @relation(fields: [userId], references: [id])
 
@@ -934,11 +1602,11 @@ model CardFee {
 // paymentMethod: pix | credit_card | boleto   (mesmos labels internos do createCharge)
 // splitType:     PERCENTAGE | FIXED
 model SplitConfig {
-  id           String   @id @default(cuid())
-  paymentMethod String  @unique          // pix | credit_card | boleto
-  splitType    String                    // PERCENTAGE | FIXED
-  splitValue   Float                     // 0.20 (=0,20% se PERCENTAGE, =R$0,20 se FIXED)
-  active       Boolean  @default(true)    // false ⇒ não aplica split neste método
-  updatedAt    DateTime @updatedAt
-  createdAt    DateTime @default(now())
+  id            String   @id @default(cuid())
+  paymentMethod String   @unique // pix | credit_card | boleto
+  splitType     String // PERCENTAGE | FIXED
+  splitValue    Float // 0.20 (=0,20% se PERCENTAGE, =R$0,20 se FIXED)
+  active        Boolean  @default(true) // false ⇒ não aplica split neste método
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
 }

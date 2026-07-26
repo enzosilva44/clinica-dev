@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "test:ios": "node --test src/modules/operating-system/*.test.js",
     "seed:admin": "node prisma/seed-admin.js",
     "postinstall": "prisma generate"
   },

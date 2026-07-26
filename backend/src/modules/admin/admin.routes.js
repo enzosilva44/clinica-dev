@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { prisma } from "../../config/prisma.js";
+import { isBillingExempt, PLAN_ARR, PLAN_MRR } from "../../config/plans.js";
 import { getMetrics, getCost, getBackups, INFRA_IDS } from "../../providers/infra/aws.infra.js";
 
 const router = Router();
@@ -13,13 +14,8 @@ function isOwner(user) {
   return user?.email?.toLowerCase() === OWNER_EMAIL;
 }
 
-// Clínicas isentas de pagamento (nunca entram no MRR/cobrança).
-const EXEMPT_EMAILS = [
-  "eurianebiomedica@gmail.com",
-  "dra.fernandabecari@gmail.com",
-];
 function isExempt(email) {
-  return EXEMPT_EMAILS.includes((email ?? "").toLowerCase());
+  return isBillingExempt(email);
 }
 
 // Registra uma ação de admin na auditoria (best-effort, nunca quebra a request)
@@ -626,9 +622,21 @@ router.post("/leads", async (req, res) => {
   try {
     const { name, email, phone, clinicName, source, status, value, notes, nextFollowUp } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: "Nome obrigatório." });
-    const lead = await prisma.lead.create({
-      data: { name, email, phone, clinicName, source, status, value: value ? Number(value) : null,
-              notes, nextFollowUp: nextFollowUp ? new Date(nextFollowUp) : null },
+    const initialStatus = status || "prospecto";
+    const lead = await prisma.$transaction(async (tx) => {
+      const created = await tx.lead.create({
+        data: { name, email, phone, clinicName, source, status: initialStatus, value: value ? Number(value) : null,
+                notes, nextFollowUp: nextFollowUp ? new Date(nextFollowUp) : null },
+      });
+      await tx.leadStageHistory.create({
+        data: {
+          leadId: created.id,
+          toStage: initialStatus,
+          changedBy: req.user.id,
+          source: "admin",
+        },
+      });
+      return created;
     });
     res.status(201).json(lead);
   } catch (e) { res.status(400).json({ error: e.message }); }
@@ -641,7 +649,23 @@ router.patch("/leads/:id", async (req, res) => {
     fields.forEach((f) => { if (req.body[f] !== undefined) data[f] = req.body[f]; });
     if (data.value) data.value = Number(data.value);
     if (data.nextFollowUp) data.nextFollowUp = new Date(data.nextFollowUp);
-    const lead = await prisma.lead.update({ where: { id: req.params.id }, data });
+    const lead = await prisma.$transaction(async (tx) => {
+      const before = await tx.lead.findUnique({ where: { id: req.params.id } });
+      if (!before) throw new Error("Lead não encontrado.");
+      const updated = await tx.lead.update({ where: { id: req.params.id }, data });
+      if (data.status && data.status !== before.status) {
+        await tx.leadStageHistory.create({
+          data: {
+            leadId: updated.id,
+            fromStage: before.status,
+            toStage: data.status,
+            changedBy: req.user.id,
+            source: "admin",
+          },
+        });
+      }
+      return updated;
+    });
     res.json(lead);
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
@@ -654,11 +678,6 @@ router.delete("/leads/:id", async (req, res) => {
 });
 
 // ── FINANCEIRO ────────────────────────────────────────────────────────────────
-// Preços oficiais (espelho de frontend/src/config/plans.js — manter em sincronia).
-// ARR = 12× mensal com 10% de desconto anual. Enterprise é sob consulta (0 no cálculo).
-const PLAN_MRR = { solo: 99,    clinica: 139,    pro: 159,    enterprise: 0,    dev: 0 };
-const PLAN_ARR = { solo: 1069.20, clinica: 1501.20, pro: 1717.20, enterprise: 0, dev: 0 }; // 12× mensal −10%
-
 // Sócios e proporção do rateio de despesas (conciliação de sociedade)
 const SOCIOS = [
   { key: "enzo",      name: "Enzo",       share: 0.60 },
@@ -739,9 +758,6 @@ router.get("/financial", async (req, res) => {
 });
 
 // ── BILLING (faturamento esperado por cliente) ────────────────────────────────
-const PLAN_MRR_VAL = { solo: 99,    clinica: 139,    pro: 159,    enterprise: 0, dev: 0 };
-const PLAN_ARR_VAL = { solo: 1069.20, clinica: 1501.20, pro: 1717.20, enterprise: 0, dev: 0 };
-
 router.patch("/financial/billing/:id/cycle", async (req, res) => {
   try {
     const { billingCycle } = req.body;
@@ -790,7 +806,7 @@ router.get("/financial/billing", async (req, res) => {
       const display  = c.clinicName || c.name;
       const isAnual  = c.billingCycle === "anual";
       const exempt   = isExempt(c.email);
-      const expected = exempt ? 0 : (isAnual ? (PLAN_ARR_VAL[c.plan] ?? 0) : (PLAN_MRR_VAL[c.plan] ?? 0));
+      const expected = exempt ? 0 : (isAnual ? (PLAN_ARR[c.plan] ?? 0) : (PLAN_MRR[c.plan] ?? 0));
       const paid     = paidMap[c.id] ?? null;
       const method   = c.cardBrand && c.cardLast4
         ? `${c.cardBrand} ****${c.cardLast4}`
@@ -1165,10 +1181,38 @@ router.delete("/cs/notes/:id", async (req, res) => {
 // ── CLINIC CANCEL / REACTIVATE ────────────────────────────────────────────────
 router.patch("/cs/clinics/:id/cancel", async (req, res) => {
   try {
-    const updated = await prisma.user.update({
-      where: { id: req.params.id },
-      data:  { canceledAt: new Date() },
-      select: { id: true, canceledAt: true },
+    const updated = await prisma.$transaction(async (tx) => {
+      const before = await tx.user.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, canceledAt: true, plan: true, billingCycle: true },
+      });
+      if (!before) throw new Error("Clínica não encontrada.");
+      // Repetir a ação não deve reescrever a data histórica do cancelamento.
+      const canceledAt = before.canceledAt ?? new Date();
+      const row = await tx.user.update({
+        where: { id: req.params.id },
+        data: { canceledAt },
+        select: { id: true, canceledAt: true },
+      });
+      if (!before.canceledAt) {
+        const organization = await tx.iosOrganization.findUnique({ where: { slug: "iaso" } });
+        if (organization) {
+          await tx.iosBusinessEvent.create({
+            data: {
+              organizationId: organization.id,
+              eventType: "subscription.canceled",
+              occurredAt: canceledAt,
+              sourceRef: "admin.cs",
+              idempotencyKey: `subscription.canceled:${row.id}:${canceledAt.toISOString()}`,
+              subjectType: "clinic",
+              subjectId: row.id,
+              payload: { plan: before.plan, billingCycle: before.billingCycle },
+              createdBy: req.user.id,
+            },
+          });
+        }
+      }
+      return row;
     });
     res.json(updated);
   } catch (e) { res.status(400).json({ error: e.message }); }
@@ -1176,10 +1220,41 @@ router.patch("/cs/clinics/:id/cancel", async (req, res) => {
 
 router.patch("/cs/clinics/:id/reactivate", async (req, res) => {
   try {
-    const updated = await prisma.user.update({
-      where: { id: req.params.id },
-      data:  { canceledAt: null },
-      select: { id: true, canceledAt: true },
+    const updated = await prisma.$transaction(async (tx) => {
+      const before = await tx.user.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, canceledAt: true, plan: true, billingCycle: true },
+      });
+      if (!before) throw new Error("Clínica não encontrada.");
+      const reactivatedAt = new Date();
+      const row = await tx.user.update({
+        where: { id: req.params.id },
+        data: { canceledAt: null },
+        select: { id: true, canceledAt: true },
+      });
+      if (before.canceledAt) {
+        const organization = await tx.iosOrganization.findUnique({ where: { slug: "iaso" } });
+        if (organization) {
+          await tx.iosBusinessEvent.create({
+            data: {
+              organizationId: organization.id,
+              eventType: "subscription.reactivated",
+              occurredAt: reactivatedAt,
+              sourceRef: "admin.cs",
+              idempotencyKey: `subscription.reactivated:${row.id}:${reactivatedAt.toISOString()}`,
+              subjectType: "clinic",
+              subjectId: row.id,
+              payload: {
+                canceledAt: before.canceledAt,
+                plan: before.plan,
+                billingCycle: before.billingCycle,
+              },
+              createdBy: req.user.id,
+            },
+          });
+        }
+      }
+      return row;
     });
     res.json(updated);
   } catch (e) { res.status(400).json({ error: e.message }); }

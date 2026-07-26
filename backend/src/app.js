@@ -23,6 +23,7 @@ import photoRoutes from "./modules/photos/photo.routes.js";
 import automationRoutes from "./modules/automations/automation.routes.js";
 import billingRoutes from "./modules/billing/billing.routes.js";
 import adminRoutes from "./modules/admin/admin.routes.js";
+import operatingSystemRoutes from "./modules/operating-system/ios.routes.js";
 import profileRoutes from "./modules/profile/profile.routes.js";
 import anamnesisRoutes from "./modules/anamnesis/anamnesis.routes.js";
 import portfolioRoutes from "./modules/portfolio/portfolio.routes.js";
@@ -76,6 +77,7 @@ app.post("/whatsapp/webhook", receiveWebhook);
 // Rotas autenticadas do Embedded Signup (connect/status/disconnect).
 app.use("/whatsapp", whatsappEmbedRoutes);
 app.use("/billing", billingRoutes);
+app.use("/admin/ios", operatingSystemRoutes);
 app.use("/admin", adminRoutes);
 app.use("/profile", profileRoutes);
 app.use("/anamnesis", anamnesisRoutes);
