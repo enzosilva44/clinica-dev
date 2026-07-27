@@ -74,9 +74,6 @@ export default function LandingPage() {
       <section className="bg-creme-50 border-b border-creme-100">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <span className="inline-flex items-center gap-2 bg-verde/8 text-verde text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
-              <Sparkles size={12} /> Novo · Agenda com IA integrada
-            </span>
             <h1 className="text-4xl md:text-5xl font-black text-[#141414] leading-[1.1] mb-5">
               Sua clínica<br />organizada do<br />
               <span className="italic font-serif text-verde">jeito certo.</span>

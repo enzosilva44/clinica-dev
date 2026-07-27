@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Check, ChevronRight, ChevronLeft, ShieldCheck, FileText, CreditCard,
@@ -16,12 +16,7 @@ import { CONTRACT_TEXT, CONTRACT_TITLE, CONTRACT_VERSION } from "../content/lega
 
 const WHATSAPP_COMMERCIAL = import.meta.env.VITE_WHATSAPP_COMMERCIAL || "";
 
-const INPUT = "w-full border border-creme-200 bg-white rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-verde/20 focus:border-verde transition";
 const LABEL = "text-xs font-semibold text-gray-500 mb-1.5 block";
-
-function maskCard(v)   { return v.replace(/\D/g,"").slice(0,16).replace(/(\d{4})/g,"$1 ").trim(); }
-function maskExpiry(v) { return v.replace(/\D/g,"").slice(0,4).replace(/(\d{2})(\d{0,2})/,"$1/$2").replace(/\/$/,""); }
-function maskCvv(v)    { return v.replace(/\D/g,"").slice(0,4); }
 
 const STEPS = [
   { id: 1, icon: ShieldCheck, label: "LGPD" },
@@ -81,11 +76,17 @@ export default function Contratar() {
   const [lgpdOk, setLgpdOk] = useState(false);
   const [contractOk, setContractOk] = useState(false);
   const [plan, setPlan] = useState(user?.plan === "clinica" ? "clinica" : "solo");
-  // "choose" = decide na 1ª cobrança (PIX/cartão/boleto) | "card" = débito automático
-  const [payMode, setPayMode] = useState("choose");
-  const [card, setCard] = useState({ number: "", name: "", expiry: "", cvv: "" });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+
+  // Após concluir, leva ao sistema automaticamente (a conta já está ativa e
+  // logada). Mostra a tela de sucesso por ~2,5s e então redireciona sozinho —
+  // sem depender do clique manual, que pode passar batido.
+  useEffect(() => {
+    if (!done) return;
+    const t = setTimeout(() => navigate("/dashboard"), 2500);
+    return () => clearTimeout(t);
+  }, [done, navigate]);
 
   const whatsappHref = WHATSAPP_COMMERCIAL
     ? `https://wa.me/${WHATSAPP_COMMERCIAL}?text=${encodeURIComponent("Olá! Estou contratando o Iasoclin e preciso de ajuda.")}`
@@ -98,9 +99,6 @@ export default function Contratar() {
   }
 
   async function finalizar() {
-    if (payMode === "card" && (!card.number || !card.name || !card.expiry || !card.cvv)) {
-      return toast.error("Preencha os dados do cartão.");
-    }
     setLoading(true);
     try {
       const origin = getLeadOrigin();
@@ -110,12 +108,7 @@ export default function Contratar() {
         contractVersion: CONTRACT_VERSION,
         // Sem cartão: backend abre a assinatura como UNDEFINED e o cliente
         // escolhe PIX/cartão/boleto na 1ª cobrança (fim do trial).
-        card: payMode === "card" ? {
-          number: card.number.replace(/\s/g, ""),
-          holderName: card.name,
-          expiry: card.expiry,
-          cvv: card.cvv,
-        } : null,
+        card: null,
         acquisitionChannel: origin?.acquisitionChannel || null,
       });
       // Atualiza o usuário logado (agora conta real, plano contratado).
@@ -143,6 +136,7 @@ export default function Contratar() {
             className="bg-verde hover:bg-verde-900 text-white px-6 py-3 rounded-xl font-semibold text-sm transition w-full">
             Ir para o sistema
           </button>
+          <p className="text-[11px] text-gray-400 mt-3">Você será redirecionado automaticamente…</p>
         </div>
       </div>
     );
@@ -196,50 +190,16 @@ export default function Contratar() {
                 ))}
               </div>
 
-              <label className={LABEL}>Forma de pagamento</label>
-              <div className="grid grid-cols-1 gap-2.5 mb-5">
-                <button onClick={() => setPayMode("choose")}
-                  className={`text-left border rounded-xl px-4 py-3 transition ${
-                    payMode === "choose" ? "border-verde bg-verde/5" : "border-creme-200 hover:border-creme-300"
-                  }`}>
-                  <p className="font-bold text-sm text-[#141414]">Escolher na primeira cobrança</p>
-                  <p className="text-xs text-gray-400">Nada agora. No 15º dia você recebe a cobrança e paga por PIX, cartão ou boleto.</p>
-                </button>
-                <button onClick={() => setPayMode("card")}
-                  className={`text-left border rounded-xl px-4 py-3 transition ${
-                    payMode === "card" ? "border-verde bg-verde/5" : "border-creme-200 hover:border-creme-300"
-                  }`}>
-                  <p className="font-bold text-sm text-[#141414]">Cadastrar cartão agora</p>
-                  <p className="text-xs text-gray-400">Débito automático todo mês, sem precisar lembrar de pagar.</p>
-                </button>
+              {/* Sem coleta de cartão: a assinatura nasce como UNDEFINED no
+                  Asaas e o cliente escolhe PIX/cartão/boleto na 1ª cobrança,
+                  no 15º dia. */}
+              <div className="bg-verde/5 border border-verde/15 rounded-xl px-5 py-4">
+                <p className="text-sm font-bold text-verde mb-1">14 dias grátis</p>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  A primeira cobrança acontece só no <strong>15º dia</strong> — você escolhe
+                  pagar por PIX, cartão ou boleto na hora. <strong>Cancele quando quiser.</strong>
+                </p>
               </div>
-
-              {payMode === "card" && (<>
-                <label className={LABEL}>Número do cartão</label>
-                <input className={INPUT} inputMode="numeric" placeholder="0000 0000 0000 0000"
-                  value={card.number} onChange={(e) => setCard({ ...card, number: maskCard(e.target.value) })} />
-
-                <label className={`${LABEL} mt-4`}>Nome impresso no cartão</label>
-                <input className={INPUT} placeholder="Como está no cartão"
-                  value={card.name} onChange={(e) => setCard({ ...card, name: e.target.value.toUpperCase() })} />
-
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div>
-                    <label className={LABEL}>Validade</label>
-                    <input className={INPUT} inputMode="numeric" placeholder="MM/AA"
-                      value={card.expiry} onChange={(e) => setCard({ ...card, expiry: maskExpiry(e.target.value) })} />
-                  </div>
-                  <div>
-                    <label className={LABEL}>CVV</label>
-                    <input className={INPUT} inputMode="numeric" placeholder="000"
-                      value={card.cvv} onChange={(e) => setCard({ ...card, cvv: maskCvv(e.target.value) })} />
-                  </div>
-                </div>
-              </>)}
-
-              <p className="text-[11px] text-gray-400 mt-4">
-                14 dias grátis. A primeira cobrança acontece no 15º dia. Cancele quando quiser.
-              </p>
             </div>
           )}
 
