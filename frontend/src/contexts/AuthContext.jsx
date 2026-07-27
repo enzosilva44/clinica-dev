@@ -58,13 +58,15 @@ export function AuthProvider({ children }) {
     navigate("/");
   }
 
-  async function registerAndLogin(data) {
+  // `redirectTo` permite o fluxo self-service mandar o recém-cadastrado para a
+  // contratação (/contratar) em vez do dashboard.
+  async function registerAndLogin(data, redirectTo = "/dashboard") {
     const response = await api.post("/auth/register", data);
     const { token, user } = response.data;
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
     setUser(user);
-    navigate("/dashboard");
+    navigate(redirectTo);
   }
 
   function updateUser(patch) {

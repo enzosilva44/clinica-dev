@@ -19,7 +19,6 @@ import EditPatient from "../pages/EditPatient";
 import Automacoes from "../pages/Automacoes";
 import Portfolio from "../pages/Portfolio";
 import LandingPage from "../pages/LandingPage";
-import Register from "../pages/Register";
 import Signup from "../pages/Signup";
 import FeatureRoute from "./FeatureRoute";
 import Settings from "../pages/Settings";
@@ -37,7 +36,8 @@ export default function AppRoutes() {
       <Route path="/"         element={<LandingPage />} />
       <Route path="/landing"  element={<LandingPage />} />
       <Route path="/login"    element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* /register aposentado — fluxo único é o Signup completo em /cadastro */}
+      <Route path="/register" element={<Navigate to="/cadastro" replace />} />
       <Route path="/cadastro" element={<Signup />} />
       <Route path="/comece-agora" element={<ComeceAgora />} />
       <Route path="/demo" element={<Navigate to="/comece-agora" replace />} />
@@ -46,7 +46,7 @@ export default function AppRoutes() {
       <Route path="/trocar-senha"      element={<PrivateRoute allowPasswordChange><TrocarSenha /></PrivateRoute>} />
 
       {/* ── Contratação self-service (a partir da demo) ── */}
-      <Route path="/contratar"         element={<PrivateRoute><Contratar /></PrivateRoute>} />
+      <Route path="/contratar"         element={<PrivateRoute allowContract><Contratar /></PrivateRoute>} />
 
       {/* ── Acesso suspenso por inadimplência (após carência) ── */}
       <Route path="/acesso-bloqueado"  element={<PrivateRoute allowBlocked><AcessoBloqueado /></PrivateRoute>} />

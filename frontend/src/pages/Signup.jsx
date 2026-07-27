@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 import { mensagemDeErro } from "../lib/tomDeVoz";
 import { useAuth } from "../contexts/AuthContext";
 import { LogoMark } from "../components/ui/Logo.jsx";
-import { PLANS_BY_ID } from "../config/plans.js";
+import { PLANS as ALL_PLANS, PLANS_BY_ID } from "../config/plans.js";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -27,23 +27,20 @@ const LABEL = "text-xs font-semibold text-gray-500 mb-1.5 block";
 
 // ── planos ────────────────────────────────────────────────────────────────────
 
-const PLANS = [
-  {
-    id: "solo", name: "Solo", price: PLANS_BY_ID.solo.priceMonthlyLabel, period: "/mês",
-    desc: "Para profissionais autônomos",
-    features: ["1 usuário","Pacientes ilimitados","Agenda + Evoluções","Mapa de procedimentos","Documentos + Assinatura (10/mês)","IA básica"],
-  },
-  {
-    id: "clinica", name: "Clínica", price: PLANS_BY_ID.clinica.priceMonthlyLabel, period: "/mês",
-    desc: "Para clínicas em crescimento", highlight: true,
-    features: ["Até 5 usuários","Tudo do Solo","WhatsApp Automações","Assinatura eletrônica ilimitada","Faturamento + links de pagamento","Guardião IA Financeiro","Analytics avançado"],
-  },
-  {
-    id: "enterprise", name: "Enterprise", price: "Sob consulta", period: "",
-    desc: "Para redes e franquias",
-    features: ["Usuários ilimitados","Multi-clínica","Suporte dedicado","Onboarding personalizado","SLA garantido"],
-  },
-];
+// Derivado da fonte ÚNICA (config/plans.js). Só planos contratáveis no
+// self-service (Solo, Clínica, Pro). Enterprise (sob consulta) fica de fora —
+// o caminho dele é falar com a gente pelo WhatsApp na landing.
+const PLANS = ALL_PLANS
+  .filter((p) => p.monthly != null)
+  .map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: p.priceMonthlyLabel,
+    period: "/mês",
+    desc: p.desc,
+    features: p.features,
+    highlight: p.highlight,
+  }));
 
 const PLAN_FEATURES_ICONS = [CalendarCheck, Map, FileSignature, MessageSquare, Sparkles, Package, Shield, BarChart2];
 
@@ -270,7 +267,7 @@ export default function Signup() {
         state: state || null,
         zipCode: zipCode.replace(/\D/g, "") || null,
         plan,
-      });
+      }, "/contratar"); // dados fiscais já coletados; segue para termos + pagamento
     } catch (err) {
       toast.error(mensagemDeErro(err, "criar a conta"));
     } finally {

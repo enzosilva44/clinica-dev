@@ -1,10 +1,13 @@
 import { prisma } from "../../config/prisma.js";
 import { asaas } from "./billing.service.js";
 import { sendAccessEmail } from "../../providers/notifications/email.provider.js";
+import { PLAN_CATALOG, monthlyPlanValue } from "../../config/plans.js";
 
-// Valor mensal por plano (mensalidade SaaS Iaso → clínica). Mantido em código
-// por enquanto; pode migrar para tabela de planos no futuro.
-const PLAN_PRICE = { solo: 197, clinica: 447 };
+// Plano contratável = tem mensalidade positiva definida no catálogo (fonte única).
+// Enterprise (monthly: null / sob consulta) e demo/dev ficam de fora do self-service.
+function isContractablePlan(plan) {
+  return (PLAN_CATALOG[plan]?.monthly ?? 0) > 0;
+}
 
 const TRIAL_DAYS = 14; // primeira cobrança no 15º dia
 
@@ -25,7 +28,7 @@ function trialEndDate() {
 // assinatura recorrente mensal do plano contratado.
 async function createSubscription(user, plan, card, trialEnd) {
   const key = iasoKey();
-  const price = PLAN_PRICE[plan] ?? PLAN_PRICE.solo;
+  const price = monthlyPlanValue(plan);
 
   // customer da clínica na conta Iaso
   const customer = await asaas("POST", "/customers", {
@@ -139,7 +142,7 @@ async function upsertLead(user, acquisitionChannel, value) {
 export async function contratar(userId, payload) {
   const { plan, lgpdVersion, contractVersion, card, acquisitionChannel } = payload;
 
-  if (!PLAN_PRICE[plan]) throw new Error("Plano inválido.");
+  if (!isContractablePlan(plan)) throw new Error("Plano inválido.");
   // Cartão é opcional: sem ele, a assinatura sai como UNDEFINED e o cliente
   // escolhe a forma de pagamento (PIX/cartão/boleto) na 1ª cobrança do trial.
   const hasCardInput = !!(card?.number || card?.holderName || card?.expiry || card?.cvv);

@@ -42,6 +42,9 @@ function publicUser(user) {
     authProvider: user.authProvider,
     mustChangePassword: user.mustChangePassword ?? false,
     demoExpiresAt: user.demoExpiresAt ?? null,
+    // Data de criação — usada pelo gate de contratação (corte por data: contas
+    // novas exigem passar por /contratar; legadas passam livre).
+    createdAt: user.createdAt ?? null,
     // Situação de pagamento (frontend mostra aviso em "grace" / tela em "blocked").
     ...(() => {
       const a = accessState(user);
