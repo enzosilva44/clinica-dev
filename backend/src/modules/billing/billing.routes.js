@@ -38,13 +38,18 @@ router.post("/webhook", async (req, res) => {
 router.post("/contratar", authMiddleware, async (req, res) => {
   try {
     const u = await contratar(req.user.id, req.body);
-    // devolve só os campos públicos (nunca o password hash)
+    // devolve só os campos públicos (nunca o password hash).
+    // subscriptionStatus + createdAt são essenciais: o gate do frontend
+    // (PrivateRoute) usa esses campos para reconhecer a conta como já
+    // contratada — sem eles, o usuário volta em loop para /contratar.
     res.json({
       user: {
         id: u.id, name: u.name, email: u.email, role: u.role,
         plan: u.plan, nickname: u.nickname, clinicName: u.clinicName,
         featureOverrides: u.featureOverrides ?? {}, avatarUrl: u.avatarUrl,
         demoExpiresAt: u.demoExpiresAt ?? null,
+        subscriptionStatus: u.subscriptionStatus ?? null,
+        createdAt: u.createdAt ?? null,
       },
     });
   } catch (e) {
