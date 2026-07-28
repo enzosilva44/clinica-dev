@@ -82,8 +82,15 @@ export async function getWhatsappConfig(req, res) {
     where: { id: req.user.id },
     select: { whatsappPhoneNumberId: true, whatsappAccessToken: true },
   });
+  // A clínica tem o próprio número conectado?
+  const ownConfigured = !!(user?.whatsappPhoneNumberId && user?.whatsappAccessToken);
+  // A plataforma tem número único ativo? (modelo padrão: enviamos pela clínica sem ela configurar nada)
+  const platformReady = !!(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
   res.json({
-    configured: !!(user?.whatsappPhoneNumberId && user?.whatsappAccessToken),
+    // "configured" = os envios vão funcionar (por número próprio OU pelo da plataforma)
+    configured: ownConfigured || platformReady,
+    ownConfigured,        // a clínica conectou o próprio WhatsApp
+    platformDefault: !ownConfigured && platformReady, // usando o número da plataforma
     phoneNumberId: user?.whatsappPhoneNumberId || "",
     hasToken: !!user?.whatsappAccessToken,
   });

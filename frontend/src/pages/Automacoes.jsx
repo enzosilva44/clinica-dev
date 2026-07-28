@@ -291,18 +291,24 @@ export default function Automacoes() {
       {wpConfig.configured ? (
         <div className="flex items-center gap-3 bg-sucesso/10 border border-sucesso/30 rounded-2xl px-4 py-3 mb-6 text-sm text-verde-900">
           <Wifi size={16} className="shrink-0 text-sucesso" />
-          <span><strong>WhatsApp conectado.</strong> Automações ativas e enviando mensagens reais.</span>
+          {wpConfig.ownConfigured ? (
+            <span><strong>WhatsApp conectado.</strong> As mensagens saem pelo número da sua clínica.</span>
+          ) : (
+            <span><strong>Automações ativas.</strong> As mensagens são enviadas com a identificação da sua clínica. Se preferir usar o seu próprio número, <button onClick={() => setTab("conexao")} className="underline font-semibold">conecte aqui</button>.</span>
+          )}
         </div>
       ) : (
         <div className="flex items-center gap-3 bg-atencao/10 border border-atencao/30 rounded-2xl px-4 py-3 mb-6 text-sm text-verde-900">
           <WifiOff size={16} className="shrink-0 text-atencao" />
-          <span><strong>WhatsApp não configurado.</strong> Configure na aba <button onClick={() => setTab("conexao")} className="underline font-semibold">Conexão</button> para ativar os envios.</span>
+          <span><strong>Envio de WhatsApp indisponível no momento.</strong> Nossa equipe já está cuidando disso.</span>
         </div>
       )}
 
       {/* TABS */}
       <div className="flex gap-1 bg-creme-50 border border-creme-200 rounded-xl p-1 mb-6 w-fit">
-        {[["templates", MessageSquare, "Templates"], ["historico", History, "Histórico"], ["conexao", Wifi, "Conexão"], ["resumo", BarChart2, "Resumo"]].map(([v, Icon, l]) => (
+        {/* Aba "Conexão" fica oculta no modelo de número único da plataforma —
+            acessível só via o link "conecte aqui" pra quem quer usar o próprio número. */}
+        {[["templates", MessageSquare, "Templates"], ["historico", History, "Histórico"], ["resumo", BarChart2, "Resumo"]].map(([v, Icon, l]) => (
           <button
             key={v}
             onClick={() => setTab(v)}
@@ -352,26 +358,30 @@ export default function Automacoes() {
         <div className="max-w-lg space-y-6">
           {/* Conexão automática (Embedded Signup) — caminho recomendado */}
           <div className="space-y-2">
-            <p className="text-sm font-bold text-verde-900">Conexão rápida</p>
+            <p className="text-sm font-bold text-verde-900">Usar meu próprio número (opcional)</p>
             <p className="text-xs text-gray-500">
-              Conecte seu WhatsApp em poucos cliques, sem precisar copiar tokens.
+              Por padrão, suas mensagens já são enviadas com a identificação da sua clínica —
+              você não precisa configurar nada. Conecte aqui só se quiser que saiam do
+              <strong> seu próprio número</strong> de WhatsApp.
             </p>
             <ConnectWhatsAppButton onConnected={loadWpConfig} />
           </div>
           <div className="border-t border-creme-200 pt-2 text-xs text-gray-400">
             ou configure manualmente abaixo
           </div>
-          {/* Status */}
-          <div className={`flex items-center gap-3 rounded-2xl px-5 py-4 border ${wpConfig.configured ? "bg-sucesso/10 border-sucesso/30" : "bg-atencao/10 border-atencao/30"}`}>
-            {wpConfig.configured
+          {/* Status — mostra "conectado" só quando a clínica tem o PRÓPRIO número */}
+          <div className={`flex items-center gap-3 rounded-2xl px-5 py-4 border ${wpConfig.ownConfigured ? "bg-sucesso/10 border-sucesso/30" : "bg-creme-50 border-creme-200"}`}>
+            {wpConfig.ownConfigured
               ? <Wifi size={20} className="text-sucesso shrink-0" />
-              : <WifiOff size={20} className="text-atencao shrink-0" />}
+              : <WifiOff size={20} className="text-gray-400 shrink-0" />}
             <div>
               <p className="font-bold text-sm text-verde-900">
-                {wpConfig.configured ? "WhatsApp conectado" : "Não configurado"}
+                {wpConfig.ownConfigured ? "Seu número conectado" : "Usando o número da plataforma"}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
-                {wpConfig.configured ? "Mensagens automáticas estão ativas." : "Preencha as credenciais abaixo para ativar."}
+                {wpConfig.ownConfigured
+                  ? "As mensagens saem pelo número da sua clínica."
+                  : "As mensagens já saem com a identificação da sua clínica. Conecte abaixo para usar o seu próprio número."}
               </p>
             </div>
           </div>
