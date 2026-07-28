@@ -12,6 +12,12 @@ import { Card, Spinner } from "../components/ui";
 import api from "../services/api";
 import ConnectWhatsAppButton from "../components/whatsapp/ConnectWhatsAppButton";
 
+// WhatsApp de suporte/comercial — mesma env var usada no resto do app.
+const WHATSAPP_COMMERCIAL = import.meta.env.VITE_WHATSAPP_COMMERCIAL || "";
+const suporteHref = WHATSAPP_COMMERCIAL
+  ? `https://wa.me/${WHATSAPP_COMMERCIAL}?text=${encodeURIComponent("Olá! Quero usar meu próprio número de WhatsApp nas automações. Podem me ajudar?")}`
+  : "";
+
 const TYPE_META = {
   birthday:     { label: "Feliz aniversário",        icon: Cake,          color: "#C4895A", desc: "Enviada no dia do aniversário do paciente (todos os dias às 09h)." },
   welcome:      { label: "Boas-vindas",               icon: UserPlus,      color: "#00704A", desc: "Enviada automaticamente ao cadastrar um novo paciente." },
@@ -294,7 +300,9 @@ export default function Automacoes() {
           {wpConfig.ownConfigured ? (
             <span><strong>WhatsApp conectado.</strong> As mensagens saem pelo número da sua clínica.</span>
           ) : (
-            <span><strong>Automações ativas.</strong> As mensagens são enviadas com a identificação da sua clínica. Se preferir usar o seu próprio número, <button onClick={() => setTab("conexao")} className="underline font-semibold">conecte aqui</button>.</span>
+            <span><strong>Automações ativas.</strong> As mensagens são enviadas com a identificação da sua clínica. Se preferir usar o seu próprio número, {suporteHref
+              ? <a href={suporteHref} target="_blank" rel="noopener noreferrer" className="underline font-semibold">consulte o especialista</a>
+              : <span className="font-semibold">fale com o nosso suporte</span>}.</span>
           )}
         </div>
       ) : (
