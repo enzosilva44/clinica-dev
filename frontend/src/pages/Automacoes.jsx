@@ -3,7 +3,7 @@ import {
   MessageSquare, History, ToggleLeft, ToggleRight,
   Edit2, Save, X, RefreshCw, CheckCircle, XCircle, Clock,
   Cake, UserPlus, CalendarCheck, Bell, Wifi, WifiOff, Eye, EyeOff, Send,
-  BarChart2, TrendingUp, DollarSign, AlertTriangle,
+  BarChart2, TrendingUp, DollarSign, AlertTriangle, Inbox,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { mensagemDeErro } from "../lib/tomDeVoz";
@@ -180,6 +180,8 @@ export default function Automacoes() {
   const [logTotal, setLogTotal] = useState(0);
   const [logTotalPages, setLogTotalPages] = useState(1);
   const [filterType, setFilterType] = useState("");
+  const [inbound, setInbound] = useState([]);
+  const [loadingInbound, setLoadingInbound] = useState(false);
   const [triggering, setTriggering] = useState("");
 
   // Usage stats
@@ -267,7 +269,18 @@ export default function Automacoes() {
   }
 
   useEffect(() => { loadTemplates(); loadWpConfig(); }, []);
+  async function loadInbound() {
+    setLoadingInbound(true);
+    try {
+      const res = await api.get("/automations/inbound");
+      setInbound(res.data.data);
+    } finally {
+      setLoadingInbound(false);
+    }
+  }
+
   useEffect(() => { if (tab === "historico") loadLogs(); }, [tab, logPage, filterType]);
+  useEffect(() => { if (tab === "respostas") loadInbound(); }, [tab]);
   useEffect(() => { if (tab === "resumo") loadStats(); }, [tab]);
 
   async function triggerManual(type) {
@@ -316,7 +329,7 @@ export default function Automacoes() {
       <div className="flex gap-1 bg-creme-50 border border-creme-200 rounded-xl p-1 mb-6 w-fit">
         {/* Aba "Conexão" fica oculta no modelo de número único da plataforma —
             acessível só via o link "conecte aqui" pra quem quer usar o próprio número. */}
-        {[["templates", MessageSquare, "Templates"], ["historico", History, "Histórico"], ["resumo", BarChart2, "Resumo"]].map(([v, Icon, l]) => (
+        {[["templates", MessageSquare, "Templates"], ["respostas", Inbox, "Respostas"], ["historico", History, "Histórico"], ["resumo", BarChart2, "Resumo"]].map(([v, Icon, l]) => (
           <button
             key={v}
             onClick={() => setTab(v)}
@@ -463,6 +476,49 @@ export default function Automacoes() {
             </Card>
           )}
         </div>
+      )}
+
+      {/* RESPOSTAS TAB — mensagens recebidas dos pacientes */}
+      {tab === "respostas" && (
+        <>
+          <p className="text-sm text-gray-500 mb-4">
+            Respostas dos seus pacientes no WhatsApp. Quando alguém confirma ou pede
+            para remarcar, a agenda é atualizada automaticamente.
+          </p>
+          {loadingInbound ? (
+            <Spinner />
+          ) : inbound.length === 0 ? (
+            <Card className="p-8 text-center text-gray-400 text-sm">
+              Nenhuma resposta ainda. Quando seus pacientes responderem, elas aparecem aqui.
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {inbound.map((r) => {
+                const badge = r.handled === "confirmed"
+                  ? { label: "Confirmou presença", cls: "bg-sucesso/10 text-sucesso border-sucesso/30", Icon: CheckCircle }
+                  : r.handled === "reschedule"
+                  ? { label: "Pediu para remarcar", cls: "bg-atencao/10 text-atencao border-atencao/30", Icon: RefreshCw }
+                  : { label: "Respondeu", cls: "bg-creme-100 text-verde border-creme-200", Icon: MessageSquare };
+                const quando = new Date(r.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+                return (
+                  <Card key={r.id} className="p-4 flex items-start gap-3">
+                    <badge.Icon size={18} className="shrink-0 mt-0.5 text-verde" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm text-verde-900">{r.patientName || r.phone}</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full border ${badge.cls}`}>{badge.label}</span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1 break-words">
+                        “{r.buttonPayload || r.text || "—"}”
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-1">{quando}</p>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {/* HISTÓRICO TAB */}

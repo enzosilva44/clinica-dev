@@ -113,6 +113,25 @@ const TEMPLATES = [
     ],
   },
   {
+    // Aviso AO DONO da clínica quando um paciente responde (confirmar/remarcar).
+    // {{1}} paciente, {{2}} o que respondeu, {{3}} referência da consulta.
+    name: "resposta_paciente_iaso",
+    category: "UTILITY",
+    language: "pt_BR",
+    components: [
+      {
+        type: "BODY",
+        text:
+          "📩 {{1}} respondeu no WhatsApp: \"{{2}}\".\n\n" +
+          "Referente a {{3}}.\n\n" +
+          "Abra o Iaso para ver os detalhes e a agenda atualizada.",
+        example: {
+          body_text: [["Maria Silva", "Confirmar presença", "a consulta de 28/07/2026 às 15:30"]],
+        },
+      },
+    ],
+  },
+  {
     name: "aviso_fatura_iaso",
     category: "UTILITY",
     language: "pt_BR",

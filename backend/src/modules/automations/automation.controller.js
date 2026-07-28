@@ -33,6 +33,21 @@ export async function getLogs(req, res) {
   res.json(result);
 }
 
+// Respostas recebidas dos pacientes (inbound).
+export async function getInbound(req, res) {
+  const { page = 1, limit = 20 } = req.query;
+  const p = Math.max(1, +page), l = Math.min(50, +limit);
+  const where = { userId: req.user.id };
+  const [data, total] = await Promise.all([
+    prisma.whatsappInbound.findMany({
+      where, orderBy: { createdAt: "desc" },
+      skip: (p - 1) * l, take: l,
+    }),
+    prisma.whatsappInbound.count({ where }),
+  ]);
+  res.json({ data, total, totalPages: Math.ceil(total / l) });
+}
+
 export async function notifyCustom(req, res) {
   const { phone, message, patientId, patientName, type = "confirmation" } = req.body;
   if (!phone || !message) return res.status(400).json({ error: "phone e message são obrigatórios" });

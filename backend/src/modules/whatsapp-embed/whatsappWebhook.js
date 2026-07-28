@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { prisma } from "../../config/prisma.js";
+import { processInboundMessage } from "../automations/inbound.service.js";
 
 const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN;
 const APP_SECRET = process.env.APP_SECRET;
@@ -63,10 +64,12 @@ export async function receiveWebhook(req, res) {
             .catch(() => {});
         }
 
-        // Mensagens recebidas dos pacientes (abre janela de 24h de conversa grátis).
-        // Por ora só logamos; tratamento de resposta é evolução futura.
-        for (const _msg of value.messages || []) {
-          // TODO: registrar inbound / abrir janela de conversa
+        // Mensagens recebidas dos pacientes: atribui à clínica, age na agenda
+        // (confirmar/remarcar), registra no histórico e avisa o dono.
+        for (const msg of value.messages || []) {
+          await processInboundMessage(msg).catch((e) =>
+            console.error("[whatsapp-webhook] inbound:", e.message)
+          );
         }
       }
     }

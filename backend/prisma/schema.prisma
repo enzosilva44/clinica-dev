@@ -79,6 +79,7 @@ model User {
   whatsappConnectedAt   DateTime?
   appointments          Appointment[]
   automationLogs        AutomationLog[]
+  whatsappInbounds      WhatsappInbound[]
   automationTemplates   AutomationTemplate[]
   budgets               Budget[]
   clubMembers           ClubMember[]
@@ -166,6 +167,7 @@ model Patient {
   zipCode            String?
   appointments       Appointment[]
   automationLogs     AutomationLog[]
+  whatsappInbounds   WhatsappInbound[]
   budgets            Budget[]
   clubMemberships    ClubMember[]
   evolutions         Evolution[]
@@ -743,6 +745,29 @@ model AutomationLog {
   patient       Patient?            @relation(fields: [patientId], references: [id])
   template      AutomationTemplate? @relation(fields: [templateId], references: [id])
   user          User                @relation(fields: [userId], references: [id])
+}
+
+// Respostas dos pacientes recebidas via webhook do WhatsApp.
+// Como o número é compartilhado, cada inbound é atribuído à clínica (userId)
+// pelo envio mais recente àquele telefone (ver whatsappWebhook.js).
+model WhatsappInbound {
+  id            String    @id @default(cuid())
+  userId        String // clínica atribuída
+  phone         String // telefone do paciente (from)
+  patientId     String?
+  patientName   String?
+  text          String? // texto livre, se houver
+  buttonPayload String? // texto do botão clicado (ex.: "Confirmar presença")
+  kind          String    @default("text") // text | button | interactive
+  metaMessageId String? // id da mensagem recebida (idempotência)
+  appointmentId String? // agendamento afetado, se a resposta agiu na agenda
+  handled       String? // "confirmed" | "reschedule" | null (o que a resposta disparou)
+  createdAt     DateTime  @default(now())
+  patient       Patient?  @relation(fields: [patientId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([metaMessageId])
 }
 
 model AdminTask {
