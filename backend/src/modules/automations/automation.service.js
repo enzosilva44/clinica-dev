@@ -2,39 +2,64 @@ import { prisma } from "../../config/prisma.js";
 import { sendWhatsAppMessage, sendWhatsAppTemplate } from "../whatsapp/whatsapp.provider.js";
 import { checkQuota, consumeQuota } from "../billing/quota.service.js";
 
+// {{clinica}} = apresentação da clínica (ex.: "do consultório da Dra. Fernanda"),
+// injetada automaticamente em logAndSend. Como o número é único/compartilhado,
+// TODA mensagem abre identificando de quem é.
 const DEFAULT_TEMPLATES = {
   birthday: {
     name: "Feliz aniversário",
-    body: "Olá {{nome}}! 🎂 A equipe da clínica deseja um feliz aniversário! Aproveite seu dia especial. 🎉",
+    body: "Olá {{nome}}! 🎂 Aqui é {{clinica}}. Passando pra desejar um feliz aniversário! Aproveite seu dia especial. 🎉",
   },
   welcome: {
     name: "Boas-vindas",
-    body: "Olá {{nome}}! 😊 Seja muito bem-vindo(a) à nossa clínica. Estamos aqui para cuidar de você com todo carinho. Qualquer dúvida, é só chamar!",
+    body: "Olá {{nome}}! 😊 Aqui é {{clinica}}. Seja muito bem-vindo(a)! Estamos aqui para cuidar de você com todo carinho. Qualquer dúvida, é só chamar!",
   },
   confirmation: {
     name: "Confirmação de agendamento",
-    body: "Olá {{nome}}! ✅ Seu agendamento está confirmado para {{data}} às {{hora}}. Aguardamos você! Caso precise reagendar, entre em contato.",
+    body: "Olá {{nome}}! Aqui é {{clinica}}. ✅ Seu agendamento está confirmado para {{data}} às {{hora}}. Aguardamos você! Caso precise reagendar, entre em contato.",
+    metaTemplateName: "confirmacao_consulta_iaso",
+    metaLanguage: "pt_BR",
+    metaVariables: ["nome", "clinica", "data", "hora"],
   },
   reminder: {
     name: "Lembrete de consulta",
-    body: "Olá {{nome}}! 🔔 Lembrando que você tem uma consulta amanhã, {{data}} às {{hora}}. Te esperamos!",
-    metaTemplateName: "lembrete_consulta",
+    body: "Olá {{nome}}! 🔔 Aqui é {{clinica}}. Lembrando da sua consulta em {{data}} às {{hora}}. Te esperamos!",
+    metaTemplateName: "lembrete_consulta_iaso",
     metaLanguage: "pt_BR",
-    metaVariables: ["nome", "data", "hora"],
+    metaVariables: ["nome", "clinica", "data", "hora"],
   },
   payment_link: {
     name: "Link de pagamento",
     // O link vai como VARIÁVEL {{link}} — 1 único template aprovado (categoria
     // Utility na Meta) serve p/ qualquer cobrança; a URL nunca muda o template.
-    body: "Olá {{nome}}! 💳 Segue o link para pagamento da sua cobrança no valor de {{valor}}:\n\n{{link}}\n\nQualquer dúvida, estamos à disposição!",
+    body: "Olá {{nome}}! 💳 Aqui é {{clinica}}. Segue o link para pagamento da sua cobrança no valor de {{valor}}:\n\n{{link}}\n\nQualquer dúvida, estamos à disposição!",
     metaTemplateName: "link_pagamento",
     metaLanguage: "pt_BR",
-    metaVariables: ["nome", "valor", "link"],
+    metaVariables: ["nome", "clinica", "valor", "link"],
   },
 };
 
 function interpolate(body, vars) {
   return body.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
+}
+
+// Como a clínica se apresenta ao paciente no WhatsApp.
+// Modelo atual: 1 número único (o da plataforma) envia por TODAS as clínicas,
+// então CADA mensagem precisa dizer de quem é. Formato: "do consultório da Dra. X".
+// Fonte única — usada tanto nas mensagens de texto quanto como variável de template.
+// Prioridade do nome: nickname (como a pessoa quer ser chamada) > name (dono) > clinicName.
+export function apresentacaoClinica(user = {}) {
+  const nome = (user.nickname || user.name || user.clinicName || "").trim();
+  if (!nome) return "do seu consultório"; // fallback sem vazar vazio
+
+  const feminino = user.gender === "female" || user.gender === "F";
+  // Título profissional só quando temos o nome de uma PESSOA (não o nome fantasia da clínica).
+  const ehPessoa = Boolean(user.nickname || user.name);
+  const titulo = ehPessoa ? (feminino ? "Dra. " : "Dr. ") : "";
+
+  // "consultório" é masculino → sempre "do consultório". O gênero da pessoa
+  // muda só o título (Dr./Dra.), nunca o artigo.
+  return `do consultório ${titulo}${nome}`;
 }
 
 export async function ensureDefaultTemplates(userId) {
@@ -74,13 +99,24 @@ async function logAndSend({ userId, patientId, patientName, phone, type, message
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { whatsappPhoneNumberId: true, whatsappAccessToken: true },
+    select: {
+      whatsappPhoneNumberId: true, whatsappAccessToken: true,
+      name: true, nickname: true, clinicName: true, gender: true,
+    },
   });
 
+  // Modelo número-único: o número da plataforma envia por todas as clínicas.
+  // Se a clínica conectou o próprio WhatsApp, usa o dela; senão, cai no da plataforma.
   const config = {
     phoneNumberId: user?.whatsappPhoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID,
     accessToken:   user?.whatsappAccessToken   || process.env.WHATSAPP_ACCESS_TOKEN,
   };
+
+  // Toda mensagem precisa identificar de qual clínica é (número compartilhado).
+  // Injeta {{clinica}} nas variáveis; templates e corpos usam essa variável.
+  const clinica = apresentacaoClinica(user);
+  vars = { ...(vars || {}), clinica };
+  message = interpolate(message, { clinica });
 
   if (!config.phoneNumberId || !config.accessToken) {
     await prisma.automationLog.create({

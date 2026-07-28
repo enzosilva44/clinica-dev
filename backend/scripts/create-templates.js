@@ -36,32 +36,33 @@ const TEMPLATES = [
     // v2: já existe um "lembrete_consulta" APROVADO como MARKETING na WABA;
     // a Meta não deixa recriar o mesmo nome com outra categoria. Este é UTILITY
     // (mais barato) e com campos ricos (clínica + profissional).
-    name: "lembrete_consulta_v2",
+    name: "lembrete_consulta_iaso",
     category: "UTILITY",
     language: "pt_BR",
     components: [
       {
+        // Ordem: {{1}} nome, {{2}} clinica (apresentação), {{3}} data, {{4}} hora
+        // — bate com metaVariables ["nome","clinica","data","hora"] no service.
         type: "BODY",
         text:
-          "Oi, {{1}}! Passando pra lembrar da sua consulta na {{2}}.\n\n" +
-          "📅 {{3}} às {{4}}\n" +
-          "👩‍⚕️ {{5}}\n\n" +
-          "Qualquer imprevisto, é só nos avisar por aqui. Até lá!",
-        example: { body_text: [["Maria", "Clínica Becari", "28/07/2026", "15:30", "Dra. Fernanda"]] },
+          "Olá {{1}}! 🔔 Aqui é {{2}}. Passando pra lembrar da sua consulta em {{3}} às {{4}}.\n\n" +
+          "Qualquer imprevisto, é só nos avisar por aqui. Te esperamos!",
+        example: { body_text: [["Maria", "do consultório da Dra. Fernanda", "28/07/2026", "15:30"]] },
       },
     ],
   },
   {
-    name: "confirmacao_consulta",
+    name: "confirmacao_consulta_iaso",
     category: "UTILITY",
     language: "pt_BR",
     components: [
       {
+        // Ordem: {{1}} nome, {{2}} clinica, {{3}} data, {{4}} hora.
         type: "BODY",
         text:
-          "Oi, {{1}}! Sua consulta na {{2}} está marcada para {{3}} às {{4}}.\n\n" +
+          "Olá {{1}}! Aqui é {{2}}. ✅ Sua consulta está marcada para {{3}} às {{4}}.\n\n" +
           "Pode confirmar pra gente? Se precisar remarcar, é só tocar abaixo que a gente ajeita.",
-        example: { body_text: [["Maria", "Clínica Becari", "28/07/2026", "15:30"]] },
+        example: { body_text: [["Maria", "do consultório da Dra. Fernanda", "28/07/2026", "15:30"]] },
       },
       {
         type: "BUTTONS",
@@ -73,55 +74,58 @@ const TEMPLATES = [
     ],
   },
   {
-    name: "retorno_paciente",
+    name: "retorno_paciente_iaso",
     category: "UTILITY",
     language: "pt_BR",
     components: [
       {
         type: "BODY",
+        // {{1}} nome, {{2}} clinica, {{3}} recomendação/motivo do retorno.
         text:
-          "Oi, {{1}}! Como parte do seu acompanhamento na {{2}}, chegou o momento do seu retorno.\n\n" +
+          "Olá {{1}}! Aqui é {{2}}. Como parte do seu acompanhamento, chegou o momento do seu retorno.\n\n" +
           "Recomendação: {{3}}\n\n" +
           "Quer que a gente já reserve um horário pra você? É só responder por aqui.",
         example: {
-          body_text: [["Maria", "Clínica Becari", "retorno de 30 dias após o preenchimento"]],
+          body_text: [["Maria", "do consultório da Dra. Fernanda", "retorno de 30 dias após o preenchimento"]],
         },
       },
     ],
   },
   {
-    name: "reativacao_paciente",
+    name: "reativacao_paciente_iaso",
     category: "MARKETING",
     language: "pt_BR",
     components: [
       {
         type: "BODY",
+        // {{1}} nome, {{2}} clinica, {{3}} mensagem/oferta.
         text:
-          "Oi, {{1}}! Sentimos sua falta na {{2}}. 💚\n\n" +
+          "Olá {{1}}! Aqui é {{2}} e sentimos sua falta. 💚\n\n" +
           "{{3}}\n\n" +
           "Se quiser agendar, é só responder esta mensagem.\n" +
           "Se preferir não receber mais estes avisos, responda SAIR.",
         example: {
           body_text: [
-            ["Maria", "Clínica Becari", "Este mês, avaliação de skincare sem custo pra clientes que voltam."],
+            ["Maria", "do consultório da Dra. Fernanda", "Este mês, avaliação de skincare sem custo pra clientes que voltam."],
           ],
         },
       },
     ],
   },
   {
-    name: "aviso_fatura",
+    name: "aviso_fatura_iaso",
     category: "UTILITY",
     language: "pt_BR",
     components: [
       {
         type: "BODY",
+        // {{1}} nome, {{2}} clinica, {{3}} valor, {{4}} vencimento.
         text:
-          "Oi, {{1}}! Passando pra avisar sobre um valor em aberto na {{2}}.\n\n" +
+          "Olá {{1}}! Aqui é {{2}}. Passando pra avisar sobre um valor em aberto.\n\n" +
           "💰 Valor: {{3}}\n" +
           "📅 Vencimento: {{4}}\n\n" +
           "Você pode pagar pelo link abaixo. Se já pagou, pode ignorar — pode levar até 1 dia útil pra compensar. Qualquer dúvida, é só chamar.",
-        example: { body_text: [["Maria", "Clínica Becari", "R$ 199,00", "30/07/2026"]] },
+        example: { body_text: [["Maria", "do consultório da Dra. Fernanda", "R$ 199,00", "30/07/2026"]] },
       },
       {
         type: "BUTTONS",
