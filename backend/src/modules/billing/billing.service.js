@@ -462,6 +462,10 @@ export async function getIasopayWalletId() {
 
 // ─── envio de link via WhatsApp ───────────────────────────────────────────────
 
+// Templates aprovados cujo botão é uma URL dinâmica: o link NÃO vai no corpo,
+// e sim como parâmetro do botão (só o trecho final da URL).
+const URL_BUTTON_TEMPLATES = new Set(["aviso_fatura_iaso"]);
+
 export async function sendPaymentLink(userId, chargeId) {
   const key    = await resolveKey(userId);
   const charge = await asaas("GET", `/payments/${chargeId}`, null, key);
@@ -489,7 +493,7 @@ export async function sendPaymentLink(userId, chargeId) {
     : null;
 
   const { sendWhatsAppMessage, sendWhatsAppTemplate } = await import("../whatsapp/whatsapp.provider.js");
-  const { getActiveTemplate, interpolate } = await import("../automations/automation.service.js");
+  const { getActiveTemplate, interpolate, apresentacaoClinica } = await import("../automations/automation.service.js");
 
   // Credenciais WhatsApp do usuário/clínica com fallback para env
   const userWa = await prisma.user.findUnique({
@@ -521,11 +525,30 @@ export async function sendPaymentLink(userId, chargeId) {
   // livre (só entrega dentro da janela de 24h, mas mantém compatibilidade).
   const tpl = await getActiveTemplate(userId, "payment_link");
   if (tpl?.metaTemplateName) {
-    const vars = { nome: firstName, valor: `${value} (${method})`, link };
+    const clinic = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, nickname: true, clinicName: true, gender: true },
+    });
+    const vencimento = charge.dueDate
+      ? new Date(charge.dueDate).toLocaleDateString("pt-BR", { timeZone: "UTC" })
+      : "—";
+    const vars = {
+      nome: firstName,
+      clinica: apresentacaoClinica(clinic ?? {}),
+      valor: `${value} (${method})`,
+      vencimento,
+      link,
+    };
     const params = (tpl.metaVariables || []).map((k) => vars[k] ?? "");
+    // Templates com botão de URL dinâmica (aviso_fatura_iaso) recebem só o
+    // trecho final da URL — o prefixo https://www.asaas.com/i/ já está no botão.
+    const urlButtonParam = URL_BUTTON_TEMPLATES.has(tpl.metaTemplateName)
+      ? String(link).split("/").filter(Boolean).pop()
+      : undefined;
     await sendWhatsAppTemplate(phone, tpl.metaTemplateName, params, {
       ...waConfig,
       language: tpl.metaLanguage || "pt_BR",
+      urlButtonParam,
     });
   } else {
     const message = tpl

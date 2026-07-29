@@ -159,6 +159,39 @@ const TEMPLATES = [
       },
     ],
   },
+  {
+    // Aniversário: a Meta costuma reclassificar felicitação como MARKETING mesmo
+    // submetida como UTILITY (não é transacional). Submetido como MARKETING desde
+    // o início p/ evitar rejeição por categoria — exige opt-in do paciente.
+    name: "aniversario_iaso",
+    category: "MARKETING",
+    language: "pt_BR",
+    components: [
+      {
+        // Ordem: {{1}} nome, {{2}} clinica — bate com metaVariables ["nome","clinica"].
+        type: "BODY",
+        text:
+          "Olá {{1}}! 🎂 Aqui é {{2}}. Passando pra desejar um feliz aniversário!\n\n" +
+          "Que seu dia seja especial. 🎉",
+        example: { body_text: [["Maria", "do consultório da Dra. Fernanda"]] },
+      },
+    ],
+  },
+  {
+    name: "boas_vindas_iaso",
+    category: "UTILITY",
+    language: "pt_BR",
+    components: [
+      {
+        // Ordem: {{1}} nome, {{2}} clinica — bate com metaVariables ["nome","clinica"].
+        type: "BODY",
+        text:
+          "Olá {{1}}! 😊 Aqui é {{2}}. Seja muito bem-vindo(a)!\n\n" +
+          "Estamos aqui para cuidar de você. Qualquer dúvida, é só chamar.",
+        example: { body_text: [["Maria", "do consultório da Dra. Fernanda"]] },
+      },
+    ],
+  },
 ];
 
 async function createTemplate(tpl) {
