@@ -6,12 +6,14 @@
 import "dotenv/config";
 
 // ==== CHUMBE AQUI (bata com o template APROVADO no WhatsApp Manager) ====
-const TEMPLATE_NAME = "lembrete_consulta"; // nome EXATO do template aprovado
+const TEMPLATE_NAME = "lembrete_consulta_iaso"; // nome EXATO do template aprovado
 const LANGUAGE = "pt_BR";                    // código de idioma do template
 // Variáveis do corpo, na ordem {{1}}, {{2}}, {{3}}...
-const PARAMS = ["Enzo", "20/07/2026", "15:30"];
+// {{2}} é a apresentação da clínica — em produção vem de apresentacaoClinica()
+const PARAMS = ["Enzo", "do consultório Dra. Fernanda", "30/07/2026", "15:30"];
 // Número destino: 1º argumento da linha de comando, ou o fixo abaixo
-const TO = process.argv[2] || "5516999999999";
+// 1º argumento que não seja flag (p/ --force poder vir em qualquer posição)
+const TO = process.argv.slice(2).find((a) => !a.startsWith("--")) || "5516999999999";
 // =======================================================================
 
 const META_API_VERSION = "v20.0";
@@ -20,6 +22,15 @@ const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
 
 if (!phoneNumberId || !accessToken) {
   console.error("Faltam WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_ACCESS_TOKEN no .env");
+  process.exit(1);
+}
+
+// Este script fala DIRETO com a Meta (não passa pelo whatsapp.provider), então
+// o kill switch WHATSAPP_SEND_ENABLED não o alcança. Exige --force para lembrar
+// que o envio pela aplicação está desligado — evita mandar sem querer.
+if (String(process.env.WHATSAPP_SEND_ENABLED ?? "").toLowerCase() !== "true" && !process.argv.includes("--force")) {
+  console.error("Envio pela aplicação está DESLIGADO (WHATSAPP_SEND_ENABLED != true).");
+  console.error("Este script manda de verdade. Se é isso mesmo que você quer, repita com --force.");
   process.exit(1);
 }
 

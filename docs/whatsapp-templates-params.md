@@ -1,5 +1,10 @@
 # Params na ordem — para o script de teste
 
+> **Status (2026-07-29):** os 6 templates `_iaso` estão **APROVADOS** na Meta.
+> O envio pela aplicação está **desligado** pelo interruptor `WHATSAPP_SEND_ENABLED`
+> (só manda com `"true"`). O script abaixo fala direto com a Meta e por isso
+> exige `--force` enquanto o interruptor estiver desligado.
+
 Depois que cada template for **aprovado**, edite o topo de
 `backend/scripts/send-test-template.js` com estes valores e rode:
 
