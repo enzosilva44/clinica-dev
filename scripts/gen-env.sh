@@ -15,6 +15,14 @@ set -e
   echo "ASAAS_WEBHOOK_TOKEN=${ASAAS_WEBHOOK_TOKEN}"
   echo "WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}"
   echo "WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}"
+  # Interruptor geral de envio. Default "false": variável ausente no CodeBuild
+  # deixa o ambiente MUDO, nunca enviando por acidente.
+  echo "WHATSAPP_SEND_ENABLED=${WHATSAPP_SEND_ENABLED:-false}"
+  # Assinatura HMAC do webhook da Meta (x-hub-signature-256) e token da
+  # verificação inicial (GET hub.verify_token). Sem APP_SECRET o webhook
+  # rejeita TODA mensagem recebida com 401.
+  echo "APP_SECRET=${APP_SECRET}"
+  echo "META_WEBHOOK_VERIFY_TOKEN=${META_WEBHOOK_VERIFY_TOKEN}"
   echo "OTP_TEST_MODE=${OTP_TEST_MODE}"
   echo "SMTP_HOST=${SMTP_HOST}"
   echo "SMTP_PORT=${SMTP_PORT}"
