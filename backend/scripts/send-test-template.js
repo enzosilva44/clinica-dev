@@ -26,12 +26,23 @@ if (!phoneNumberId || !accessToken) {
 }
 
 // Este script fala DIRETO com a Meta (não passa pelo whatsapp.provider), então
-// o kill switch WHATSAPP_SEND_ENABLED não o alcança. Exige --force para lembrar
-// que o envio pela aplicação está desligado — evita mandar sem querer.
-if (String(process.env.WHATSAPP_SEND_ENABLED ?? "").toLowerCase() !== "true" && !process.argv.includes("--force")) {
-  console.error("Envio pela aplicação está DESLIGADO (WHATSAPP_SEND_ENABLED != true).");
-  console.error("Este script manda de verdade. Se é isso mesmo que você quer, repita com --force.");
-  process.exit(1);
+// o kill switch WHATSAPP_SEND_ENABLED não o alcança sozinho.
+//
+// Com o envio DESLIGADO, --force não basta: é preciso repetir o número de
+// destino em --confirmar=<numero>. Uma flag genérica vira reflexo e acaba
+// colada de um histórico de shell; repetir o destino obriga a olhar para quem
+// vai receber. O .env desta máquina costuma apontar para o banco de dev, que
+// tem pacientes REAIS — um disparo distraído atinge gente de verdade.
+if (String(process.env.WHATSAPP_SEND_ENABLED ?? "").toLowerCase() !== "true") {
+  const confirmado = (process.argv.find((a) => a.startsWith("--confirmar=")) || "").split("=")[1] || "";
+  const alvo = TO.replace(/\D/g, "");
+  if (confirmado.replace(/\D/g, "") !== alvo) {
+    console.error("Envio pela aplicação está DESLIGADO (WHATSAPP_SEND_ENABLED != true).");
+    console.error("Este script manda de VERDADE, pelo número oficial da plataforma.");
+    console.error(`Para enviar assim mesmo, confirme o destino:\n`);
+    console.error(`  node scripts/send-test-template.js ${alvo} --confirmar=${alvo}\n`);
+    process.exit(1);
+  }
 }
 
 let to = TO.replace(/\D/g, "");
