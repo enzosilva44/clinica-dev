@@ -88,10 +88,23 @@ function downloadCSV(rows, filename) {
 
 const INPUT = "w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20";
 
+// "pago" e "confirmado" convivem por desenho: lançamentos financeiros usam
+// "pago" (é o que o webhook do Asaas grava e o que os relatórios de IA leem),
+// o fluxo de cobrança usa "confirmado". Ambos são recebimento efetivado.
 const STATUS_PILL = {
   pendente:   "bg-ambar-50 text-ambar-700",
   confirmado: "bg-verde-100 text-verde-800",
+  pago:       "bg-verde-100 text-verde-800",
+  isento:     "bg-gray-100 text-gray-500",
   cancelado:  "bg-gray-100 text-gray-500",
+};
+
+const STATUS_LABEL = {
+  pendente:   "Pendente",
+  confirmado: "Confirmado",
+  pago:       "Pago",
+  isento:     "Isento",
+  cancelado:  "Cancelado",
 };
 
 const TABS = [
@@ -1277,8 +1290,8 @@ export default function Financeiro() {
                             <span className="text-gray-300"> · taxa {tx.feePercent}%</span>
                           </p>
                         )}
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_PILL[tx.status] || STATUS_PILL.cancelado}`}>
-                          {tx.status === "pendente" ? "Pendente" : tx.status === "confirmado" ? "Confirmado" : "Cancelado"}
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_PILL[tx.status] || STATUS_PILL.pendente}`}>
+                          {STATUS_LABEL[tx.status] || tx.status}
                         </span>
                       </div>
 

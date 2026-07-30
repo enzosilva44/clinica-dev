@@ -394,7 +394,9 @@ export async function createSubaccount(userId, { incomeValue } = {}) {
 function webhookEndpoint() {
   if (process.env.ASAAS_WEBHOOK_URL) return process.env.ASAAS_WEBHOOK_URL;
   const base = (process.env.APP_URL || "https://sistema.iasoclin.com.br").replace(/\/$/, "");
-  return `${base}/billing/webhook`;
+  // O Nginx serve a API sob /api — sem esse prefixo o Asaas bate numa rota que
+  // não existe e nenhuma baixa chega ao Financeiro.
+  return `${base}/api/billing/webhook`;
 }
 
 // Cria o webhook na subconta (chamada feita COM a apiKey da subconta). Todos os
@@ -591,9 +593,20 @@ export async function handleWebhook(event) {
   }
 
   if (type === "PAYMENT_CONFIRMED" || type === "PAYMENT_RECEIVED") {
+    // netValue = o que de fato cai na conta da clínica (bruto − taxa do Asaas −
+    // split IASOPay). O Financeiro precisa exibir esse valor, não o bruto.
+    const bruto = Number(payment.value ?? 0);
+    const liquido = payment.netValue != null ? Number(payment.netValue) : null;
     await prisma.transaction.updateMany({
       where: { id: payment.externalReference },
-      data: { status: "pago", paidAt: new Date() },
+      data: {
+        status: "pago",
+        paidAt: new Date(),
+        ...(liquido != null && {
+          netAmount: liquido,
+          feeAmount: Number((bruto - liquido).toFixed(2)),
+        }),
+      },
     });
     // Split: a comissão IASOPay já foi registrada no createCharge (iasoRevenue).
     // O recebimento apenas confirma; não recalcula para não divergir do que o
