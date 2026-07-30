@@ -136,10 +136,12 @@ export async function processInboundMessage(msg) {
     select: { id: true, phone: true, name: true, nickname: true, clinicName: true, gender: true },
   });
   const replyLabel = buttonPayload || text || "respondeu sua mensagem";
+  // O template já diz "Referente a {{3}}" — este texto entra SEM artigo próprio,
+  // senão sai "Referente a a consulta de...".
   let quandoTexto = "sua próxima consulta";
   if (acted?.appt) {
     const d = new Date(acted.appt.startsAt);
-    quandoTexto = `a consulta de ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+    quandoTexto = `sua consulta de ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
   }
   await notifyOwner(user, { patientName: owner.patientName, replyLabel, quandoTexto });
 }
