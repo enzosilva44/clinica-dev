@@ -300,14 +300,16 @@ function ChargeDetailModal({ charge, onClose, onSimulate, onCancel }) {
                   {sendingLink ? "Enviando…" : "WhatsApp"}
                 </button>
               </div>
-              <button
-                onClick={handleSimulate}
-                disabled={simulating}
-                className="w-full flex items-center justify-center gap-2 bg-ambar-500 hover:bg-ambar-600 text-white py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-60"
-              >
-                {simulating ? <RefreshCw size={13} className="animate-spin" /> : <Zap size={13} />}
-                {simulating ? "Simulando…" : "Simular pagamento (sandbox)"}
-              </button>
+              {import.meta.env.DEV && (
+                <button
+                  onClick={handleSimulate}
+                  disabled={simulating}
+                  className="w-full flex items-center justify-center gap-2 bg-ambar-500 hover:bg-ambar-600 text-white py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-60"
+                >
+                  {simulating ? <RefreshCw size={13} className="animate-spin" /> : <Zap size={13} />}
+                  {simulating ? "Simulando…" : "Simular pagamento (sandbox)"}
+                </button>
+              )}
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
@@ -1237,7 +1239,7 @@ export default function Faturamento() {
                         className="w-8 h-8 rounded-xl border border-creme-200 hover:bg-creme-50 flex items-center justify-center text-gray-400 hover:text-verde transition">
                         <Eye size={13} />
                       </button>
-                      {(charge.status === "PENDING" || charge.status === "pending" || charge.status === "OVERDUE" || charge.status === "overdue") && (
+                      {import.meta.env.DEV && (charge.status === "PENDING" || charge.status === "pending" || charge.status === "OVERDUE" || charge.status === "overdue") && (
                         <button
                           onClick={() => simulateCharge(charge.id)}
                           title="Simular pagamento (sandbox)"

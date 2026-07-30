@@ -127,7 +127,13 @@ router.delete("/charges/:id", async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
+// Simular pagamento chama receiveInCash no Asaas — em produção isso dá baixa
+// REAL numa cobrança que ninguém pagou. Só existe em sandbox.
 router.post("/charges/:id/simulate", async (req, res) => {
+  const emSandbox = String(process.env.ASAAS_URL || "").includes("sandbox");
+  if (!emSandbox) {
+    return res.status(403).json({ error: "Simulação de pagamento não disponível em produção." });
+  }
   try {
     const result = await simulatePayment(req.user.id, req.params.id);
     res.json(result);
