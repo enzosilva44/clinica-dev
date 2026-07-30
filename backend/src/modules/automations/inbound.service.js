@@ -6,11 +6,28 @@ import { sendWhatsAppTemplate } from "../whatsapp/whatsapp.provider.js";
 import { checkQuota, consumeQuota } from "../billing/quota.service.js";
 import { apresentacaoClinica } from "./automation.service.js";
 
+// Pedido de remarcação/cancelamento. Além das raízes explícitas (remarcar,
+// reagendar), cobre as formas indiretas que o paciente usa na prática — "não
+// vou conseguir ir", "tem outro dia?" —, que antes passavam sem classificar e
+// deixavam o horário preso na agenda.
+// Cancelamento entra aqui por decisão de produto: hoje só existe o status
+// RESCHEDULE_REQUESTED, então "cancelar" é tratado como pedido de remarcação
+// (a dona vê o texto original no aviso e decide).
+const RESCHEDULE_RE =
+  /remarc|reagend|remarq|desmarc|cancel|n[ãa]o (vou |consigo |posso |vou conseguir |poderei )|n[ãa]o (dá|da|vai dar)|outro (dia|hor[áa]rio)|imprevisto/;
+
+// "confirm" só vale se NÃO houver negação perto — "não vou conseguir confirmar"
+// é recusa, não confirmação.
+const CONFIRM_RE = /confirm|pode (deixar|manter)|estarei|vou sim|tudo certo/;
+const NEGATION_RE = /n[ãa]o|nao |nunca|infelizmente/;
+
 // Detecta a intenção a partir do texto do botão / mensagem livre.
 function classifyReply({ buttonPayload, text }) {
   const t = (buttonPayload || text || "").toLowerCase();
-  if (/confirm/.test(t)) return "confirm";
-  if (/remarc|reagend|remarq/.test(t)) return "reschedule";
+  // Remarcação vem primeiro: uma frase pode conter as duas ideias
+  // ("não vou conseguir confirmar, preciso remarcar") e a recusa manda.
+  if (RESCHEDULE_RE.test(t)) return "reschedule";
+  if (CONFIRM_RE.test(t) && !NEGATION_RE.test(t)) return "confirm";
   return null;
 }
 
