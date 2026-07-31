@@ -803,8 +803,16 @@ export default function Agenda() {
 
   async function handleDelete() {
     try {
-      await api.delete(`/appointments/${editing.id}`);
-      toast.success("Agendamento excluído");
+      const { data } = await api.delete(`/appointments/${editing.id}`);
+      // Agendamento com pagamento registrado não é excluído — vira CANCELED,
+      // para não deixar o Financeiro com lançamento órfão. O backend devolve o
+      // motivo em `message`; mostrar isso evita que a clínica ache que o botão
+      // falhou ao ver o item sumir da agenda mas continuar no financeiro.
+      if (data?.deleted === false) {
+        toast(data.message, { icon: "ℹ️", duration: 7000 });
+      } else {
+        toast.success("Agendamento excluído");
+      }
       setShowModal(false);
       setEditing(null);
       loadAppointments();

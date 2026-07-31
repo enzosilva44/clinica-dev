@@ -14,5 +14,6 @@ router.get("/patient/:patientId", appointmentController.findByPatient);
 router.get("/:id", appointmentController.findById);
 router.put("/:id", appointmentController.update);
 router.post("/", appointmentController.create);
+router.delete("/:id", appointmentController.remove);
 
 export default router;

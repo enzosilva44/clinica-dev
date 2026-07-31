@@ -87,3 +87,11 @@ export async function update(
     });
   }
 }
+export async function remove(req, res) {
+  try {
+    const r = await appointmentService.remove(req.params.id, req.user.id);
+    return res.json(r);
+  } catch (error) {
+    return res.status(400).json({ error: sanitizeError(error) });
+  }
+}

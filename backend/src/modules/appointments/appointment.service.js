@@ -477,3 +477,52 @@ export async function update(
 
   return { ...updated, suggestedReturn };
 }
+
+// Status de transação que representam dinheiro efetivamente movimentado.
+// "pago" e "confirmado" convivem por desenho (ver dc39cdf).
+const TX_LIQUIDADAS = ["pago", "confirmado"];
+
+// Exclusão de agendamento.
+//
+// Regra: apaga de verdade só quando não há registro financeiro liquidado.
+// Uma consulta com pagamento recebido não pode sumir — o Financeiro perderia
+// a origem do lançamento. Nesse caso o agendamento é CANCELADO: some da agenda
+// (o cron de mensagens já ignora CANCELED) e o histórico fica de pé.
+//
+// Transação apenas PENDENTE é removida junto: foi criada automaticamente pelo
+// createPending ao agendar, não representa dinheiro que entrou.
+export async function remove(appointmentId, userId) {
+  const appointment = await prisma.appointment.findFirst({
+    where: { id: appointmentId, userId },
+    include: { transaction: true },
+  });
+  if (!appointment) throw new Error("Agendamento não encontrado.");
+
+  // Relação 1-1: no máximo uma transação por agendamento.
+  const tx = appointment.transaction;
+  const temPagamento = tx && TX_LIQUIDADAS.includes(tx.status);
+
+  if (temPagamento) {
+    const cancelado = await prisma.appointment.update({
+      where: { id: appointment.id },
+      data: { status: "CANCELED" },
+    });
+    return {
+      deleted: false,
+      appointment: cancelado,
+      reason: "tem_pagamento",
+      // Texto exibido na UI — explica por que não deu para excluir.
+      message:
+        "Este agendamento tem um pagamento registrado no Financeiro, então não pode ser excluído. Ele foi cancelado e não aparece mais na agenda.",
+    };
+  }
+
+  // Sem dinheiro liquidado: devolve a sessão de pacote que este agendamento
+  // havia consumido (senão a paciente perde uma sessão paga), remove a cobrança
+  // pendente (nasceu com o agendamento) e o próprio registro.
+  // AppointmentProcedure cai por cascade; ProcedureMap fica com appointmentId nulo.
+  await releasePackageSession(appointment.id);
+  await prisma.transaction.deleteMany({ where: { appointmentId: appointment.id, userId } });
+  await prisma.appointment.delete({ where: { id: appointment.id } });
+  return { deleted: true, message: "Agendamento excluído." };
+}
