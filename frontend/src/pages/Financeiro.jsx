@@ -1295,9 +1295,10 @@ export default function Financeiro() {
                         {tx.estimativa && (
                           <p
                             className="text-[10px] text-gray-400 leading-tight"
-                            title={`Estimativa — taxa Asaas ${fmt(tx.estimativa.taxa)} (${tx.estimativa.detalhe}) + IASOPay ${fmt(tx.estimativa.split)}. O valor final é confirmado quando o pagamento cai.`}
+                            title={`Estimativa: ${fmt(tx.estimativa.bruto)} − ${fmt(tx.estimativa.taxa)} de taxas. O valor final é confirmado quando o pagamento cai.`}
                           >
                             líq. estimado {fmt(tx.estimativa.liquido).replace("R$ ", "")}
+                            <span className="text-gray-300"> · taxas {fmt(tx.estimativa.taxa).replace("R$ ", "")}</span>
                           </p>
                         )}
                         {/* Falha ao gerar a cobrança — o agendamento foi salvo, mas

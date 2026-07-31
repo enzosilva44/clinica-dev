@@ -100,14 +100,15 @@ function comEstimativa(t) {
   });
   if (!est) return t;
 
+  // A clínica vê UMA linha de taxas, não a composição. Como o split da IASOPay
+  // sai do mesmo bolo, separá-lo na tela só levantaria a pergunta "o que é
+  // IASOPay?" no meio do financeiro dela. O que importa é quanto sobra.
   return {
     ...t,
     estimativa: {
       bruto: est.bruto,
-      taxa: est.taxaAsaas,
-      split: est.split,
+      taxa: Math.round((est.taxaAsaas + est.split) * 100) / 100,
       liquido: est.liquido,
-      detalhe: est.detalhe,
     },
   };
 }

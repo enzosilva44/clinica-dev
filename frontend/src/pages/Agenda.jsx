@@ -1586,28 +1586,20 @@ export default function Agenda() {
                               <option value="credit_card">Cartão de crédito</option>
                             </select>
                           </div>
-                          {estimativaCobranca && (
-                            <div className="text-[11px] bg-creme-50 border border-creme-200 rounded-xl px-3 py-2 space-y-0.5">
-                              <div className="flex justify-between text-gray-500">
-                                <span>Valor bruto</span><span>{brl(estimativaCobranca.bruto)}</span>
-                              </div>
-                              <div className="flex justify-between text-gray-400">
-                                <span>Taxa Asaas ({estimativaCobranca.detalhe})</span>
-                                <span>− {brl(estimativaCobranca.taxa)}</span>
-                              </div>
-                              <div className="flex justify-between text-gray-400">
-                                <span>IASOPay</span><span>− {brl(estimativaCobranca.split)}</span>
-                              </div>
-                              <div className="flex justify-between font-semibold text-verde pt-1 border-t border-creme-200">
-                                <span>Você recebe (estimado)</span><span>{brl(estimativaCobranca.liquido)}</span>
-                              </div>
-                            </div>
-                          )}
+                          {/* O detalhamento de bruto × líquido vive no Financeiro,
+                              que é onde a clínica olha dinheiro. Aqui só o essencial
+                              para decidir se gera a cobrança. */}
                           <p className="text-[10px] text-gray-400">
                             A cobrança é criada ao salvar, com vencimento em{" "}
                             {form.txDueDate
                               ? new Date(form.txDueDate + "T12:00:00").toLocaleDateString("pt-BR")
                               : "hoje (defina a data acima)"}.
+                            {estimativaCobranca && (
+                              <> Você recebe cerca de{" "}
+                                <span className="font-medium text-verde">{brl(estimativaCobranca.liquido)}</span>
+                                {" "}(já com as taxas). Detalhes no Financeiro.
+                              </>
+                            )}
                           </p>
 
                           {features.whatsapp && (

@@ -49,14 +49,11 @@ export function estimarLiquido(valor, metodo, { parcelas = 1 } = {}) {
   const cfg = SPLIT[metodo];
   const split = round2(cfg.fixo + (bruto * cfg.percent) / 100);
 
+  // taxa já soma adquirente + split: a clínica vê uma linha só de "taxas".
   return {
     bruto: round2(bruto),
-    taxa,
-    split,
+    taxa: round2(taxa + split),
     liquido: round2(bruto - taxa - split),
-    detalhe: percent
-      ? `R$ ${base.fixo.toFixed(2).replace(".", ",")} + ${percent.toFixed(2).replace(".", ",")}%`
-      : `R$ ${base.fixo.toFixed(2).replace(".", ",")}`,
   };
 }
 
