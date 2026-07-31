@@ -1,5 +1,6 @@
 import { prisma } from "../../config/prisma.js";
 import { createPending } from "../financial/transaction.service.js";
+import { triggerConfirmation } from "../automations/automation.service.js";
 
 const COMPLETED_STATUSES = ["COMPLETED", "FINISHED"];
 
@@ -198,6 +199,18 @@ export async function create(data, user) {
     notes: data.txNotes || `Agendamento criado em ${new Date(appointment.startsAt).toLocaleDateString("pt-BR")} com ${appointment.professional || "profissional não informado"}.`,
     settlementType: data.txSettlementType || null,
   });
+
+  // Confirmação ao paciente. Não-bloqueante: falha de WhatsApp não pode
+  // derrubar a criação do agendamento (mesmo padrão de triggerWelcome).
+  // Só faz sentido para agendamento futuro que ainda não aconteceu — pedir
+  // confirmação de consulta já concluída ou passada confunde o paciente.
+  if (
+    appointment.patient?.phone &&
+    !COMPLETED_STATUSES.includes(appointment.status) &&
+    startsAt > new Date()
+  ) {
+    triggerConfirmation(user.id, appointment, appointment.patient).catch(() => {});
+  }
 
   // Sugere retorno se o agendamento já NASCE concluído (mesma regra da transição no update).
   let suggestedReturn = null;

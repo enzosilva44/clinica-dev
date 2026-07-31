@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma.js";
 import { sendWhatsAppMessage, sendWhatsAppTemplate } from "../whatsapp/whatsapp.provider.js";
 import { checkQuota, consumeQuota } from "../billing/quota.service.js";
+import { getFeatures } from "../../config/features.js";
 
 // {{clinica}} = apresentação da clínica (ex.: "do consultório da Dra. Fernanda"),
 // injetada automaticamente em logAndSend. Como o número é único/compartilhado,
@@ -8,11 +9,17 @@ import { checkQuota, consumeQuota } from "../billing/quota.service.js";
 const DEFAULT_TEMPLATES = {
   birthday: {
     name: "Feliz aniversário",
-    body: "Olá {{nome}}! 🎂 Aqui é {{clinica}}. Passando pra desejar um feliz aniversário! Aproveite seu dia especial. 🎉",
+    body: "Olá {{nome}}! 🎂 Aqui é {{clinica}}. Passando pra desejar um feliz aniversário!\n\nQue seu dia seja especial. 🎉",
+    metaTemplateName: "aniversario_iaso",
+    metaLanguage: "pt_BR",
+    metaVariables: ["nome", "clinica"],
   },
   welcome: {
     name: "Boas-vindas",
-    body: "Olá {{nome}}! 😊 Aqui é {{clinica}}. Seja muito bem-vindo(a)! Estamos aqui para cuidar de você com todo carinho. Qualquer dúvida, é só chamar!",
+    body: "Olá {{nome}}! 😊 Aqui é {{clinica}}. Seja muito bem-vindo(a)!\n\nEstamos aqui para cuidar de você. Qualquer dúvida, é só chamar.",
+    metaTemplateName: "boas_vindas_iaso",
+    metaLanguage: "pt_BR",
+    metaVariables: ["nome", "clinica"],
   },
   confirmation: {
     name: "Confirmação de agendamento",
@@ -30,12 +37,14 @@ const DEFAULT_TEMPLATES = {
   },
   payment_link: {
     name: "Link de pagamento",
-    // O link vai como VARIÁVEL {{link}} — 1 único template aprovado (categoria
-    // Utility na Meta) serve p/ qualquer cobrança; a URL nunca muda o template.
-    body: "Olá {{nome}}! 💳 Aqui é {{clinica}}. Segue o link para pagamento da sua cobrança no valor de {{valor}}:\n\n{{link}}\n\nQualquer dúvida, estamos à disposição!",
-    metaTemplateName: "link_pagamento",
+    // Template aprovado na Meta: aviso_fatura_iaso (Utility). O corpo tem 4
+    // variáveis e o LINK NÃO é uma delas — vai no botão de URL dinâmica
+    // ("https://www.asaas.com/i/{{1}}"), que recebe só o trecho final da URL.
+    // Por isso metaVariables não inclui "link"; quem envia passa urlButtonParam.
+    body: "Olá {{nome}}! Aqui é {{clinica}}. Passando pra avisar sobre um valor em aberto.\n\n💰 Valor: {{valor}}\n📅 Vencimento: {{vencimento}}\n\nVocê pode pagar pelo link abaixo. Se já pagou, pode ignorar — pode levar até 1 dia útil pra compensar. Qualquer dúvida, é só chamar.",
+    metaTemplateName: "aviso_fatura_iaso",
     metaLanguage: "pt_BR",
-    metaVariables: ["nome", "clinica", "valor", "link"],
+    metaVariables: ["nome", "clinica", "valor", "vencimento"],
   },
 };
 
@@ -76,8 +85,11 @@ export async function ensureDefaultTemplates(userId) {
       await prisma.automationTemplate.create({
         data: { type, name: data.name, body: data.body, isActive: true, userId, ...metaFields },
       });
-    } else if (data.metaTemplateName && !current.metaTemplateName) {
-      // Retrofit: clínicas que já tinham o template ganham o mapeamento Meta.
+    } else if (data.metaTemplateName && current.metaTemplateName !== data.metaTemplateName) {
+      // Retrofit: alinha o mapeamento Meta com o DEFAULT atual. Cobre tanto quem
+      // nunca teve mapeamento quanto quem ficou com um nome que não existe mais
+      // na Meta (caso do antigo "link_pagamento", que nunca chegou a ser criado
+      // lá e fazia todo envio de cobrança falhar).
       await prisma.automationTemplate.update({
         where: { id: current.id },
         data: metaFields,
@@ -87,9 +99,29 @@ export async function ensureDefaultTemplates(userId) {
 }
 
 export async function getActiveTemplate(userId, type) {
-  return prisma.automationTemplate.findFirst({
+  const tpl = await prisma.automationTemplate.findFirst({
     where: { userId, type, isActive: true },
   });
+  if (!tpl) return null;
+
+  // Retrofit no caminho de LEITURA. ensureDefaultTemplates() só roda quando
+  // alguém abre a tela de Automações, mas os disparos (cron de aniversário,
+  // boas-vindas no cadastro) não passam por lá — uma clínica que nunca abriu a
+  // tela ficaria com metaTemplateName nulo e cairia em texto livre, que a Meta
+  // só entrega dentro da janela de 24h. Como aniversário/boas-vindas são
+  // mensagens que NÓS iniciamos, quase nunca há janela: falhavam em silêncio.
+  const def = DEFAULT_TEMPLATES[type];
+  if (def?.metaTemplateName && tpl.metaTemplateName !== def.metaTemplateName) {
+    return prisma.automationTemplate.update({
+      where: { id: tpl.id },
+      data: {
+        metaTemplateName: def.metaTemplateName,
+        metaLanguage: def.metaLanguage ?? "pt_BR",
+        metaVariables: def.metaVariables ?? [],
+      },
+    });
+  }
+  return tpl;
 }
 
 export { interpolate };
@@ -102,8 +134,25 @@ async function logAndSend({ userId, patientId, patientName, phone, type, message
     select: {
       whatsappPhoneNumberId: true, whatsappAccessToken: true,
       name: true, nickname: true, clinicName: true, gender: true,
+      plan: true, featureOverrides: true, role: true,
     },
   });
+
+  // Feature "whatsapp" desligada no admin = nenhuma mensagem sai, ponto.
+  // A checagem vive AQUI porque requireFeature() protege só as rotas HTTP: os
+  // crons (aniversário/lembrete) e os gatilhos internos (boas-vindas no
+  // cadastro, confirmação ao agendar) não passam por middleware nenhum e
+  // disparavam para qualquer clínica com template ativo, mesmo desabilitada.
+  // logAndSend é o gargalo único de TODAS as automações — cobre todos os
+  // caminhos de uma vez. Plano desconhecido cai no default de getFeatures()
+  // (solo, whatsapp: false): na dúvida, mudo.
+  const features = { ...getFeatures(user?.plan), ...(user?.featureOverrides ?? {}) };
+  if (!features.whatsapp) {
+    await prisma.automationLog.create({
+      data: { userId, patientId, patientName, phone, type, message, scheduledFor, templateId, status: "skipped", error: "feature_disabled" },
+    });
+    return;
+  }
 
   // Modelo número-único: o número da plataforma envia por todas as clínicas.
   // Se a clínica conectou o próprio WhatsApp, usa o dela; senão, cai no da plataforma.
@@ -156,6 +205,7 @@ async function logAndSend({ userId, patientId, patientName, phone, type, message
       where: { id: log.id },
       data: { status: "sent", sentAt: new Date() },
     });
+
   } catch (err) {
     await prisma.automationLog.update({
       where: { id: log.id },
