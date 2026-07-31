@@ -1,7 +1,7 @@
 import { prisma } from "../../config/prisma.js";
 import { createPending } from "../financial/transaction.service.js";
 import { triggerConfirmation } from "../automations/automation.service.js";
-import { gerarCobrancaDaTransacao } from "../billing/billing.service.js";
+import { gerarCobrancaDaTransacao, sendPaymentLink } from "../billing/billing.service.js";
 
 const COMPLETED_STATUSES = ["COMPLETED", "FINISHED"];
 
@@ -213,6 +213,19 @@ export async function create(data, user) {
     cobranca = await gerarCobrancaDaTransacao(user.id, pendingTx.id, {
       method: data.cobrancaMethod || "pix",
     });
+
+    // Envio do link por WhatsApp, se a clínica marcou. Também não-bloqueante,
+    // e só faz sentido se a cobrança existir. Um erro aqui não desfaz a
+    // cobrança — ela está criada e o link pode ser reenviado pelo Faturamento.
+    if (cobranca.ok && data.enviarCobrancaWhatsapp) {
+      try {
+        await sendPaymentLink(user.id, cobranca.chargeId);
+        cobranca.linkEnviado = true;
+      } catch (err) {
+        cobranca.linkEnviado = false;
+        cobranca.envioErro = err.message;
+      }
+    }
   }
 
   // Confirmação ao paciente. Não-bloqueante: falha de WhatsApp não pode

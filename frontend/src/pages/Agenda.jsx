@@ -278,6 +278,7 @@ function emptyForm() {
     txSettlementType: "",
     gerarCobranca: false,
     cobrancaMethod: "pix",
+    enviarCobrancaWhatsapp: false,
   };
 }
 
@@ -769,6 +770,7 @@ export default function Agenda() {
           txSettlementType: isSimple ? undefined : (form.txSettlementType || undefined),
           gerarCobranca: !isSimple && form.gerarCobranca ? true : undefined,
           cobrancaMethod: !isSimple && form.gerarCobranca ? form.cobrancaMethod : undefined,
+          enviarCobrancaWhatsapp: !isSimple && form.gerarCobranca && form.enviarCobrancaWhatsapp ? true : undefined,
         });
         // Renova a chave para o próximo agendamento
         idempotencyKeyRef.current = crypto.randomUUID();
@@ -777,7 +779,11 @@ export default function Agenda() {
         // o atendimento é salvo do mesmo jeito e o erro fica no Faturamento.
         const cob = res?.data?.cobranca;
         if (cob) {
-          if (cob.ok) toast.success("Cobrança gerada no Faturamento");
+          if (cob.ok) {
+            if (cob.linkEnviado) toast.success("Cobrança gerada e link enviado por WhatsApp");
+            else if (cob.envioErro) toast.error(`Cobrança gerada, mas o link não foi enviado: ${cob.envioErro}`, { duration: 9000 });
+            else toast.success("Cobrança gerada no Faturamento");
+          }
           else toast.error(`Agendamento salvo, mas a cobrança falhou: ${cob.error}. Você pode gerá-la no Faturamento.`, { duration: 9000 });
         }
         maybeInvite("sua agenda");
@@ -1603,6 +1609,23 @@ export default function Agenda() {
                               ? new Date(form.txDueDate + "T12:00:00").toLocaleDateString("pt-BR")
                               : "hoje (defina a data acima)"}.
                           </p>
+
+                          {features.whatsapp && (
+                            <label className="flex items-start gap-2 cursor-pointer pt-1">
+                              <input
+                                type="checkbox"
+                                checked={form.enviarCobrancaWhatsapp}
+                                onChange={(e) => setForm((p) => ({ ...p, enviarCobrancaWhatsapp: e.target.checked }))}
+                                className="mt-0.5 accent-verde"
+                              />
+                              <span className="text-xs text-verde leading-snug">
+                                Enviar o link por WhatsApp ao salvar
+                                <span className="block text-[10px] text-gray-400">
+                                  O paciente recebe a cobrança com botão de pagamento.
+                                </span>
+                              </span>
+                            </label>
+                          )}
                         </div>
                       )}
                     </div>
