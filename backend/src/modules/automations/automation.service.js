@@ -2,6 +2,7 @@ import { prisma } from "../../config/prisma.js";
 import { sendWhatsAppMessage, sendWhatsAppTemplate } from "../whatsapp/whatsapp.provider.js";
 import { checkQuota, consumeQuota } from "../billing/quota.service.js";
 import { getFeatures } from "../../config/features.js";
+import { dataBR, horaBR } from "../../lib/datasBR.js";
 
 // {{clinica}} = apresentação da clínica (ex.: "do consultório da Dra. Fernanda"),
 // injetada automaticamente em logAndSend. Como o número é único/compartilhado,
@@ -265,8 +266,8 @@ export async function triggerConfirmation(userId, appointment, patient) {
   const tpl = await getActiveTemplate(userId, "confirmation");
   if (!tpl || !patient?.phone) return;
   const startsAt = new Date(appointment.startsAt);
-  const data = startsAt.toLocaleDateString("pt-BR");
-  const hora = startsAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const data = dataBR(startsAt);
+  const hora = horaBR(startsAt);
   const vars = { nome: patient.name.split(" ")[0], data, hora };
   const message = interpolate(tpl.body, vars);
   await logAndSend({
@@ -293,8 +294,8 @@ export async function triggerForAppointment(userId, type, appointmentId) {
   const startsAt = new Date(appt.startsAt);
   const vars = {
     nome: appt.patient.name.split(" ")[0],
-    data: startsAt.toLocaleDateString("pt-BR"),
-    hora: startsAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+    data: dataBR(startsAt),
+    hora: horaBR(startsAt),
   };
   await logAndSend({
     userId, patientId: appt.patient.id, patientName: appt.patient.name,
@@ -374,8 +375,8 @@ export async function runReminderCron() {
       if (alreadySent) continue;
 
       const startsAt = new Date(appt.startsAt);
-      const data = startsAt.toLocaleDateString("pt-BR");
-      const hora = startsAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const data = dataBR(startsAt);
+      const hora = horaBR(startsAt);
       const vars = { nome: appt.patient.name.split(" ")[0], data, hora };
       const message = interpolate(tpl.body, vars);
       await logAndSend({

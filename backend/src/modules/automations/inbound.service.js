@@ -6,6 +6,7 @@ import { sendWhatsAppTemplate } from "../whatsapp/whatsapp.provider.js";
 import { checkQuota, consumeQuota } from "../billing/quota.service.js";
 import { apresentacaoClinica } from "./automation.service.js";
 import { getFeatures } from "../../config/features.js";
+import { dataBR, horaBR } from "../../lib/datasBR.js";
 
 // Pedido de remarcação/cancelamento. Além das raízes explícitas (remarcar,
 // reagendar), cobre as formas indiretas que o paciente usa na prática — "não
@@ -167,7 +168,7 @@ export async function processInboundMessage(msg) {
   let quandoTexto = "sua próxima consulta";
   if (acted?.appt) {
     const d = new Date(acted.appt.startsAt);
-    quandoTexto = `sua consulta de ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+    quandoTexto = `sua consulta de ${dataBR(d)} às ${horaBR(d)}`;
   }
   await notifyOwner(user, { patientName: owner.patientName, replyLabel, quandoTexto });
 }
