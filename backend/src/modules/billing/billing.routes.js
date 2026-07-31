@@ -14,12 +14,21 @@ import { createTopupCharge } from "./usage.service.js";
 const router = Router();
 
 // webhook — sem authMiddleware (chamado pelo Asaas), mas validado pelo token
-// que o Asaas envia no header `asaas-access-token`. Se ASAAS_WEBHOOK_TOKEN
-// estiver configurado e o header não bater, rejeita (401). Se não estiver
-// configurado, aceita (não quebra caso o token ainda não tenha sido setado).
+// que o Asaas envia no header `asaas-access-token`. O token é OBRIGATÓRIO:
+// sem ele configurado, rejeitamos tudo. A versão anterior aceitava qualquer
+// requisição quando a variável estava ausente, o que permitia a um terceiro
+// forjar uma confirmação de pagamento (SEC-02). Falhamos fechado, e só aqui —
+// derrubar o boot da aplicação inteira por causa do webhook seria pior.
 router.post("/webhook", async (req, res) => {
   const expected = process.env.ASAAS_WEBHOOK_TOKEN;
-  if (expected && req.headers["asaas-access-token"] !== expected) {
+  if (!expected) {
+    console.error(
+      "[webhook] REJEITADO: ASAAS_WEBHOOK_TOKEN não configurado. " +
+      "Nenhuma baixa de pagamento será processada até que a variável seja definida."
+    );
+    return res.status(503).json({ error: "webhook not configured" });
+  }
+  if (req.headers["asaas-access-token"] !== expected) {
     console.warn("[webhook] rejeitado: asaas-access-token ausente ou inválido.");
     return res.status(401).json({ error: "invalid webhook token" });
   }

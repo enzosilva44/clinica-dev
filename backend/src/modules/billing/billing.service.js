@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma.js";
 import { checkQuota, consumeQuota } from "./quota.service.js";
 import { buildSplit } from "./split.service.js";
+import { getFeatures } from "../../config/features.js";
 
 const BASE_URL = process.env.ASAAS_URL ?? "https://sandbox.asaas.com/api/v3";
 
@@ -404,6 +405,13 @@ function webhookEndpoint() {
 // header `asaas-access-token` — o mesmo que billing.routes valida.
 export async function registerSubaccountWebhook(subaccountApiKey) {
   const url = webhookEndpoint();
+  // Sem token não adianta registrar: o endpoint rejeita toda entrega (503) e a
+  // subconta nasceria com um webhook permanentemente quebrado, sem sinal algum.
+  if (!process.env.ASAAS_WEBHOOK_TOKEN) {
+    throw new Error(
+      "ASAAS_WEBHOOK_TOKEN não configurado — webhook da subconta não registrado."
+    );
+  }
   const payload = {
     name: "IASOPay",
     url,
@@ -500,8 +508,20 @@ export async function sendPaymentLink(userId, chargeId) {
   // Credenciais WhatsApp do usuário/clínica com fallback para env
   const userWa = await prisma.user.findUnique({
     where: { id: userId },
-    select: { whatsappPhoneNumberId: true, whatsappAccessToken: true },
+    select: {
+      whatsappPhoneNumberId: true, whatsappAccessToken: true,
+      plan: true, featureOverrides: true,
+    },
   });
+
+  // Esta rota é protegida por requireFeature("faturamento"), NÃO por "whatsapp":
+  // sem esta checagem, uma clínica com faturamento e WhatsApp desligado
+  // enviaria cobrança pelo WhatsApp assim mesmo.
+  const feats = { ...getFeatures(userWa?.plan), ...(userWa?.featureOverrides ?? {}) };
+  if (!feats.whatsapp) {
+    throw new Error("WhatsApp não está habilitado para esta clínica.");
+  }
+
   const waConfig = {
     phoneNumberId: userWa?.whatsappPhoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID,
     accessToken:   userWa?.whatsappAccessToken   || process.env.WHATSAPP_ACCESS_TOKEN,
