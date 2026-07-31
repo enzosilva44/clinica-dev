@@ -1650,3 +1650,28 @@ model SplitConfig {
   updatedAt     DateTime @updatedAt
   createdAt     DateTime @default(now())
 }
+
+// Custo de WhatsApp cobrado pela Meta, espelhado dia a dia da Graph API
+// (/{WABA_ID}/pricing_analytics). Cache local porque a tela do admin não pode
+// depender da Graph: rate limit baixo e latência alta. O cron reescreve os
+// últimos dias a cada rodada — a Meta revisa números por ~2 dias, então a
+// linha só estabiliza depois disso (por isso upsert, nunca create puro).
+//
+// Granularidade: 1 linha por (dia × categoria × tipo de preço). Não há userId:
+// a Meta cobra a WABA inteira e NÃO sabe de qual clínica foi a mensagem — o
+// número é único/compartilhado. O rateio por clínica é inferido do
+// AutomationLog no serviço, e é estimativa, não medição.
+model WhatsappCostDaily {
+  id        String   @id @default(cuid())
+  day       DateTime // dia UTC (00:00), chave temporal
+  category  String // "MARKETING" | "UTILITY" | "AUTHENTICATION" | "SERVICE" | …
+  pricing   String // "PAID" | "FREE_TIER" | "FREE_ENTRY_POINT"
+  volume    Int      @default(0) // mensagens entregues nesse recorte
+  costUsd   Float    @default(0) // custo em USD cobrado pela Meta
+  wabaId    String? // qual WABA — preparado p/ multi-WABA
+  syncedAt  DateTime @default(now()) // quando o cron gravou esta versão
+  createdAt DateTime @default(now())
+
+  @@unique([day, category, pricing, wabaId])
+  @@index([day])
+}

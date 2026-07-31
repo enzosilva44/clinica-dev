@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { runBirthdayCron, runReminderCron } from "./automation.service.js";
 import { cleanupExpiredDemos } from "../auth/demoCleanup.service.js";
+import { syncWhatsappCost } from "../whatsapp/whatsappCost.service.js";
 
 export function startAutomationCrons() {
   // Every day at 09:00 — birthday messages
@@ -22,6 +23,18 @@ export function startAutomationCrons() {
     console.log("[Cron] Cleaning expired demo accounts…");
     try { await cleanupExpiredDemos(); }
     catch (e) { console.error("[Cron] demo cleanup error:", e.message); }
+  });
+
+  // Todo dia às 05:00 — espelha o custo do WhatsApp cobrado pela Meta.
+  // Roda de madrugada porque a Graph API responde melhor fora de pico e o dado
+  // do dia anterior já fechou. Falha aqui NÃO afeta envio: o painel só fica
+  // desatualizado, e a próxima rodada regrava a janela inteira.
+  cron.schedule("0 5 * * *", async () => {
+    console.log("[Cron] Sincronizando custo do WhatsApp (Meta)…");
+    try {
+      const r = await syncWhatsappCost({ forcar: true });
+      console.log(`[Cron] custo WhatsApp: ${r.linhas} linha(s) atualizada(s).`);
+    } catch (e) { console.error("[Cron] whatsapp cost error:", e.message); }
   });
 
   console.log("[Cron] Automation crons scheduled.");

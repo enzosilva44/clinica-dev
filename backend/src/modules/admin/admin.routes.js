@@ -260,6 +260,37 @@ router.get("/usage", async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
+// ── CUSTO WHATSAPP (Tecnologia) ───────────────────────────────────────────────
+// Espelho do card "Preços das mensagens" do WhatsApp Manager + rateio por
+// clínica. Lê do cache local (WhatsappCostDaily), nunca da Graph API — ver
+// whatsappCost.service.js. Painel INTERNO da IASO: mostra custo de fornecedor,
+// não deve ser exposto ao app da clínica.
+router.get("/whatsapp-cost", async (req, res) => {
+  try {
+    const { getWhatsappCostSummary } = await import("../whatsapp/whatsappCost.service.js");
+    const days = Math.min(Math.max(Number(req.query.days) || 30, 1), 90);
+    res.json(await getWhatsappCostSummary({ days }));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// Força a sincronização com a Meta (botão "Sincronizar agora" do painel).
+// Existe porque o cron roda 1×/dia: sem isso, ligar o painel pela primeira vez
+// ou conferir um envio recente exigiria esperar até a madrugada seguinte.
+// Tem trava de intervalo mínimo no serviço: o rate limit da Graph é por app e
+// estourá-lo afetaria o ENVIO de mensagem, não só este painel.
+router.post("/whatsapp-cost/sync", async (req, res) => {
+  try {
+    const { syncWhatsappCost } = await import("../whatsapp/whatsappCost.service.js");
+    const dias = Math.min(Math.max(Number(req.body?.dias) || 3, 1), 90);
+    res.json(await syncWhatsappCost({ dias }));
+  } catch (e) {
+    if (e.code === "SYNC_MUITO_RECENTE") {
+      return res.status(429).json({ error: e.message, retryEmSegundos: e.retryEmSegundos });
+    }
+    res.status(400).json({ error: e.message });
+  }
+});
+
 // ── SAÚDE DO SISTEMA (Tecnologia) ─────────────────────────────────────────────
 router.get("/health", async (req, res) => {
   const checks = {};
