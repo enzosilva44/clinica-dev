@@ -41,21 +41,23 @@ export function diaUTC(date) {
 export async function fetchPricingAnalytics({ since, until }) {
   const { wabaId, accessToken } = assertConfig();
 
-  // Sintaxe da Graph: cada parâmetro é um par chave.valor dentro de
-  // .parameters(...) — NÃO um blob JSON. Passar um objeto JSON faz a Meta
-  // responder "(#100) The parameter start is required", porque ela não enxerga
-  // os campos de dentro. Listas (metric_types/dimensions) vão como JSON array.
-  const parameters = [
-    `start.${toEpoch(since)}`,
-    `end.${toEpoch(until)}`,
-    `granularity.DAILY`,
-    `metric_types.${JSON.stringify(["COST", "VOLUME"])}`,
-    `dimensions.${JSON.stringify(["PRICING_CATEGORY", "PRICING_TYPE"])}`,
-  ].join(",");
+  // Sintaxe da Graph: argumentos ENCADEADOS no próprio field —
+  // pricing_analytics.start(...).end(...).granularity(...).dimensions(...).
+  //
+  // Não é `.parameters(chave.valor,…)` nem um blob JSON: as duas formas fazem a
+  // Meta responder "(#100) The parameter start is required", porque ela não
+  // enxerga os campos de dentro. Verificado contra a WABA de produção: só a
+  // forma encadeada devolve data_points. `dimensions` aceita lista separada por
+  // vírgula e é o que quebra o resultado por categoria/tipo de preço — sem ela
+  // vem só o total do dia.
+  const fields =
+    `pricing_analytics` +
+    `.start(${toEpoch(since)})` +
+    `.end(${toEpoch(until)})` +
+    `.granularity(DAILY)` +
+    `.dimensions(PRICING_CATEGORY,PRICING_TYPE)`;
 
-  const url =
-    `https://graph.facebook.com/${META_API_VERSION}/${wabaId}` +
-    `?fields=pricing_analytics.parameters(${parameters})`;
+  const url = `https://graph.facebook.com/${META_API_VERSION}/${wabaId}?fields=${fields}`;
 
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   const data = await res.json();
@@ -70,6 +72,9 @@ export async function fetchPricingAnalytics({ since, until }) {
     // `start` é o início do bucket diário.
     day: diaUTC(new Date((p.start ?? 0) * 1000)),
     category: p.pricing_category ?? "UNKNOWN",
+    // Valores reais observados: REGULAR (cobrada) e FREE_CUSTOMER_SERVICE
+    // (janela de atendimento de 24h, custo zero). Guardamos como vêm — quem
+    // decide o que é pago é `isPaga`, não uma normalização aqui.
     pricing: p.pricing_type ?? "UNKNOWN",
     volume: Number(p.volume ?? 0),
     costUsd: Number(p.cost ?? 0),

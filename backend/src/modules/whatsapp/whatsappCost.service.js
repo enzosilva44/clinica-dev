@@ -89,6 +89,16 @@ export async function syncWhatsappCost({ dias = DIAS_REVISAO, forcar = false } =
 
 // ─── leitura (painel) ────────────────────────────────────────────────────────
 
+// A Meta manda o TIPO de preço, não um "pago sim/não". Os valores observados na
+// WABA de produção são REGULAR (cobrada) e FREE_CUSTOMER_SERVICE (resposta
+// dentro da janela de 24h, custo zero) — e a lista muda com o tempo, então
+// classificar pelo custo é mais robusto que manter um allowlist de nomes.
+//
+// Guardamos o rótulo cru no banco; a interpretação vive aqui.
+export function isPaga(linha) {
+  return Number(linha.costUsd) > 0;
+}
+
 // Rateio do custo entre clínicas. NÃO é medição: a Meta não informa a clínica
 // de origem, então distribuímos o custo real de cada categoria proporcional a
 // quantas mensagens daquela categoria cada clínica enviou (AutomationLog).
@@ -170,7 +180,7 @@ export async function getWhatsappCostSummary({ days = 30 } = {}) {
   const porDiaMap = new Map();
 
   for (const l of linhas) {
-    const pago = l.pricing === "PAID";
+    const pago = isPaga(l);
     totais.custoUsd += l.costUsd;
     totais.mensagens += l.volume;
     if (pago) totais.mensagensPagas += l.volume;
