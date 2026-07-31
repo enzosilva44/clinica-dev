@@ -224,15 +224,30 @@ async function logAndSend({ userId, patientId, patientName, phone, type, message
   try {
     // Envio proativo (fora da janela de 24h) exige Message Template aprovado na Meta.
     // Se o template tem metaTemplateName, envia via template; senão, texto livre (janela/teste).
+    let sendResult;
     if (tpl?.metaTemplateName) {
       const params = (tpl.metaVariables || []).map((key) => vars?.[key] ?? "");
-      await sendWhatsAppTemplate(phone, tpl.metaTemplateName, params, {
+      sendResult = await sendWhatsAppTemplate(phone, tpl.metaTemplateName, params, {
         ...config,
         language: tpl.metaLanguage || "pt_BR",
       });
     } else {
-      await sendWhatsAppMessage(phone, message, config);
+      sendResult = await sendWhatsAppMessage(phone, message, config);
     }
+
+    // Kill switch ligado (WHATSAPP_SEND_ENABLED != true): o provider devolve
+    // uma resposta simulada, no formato da Meta, e NADA foi para a rede.
+    // Registrar isso como "sent" fazia a tela afirmar que o paciente tinha sido
+    // avisado quando não tinha — foi o que confundiu a leitura do histórico em
+    // 31/07. Também não debita cota: não houve mensagem.
+    if (sendResult?.simulated) {
+      await prisma.automationLog.update({
+        where: { id: log.id },
+        data: { status: "blocked", error: "send_disabled" },
+      });
+      return;
+    }
+
     // Debita 1 mensagem só após o envio confirmado pela Meta.
     await consumeQuota(userId, "whatsapp", 1, { type, templateId: templateId ?? null });
     await prisma.automationLog.update({

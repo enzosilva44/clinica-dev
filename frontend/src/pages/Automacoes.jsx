@@ -30,6 +30,10 @@ const STATUS_STYLE = {
   failed:  { label: "Falhou",    icon: XCircle,     cls: "text-erro bg-erro/10" },
   pending: { label: "Pendente",  icon: Clock,       cls: "text-atencao bg-atencao/10" },
   skipped: { label: "Ignorado",  icon: X,           cls: "text-gray-400 bg-gray-100" },
+  // Envio desligado no sistema: a mensagem foi montada mas NÃO saiu.
+  // Precisa se distinguir de "Enviado" — a clínica não pode achar que o
+  // paciente foi avisado quando não foi.
+  blocked: { label: "Bloqueado pelo sistema", icon: AlertTriangle, cls: "text-atencao bg-atencao/10" },
 };
 
 function StatusBadge({ status }) {
