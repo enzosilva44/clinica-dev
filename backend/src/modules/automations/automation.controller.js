@@ -17,11 +17,15 @@ export async function getTemplates(req, res) {
   res.json(templates);
 }
 
+// name e body NÃO são editáveis pela clínica: o texto entregue ao paciente é o
+// Message Template aprovado na WABA da IASO, igual para todas. Aceitar um body
+// aqui só criava divergência — a clínica salvava um texto, via ele na tela, e a
+// Meta entregava outro. O que a clínica controla é ligar/desligar a automação e
+// a antecedência do pedido de confirmação.
 export async function saveTemplate(req, res) {
   const { type } = req.params;
-  const { name, body, isActive, reminderHoursBefore } = req.body;
+  const { isActive, reminderHoursBefore } = req.body;
   const tpl = await upsertTemplate(req.user.id, type, {
-    name, body,
     isActive: isActive !== undefined ? Boolean(isActive) : true,
     ...(reminderHoursBefore != null ? { reminderHoursBefore: parseInt(reminderHoursBefore) } : {}),
   });

@@ -25,13 +25,6 @@ const TYPE_META = {
   reminder:     { label: "Pedido de confirmação",      icon: Bell,          color: "#8B6B4E", desc: "Enviada X horas antes da consulta (configurável). É a que pede para o paciente confirmar." },
 };
 
-const VARS = {
-  birthday:     ["{{nome}}"],
-  welcome:      ["{{nome}}"],
-  confirmation: ["{{nome}}", "{{data}}", "{{hora}}"],
-  reminder:     ["{{nome}}", "{{data}}", "{{hora}}"],
-};
-
 const STATUS_STYLE = {
   sent:    { label: "Enviado",   icon: CheckCircle, cls: "text-sucesso bg-sucesso/10" },
   failed:  { label: "Falhou",    icon: XCircle,     cls: "text-erro bg-erro/10" },
@@ -53,7 +46,6 @@ function TemplateCard({ tpl, onSave }) {
   const meta = TYPE_META[tpl.type] ?? {};
   const Icon = meta.icon ?? MessageSquare;
   const [editing, setEditing] = useState(false);
-  const [body, setBody] = useState(tpl.body);
   const [reminderHours, setReminderHours] = useState(tpl.reminderHoursBefore ?? 24);
   const [active, setActive] = useState(tpl.isActive);
   const [saving, setSaving] = useState(false);
@@ -61,7 +53,8 @@ function TemplateCard({ tpl, onSave }) {
   async function save() {
     setSaving(true);
     try {
-      const payload = { name: tpl.name, body, isActive: active };
+      // name/body não vão: o texto é da IASO e o backend não os aceita mais.
+      const payload = { isActive: active };
       if (tpl.type === "reminder") payload.reminderHoursBefore = reminderHours;
       await api.put(`/automations/templates/${tpl.type}`, payload);
       onSave();
@@ -74,7 +67,7 @@ function TemplateCard({ tpl, onSave }) {
   async function toggleActive() {
     const next = !active;
     setActive(next);
-    await api.put(`/automations/templates/${tpl.type}`, { name: tpl.name, body, isActive: next }).catch(() => setActive(!next));
+    await api.put(`/automations/templates/${tpl.type}`, { isActive: next }).catch(() => setActive(!next));
     onSave();
   }
 
@@ -99,24 +92,18 @@ function TemplateCard({ tpl, onSave }) {
 
       {editing ? (
         <div className="mt-3 space-y-3">
+          {/* Texto não editável: é o Message Template aprovado na Meta, igual
+              para todas as clínicas. O que a clínica ajusta é ligar/desligar e
+              a antecedência. */}
           <div>
-            <div className="flex flex-wrap gap-1 mb-1.5">
-              {(VARS[tpl.type] ?? []).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setBody((b) => b + v)}
-                  className="text-[10px] px-2 py-0.5 rounded-full bg-creme-100 text-verde font-mono hover:bg-ambar transition"
-                >
-                  {v}
-                </button>
-              ))}
+            <p className="text-[11px] text-gray-500 mb-1.5">Mensagem enviada ao paciente:</p>
+            <div className="w-full border border-ambar rounded-xl px-3 py-2.5 text-sm bg-creme-50 text-verde whitespace-pre-wrap">
+              {tpl.body}
             </div>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={4}
-              className="w-full border border-ambar rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20 resize-none"
-            />
+            <p className="text-[10px] text-gray-400 mt-1.5">
+              {"{{nome}}"} e {"{{clinica}}"} são preenchidos no envio, com o nome do
+              paciente e a identificação da sua clínica.
+            </p>
           </div>
 
           {tpl.type === "reminder" && (
@@ -141,7 +128,7 @@ function TemplateCard({ tpl, onSave }) {
               <Save size={13} />{saving ? "Salvando…" : "Salvar"}
             </button>
             <button
-              onClick={() => { setBody(tpl.body); setEditing(false); }}
+              onClick={() => { setReminderHours(tpl.reminderHoursBefore ?? 24); setEditing(false); }}
               className="flex items-center gap-1.5 border border-ambar hover:bg-creme-100 text-verde px-3 py-2 rounded-xl text-xs font-medium transition"
             >
               <X size={13} />Cancelar
@@ -162,7 +149,7 @@ function TemplateCard({ tpl, onSave }) {
             onClick={() => setEditing(true)}
             className="mt-2.5 flex items-center gap-1.5 text-xs text-verde hover:opacity-70 transition font-medium"
           >
-            <Edit2 size={12} />Editar mensagem
+            <Edit2 size={12} />Ver mensagem e ajustes
           </button>
         </div>
       )}

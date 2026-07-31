@@ -98,14 +98,23 @@ export async function ensureDefaultTemplates(userId) {
       await prisma.automationTemplate.create({
         data: { type, name: data.name, body: data.body, isActive: true, userId, ...metaFields },
       });
-    } else if (data.metaTemplateName && current.metaTemplateName !== data.metaTemplateName) {
-      // Retrofit: alinha o mapeamento Meta com o DEFAULT atual. Cobre tanto quem
-      // nunca teve mapeamento quanto quem ficou com um nome que não existe mais
-      // na Meta (caso do antigo "link_pagamento", que nunca chegou a ser criado
-      // lá e fazia todo envio de cobrança falhar).
+      continue;
+    }
+    // Retrofit: o texto pertence à IASO, não à clínica. Quem é entregue ao
+    // paciente é o Message Template aprovado na WABA da IASO — o body local é
+    // só a cópia exibida na tela. Deixar cada clínica com a sua fazia a tela
+    // mostrar um texto e a Meta entregar outro (12 clínicas tinham versões
+    // antigas, sem {{clinica}}, de quando o número não era compartilhado).
+    // Alinha também name e metaTemplateName ao DEFAULT atual — cobre quem
+    // nunca teve mapeamento e quem ficou com nome que não existe mais na Meta.
+    const desatualizado =
+      current.body !== data.body ||
+      current.name !== data.name ||
+      (data.metaTemplateName && current.metaTemplateName !== data.metaTemplateName);
+    if (desatualizado) {
       await prisma.automationTemplate.update({
         where: { id: current.id },
-        data: metaFields,
+        data: { name: data.name, body: data.body, ...metaFields },
       });
     }
   }
@@ -124,18 +133,24 @@ export async function getActiveTemplate(userId, type) {
   // só entrega dentro da janela de 24h. Como aniversário/boas-vindas são
   // mensagens que NÓS iniciamos, quase nunca há janela: falhavam em silêncio.
   const def = DEFAULT_TEMPLATES[type];
-  if (def?.metaTemplateName && tpl.metaTemplateName !== def.metaTemplateName) {
+  const desatualizado =
+    def && (
+      tpl.body !== def.body ||
+      tpl.name !== def.name ||
+      (def.metaTemplateName && tpl.metaTemplateName !== def.metaTemplateName)
+    );
+  if (desatualizado) {
     return prisma.automationTemplate.update({
       where: { id: tpl.id },
       data: {
         metaTemplateName: def.metaTemplateName,
         metaLanguage: def.metaLanguage ?? "pt_BR",
         metaVariables: def.metaVariables ?? [],
-        // O rótulo acompanha: confirmation/reminder trocaram de papel, e um
-        // nome antigo ("Confirmação de agendamento" no que hoje é o aviso)
-        // faria a clínica editar o campo errado. O corpo NÃO é sobrescrito —
-        // pode ter sido personalizado pela clínica.
+        // name e body acompanham: o texto é da IASO (é o template aprovado na
+        // WABA dela que a Meta entrega), não da clínica. Um body local antigo
+        // só produzia divergência entre o que a tela mostra e o que sai.
         name: def.name,
+        body: def.body,
       },
     });
   }
@@ -383,7 +398,20 @@ export async function upsertTemplate(userId, type, data) {
   if (existing) {
     return prisma.automationTemplate.update({ where: { id: existing.id }, data });
   }
-  return prisma.automationTemplate.create({ data: { userId, type, ...data } });
+  // Ao criar, name/body vêm do padrão da IASO — não do cliente (saveTemplate
+  // não os aceita mais, e o schema exige ambos).
+  const def = DEFAULT_TEMPLATES[type];
+  if (!def) throw new Error(`Tipo de automação desconhecido: ${type}`);
+  return prisma.automationTemplate.create({
+    data: {
+      userId, type,
+      name: def.name, body: def.body,
+      metaTemplateName: def.metaTemplateName ?? null,
+      metaLanguage: def.metaLanguage ?? "pt_BR",
+      metaVariables: def.metaVariables ?? [],
+      ...data,
+    },
+  });
 }
 
 export async function listLogs(userId, { page = 1, limit = 20, type } = {}) {
