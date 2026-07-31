@@ -1,5 +1,6 @@
 import { prisma } from "../../config/prisma.js";
 import { fetchPricingAnalytics, diaUTC, DIAS_REVISAO } from "./whatsappCost.provider.js";
+import { getCotacaoUsdBrl } from "../../providers/cambio/cambio.provider.js";
 
 // Categoria de preço da Meta por tipo de automação nossa. Usado APENAS para
 // ratear o custo entre clínicas — a Meta cobra a WABA inteira e não diz de
@@ -166,10 +167,15 @@ export async function getWhatsappCostSummary({ days = 30 } = {}) {
   const since = new Date(hoje.getTime() - (days - 1) * 86400000);
   const until = new Date(hoje.getTime() + 86400000);
 
-  const linhas = await prisma.whatsappCostDaily.findMany({
-    where: { day: { gte: since, lt: until } },
-    orderBy: { day: "asc" },
-  });
+  // Banco e câmbio são independentes — em paralelo. O câmbio nunca lança
+  // (devolve null quando indisponível), então não precisa de allSettled.
+  const [linhas, cambio] = await Promise.all([
+    prisma.whatsappCostDaily.findMany({
+      where: { day: { gte: since, lt: until } },
+      orderBy: { day: "asc" },
+    }),
+    getCotacaoUsdBrl(),
+  ]);
 
   const totais = {
     custoUsd: 0, mensagens: 0,
@@ -219,6 +225,16 @@ export async function getWhatsappCostSummary({ days = 30 } = {}) {
   return {
     periodo: { since, until, days },
     ultimaSync,
+    // Estimativa em reais. USD continua sendo o valor de fato — isto é uma
+    // conveniência de leitura, e vem null quando a fonte de câmbio falha,
+    // caso em que a tela simplesmente não mostra o card.
+    cambio: cambio && {
+      usdBrl: Number(cambio.valor.toFixed(4)),
+      custoBrlEstimado: Number((totais.custoUsd * cambio.valor).toFixed(2)),
+      fonte: cambio.fonte,
+      cotadoEm: cambio.cotadoEm ?? null,
+      expirada: cambio.expirada ?? false,
+    },
     totais: {
       ...totais,
       custoUsd: arred(totais.custoUsd),
