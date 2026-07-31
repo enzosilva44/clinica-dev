@@ -322,7 +322,11 @@ model Appointment {
   professional        String?
   status              String                 @default("SCHEDULED")
   idempotencyKey      String?                @unique
-  category            String                 @default("consulta") // consulta | retorno | lembrete | compromisso
+  // consulta | retorno | lembrete | compromisso | bloqueio | receivable | payable
+  // SÓ consulta e retorno geram mensagem ao paciente — as demais são anotações
+  // internas da agenda. A regra vive em CATEGORIAS_COM_PACIENTE
+  // (automation.service.js) como allowlist: categoria nova nasce muda.
+  category            String                 @default("consulta")
   isAllDay            Boolean                @default(false)
   recurrenceRule      String? // RRULE (ex: FREQ=WEEKLY;INTERVAL=1) p/ compromissos recorrentes
   parentAppointmentId String? // liga o retorno ao agendamento de origem
