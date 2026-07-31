@@ -21,7 +21,10 @@ const PLAN_FEATURES = {
   enterprise: ALL_FEATURES,
   solo: {
     multiProfessional: false,
-    whatsapp: false,
+    // WhatsApp NÃO é definido pelo plano: quem libera ou corta é a feature na
+    // tela de admin (featureOverrides). O plano só define o default de partida,
+    // e o default é ligado — desligar é decisão explícita por clínica.
+    whatsapp: true,
     faturamento: false,
     clube: false,
     aiSummary: true,
