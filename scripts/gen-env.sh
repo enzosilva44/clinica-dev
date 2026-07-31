@@ -15,6 +15,10 @@ set -e
   echo "ASAAS_WEBHOOK_TOKEN=${ASAAS_WEBHOOK_TOKEN}"
   echo "WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}"
   echo "WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}"
+  # Conta (WABA) dona do número. O envio usa o PHONE_NUMBER_ID; o WABA_ID só é
+  # necessário para ler o custo em /{WABA_ID}/pricing_analytics. Sem ele o
+  # painel de Custo do WhatsApp não sincroniza — o envio segue normal.
+  echo "WHATSAPP_WABA_ID=${WHATSAPP_WABA_ID}"
   # Interruptor geral de envio. Default "false": variável ausente no CodeBuild
   # deixa o ambiente MUDO, nunca enviando por acidente.
   echo "WHATSAPP_SEND_ENABLED=${WHATSAPP_SEND_ENABLED:-false}"

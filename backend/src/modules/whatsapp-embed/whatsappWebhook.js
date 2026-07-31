@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "../../config/prisma.js";
 import { processInboundMessage } from "../automations/inbound.service.js";
+import { enqueueWebhookEvent } from "../conversations/webhook/webhookEvent.service.js";
 
 const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN;
 const APP_SECRET = process.env.APP_SECRET;
@@ -48,6 +49,11 @@ export async function receiveWebhook(req, res) {
     for (const entry of entries) {
       for (const change of entry.changes || []) {
         const value = change.value || {};
+
+        // Iaso Conversas: enfileira o change cru na fila durável (idempotente).
+        // Não bloqueia nem substitui o fluxo de automações abaixo — a Fase 2
+        // do módulo passa a consumir esta fila. Best-effort, nunca quebra o webhook.
+        await enqueueWebhookEvent(change).catch(() => {});
 
         // Status de entrega das mensagens que enviamos (sent/delivered/read/failed).
         for (const status of value.statuses || []) {
