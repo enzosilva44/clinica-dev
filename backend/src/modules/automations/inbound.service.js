@@ -5,6 +5,7 @@ import { prisma } from "../../config/prisma.js";
 import { sendWhatsAppTemplate } from "../whatsapp/whatsapp.provider.js";
 import { checkQuota, consumeQuota } from "../billing/quota.service.js";
 import { apresentacaoClinica } from "./automation.service.js";
+import { getFeatures } from "../../config/features.js";
 
 // Pedido de remarcação/cancelamento. Além das raízes explícitas (remarcar,
 // reagendar), cobre as formas indiretas que o paciente usa na prática — "não
@@ -84,6 +85,11 @@ async function notifyOwner(user, { patientName, replyLabel, quandoTexto }) {
   const ownerPhone = user?.phone;
   if (!ownerPhone) return false;
 
+  // Chegou por webhook, sem passar por requireFeature(). Com a feature
+  // desligada, nenhuma mensagem sai — nem para o dono da clínica.
+  const feats = { ...getFeatures(user?.plan), ...(user?.featureOverrides ?? {}) };
+  if (!feats.whatsapp) return false;
+
   const quota = await checkQuota(user.id, "whatsapp");
   if (!quota.ok) return false;
 
@@ -150,7 +156,10 @@ export async function processInboundMessage(msg) {
   // Avisa o dono no WhatsApp dele (best-effort).
   const user = await prisma.user.findUnique({
     where: { id: owner.userId },
-    select: { id: true, phone: true, name: true, nickname: true, clinicName: true, gender: true },
+    select: {
+      id: true, phone: true, name: true, nickname: true, clinicName: true, gender: true,
+      plan: true, featureOverrides: true,
+    },
   });
   const replyLabel = buttonPayload || text || "respondeu sua mensagem";
   // O template já diz "Referente a {{3}}" — este texto entra SEM artigo próprio,
