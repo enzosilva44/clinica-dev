@@ -21,8 +21,8 @@ const suporteHref = WHATSAPP_COMMERCIAL
 const TYPE_META = {
   birthday:     { label: "Feliz aniversário",        icon: Cake,          color: "#C4895A", desc: "Enviada no dia do aniversário do paciente (todos os dias às 09h)." },
   welcome:      { label: "Boas-vindas",               icon: UserPlus,      color: "#00704A", desc: "Enviada automaticamente ao cadastrar um novo paciente." },
-  confirmation: { label: "Confirmação de agendamento", icon: CalendarCheck, color: "#6F7F73", desc: "Enviada ao criar um novo agendamento." },
-  reminder:     { label: "Lembrete de consulta",      icon: Bell,          color: "#8B6B4E", desc: "Enviada X horas antes da consulta (configurável)." },
+  confirmation: { label: "Aviso de agendamento",       icon: CalendarCheck, color: "#6F7F73", desc: "Enviada na hora em que o agendamento é criado." },
+  reminder:     { label: "Pedido de confirmação",      icon: Bell,          color: "#8B6B4E", desc: "Enviada X horas antes da consulta (configurável). É a que pede para o paciente confirmar." },
 };
 
 const VARS = {
@@ -155,7 +155,7 @@ function TemplateCard({ tpl, onSave }) {
           </p>
           {tpl.type === "reminder" && (
             <p className="text-xs text-gray-400 mt-1.5">
-              Lembrete enviado <span className="font-medium text-verde">{tpl.reminderHoursBefore ?? 24}h</span> antes da consulta.
+              Enviado <span className="font-medium text-verde">{tpl.reminderHoursBefore ?? 24}h</span> antes da consulta.
             </p>
           )}
           <button
@@ -358,7 +358,7 @@ export default function Automacoes() {
           <Card className="mt-6 bg-creme-50! p-5">
             <p className="text-sm font-bold text-verde-900 mb-3">Testar disparo manual</p>
             <div className="flex flex-wrap gap-2">
-              {[["birthday", "Aniversários de hoje"], ["reminder", "Lembretes pendentes"]].map(([type, label]) => (
+              {[["birthday", "Aniversários de hoje"], ["reminder", "Confirmações pendentes"]].map(([type, label]) => (
                 <button
                   key={type}
                   onClick={() => triggerManual(type)}
@@ -719,8 +719,8 @@ export default function Automacoes() {
                 {[
                   { type: "birthday",     label: "Aniversários",    icon: Cake,          cost: 0.50, color: "#C4895A" },
                   { type: "welcome",      label: "Boas-vindas",     icon: UserPlus,      cost: 0.50, color: "#00704A" },
-                  { type: "confirmation", label: "Confirmações",    icon: CalendarCheck, cost: 0.20, color: "#6F7F73" },
-                  { type: "reminder",     label: "Lembretes",       icon: Bell,          cost: 0.20, color: "#8B6B4E" },
+                  { type: "confirmation", label: "Avisos",          icon: CalendarCheck, cost: 0.20, color: "#6F7F73" },
+                  { type: "reminder",     label: "Confirmações",    icon: Bell,          cost: 0.20, color: "#8B6B4E" },
                 ].map(({ type, label, icon: Icon, cost, color }) => {
                   const count = stats?.thisMonth?.byType?.[type] ?? 0;
                   return (

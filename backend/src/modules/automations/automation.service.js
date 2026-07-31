@@ -21,17 +21,30 @@ const DEFAULT_TEMPLATES = {
     metaLanguage: "pt_BR",
     metaVariables: ["nome", "clinica"],
   },
+  // ATENÇÃO à inversão: o tipo "confirmation" é o AVISO DE AGENDAMENTO (sai na
+  // hora em que a consulta é marcada) e usa o template lembrete_consulta_iaso.
+  // O tipo "reminder" é o PEDIDO DE CONFIRMAÇÃO (véspera) e usa o
+  // confirmacao_consulta_iaso, que é quem tem os botões de resposta.
+  //
+  // Por quê: pedir confirmação com 30 dias de antecedência não serve para nada
+  // — a resposta perde validade antes da data. Confirmar na véspera é o que
+  // permite liberar o horário a tempo. Os botões precisam chegar nesse momento.
+  //
+  // Os NOMES dos templates na Meta ficaram trocados em relação ao papel que
+  // exercem. Trocar o texto de um template aprovado exige nova submissão e
+  // aprovação da Meta, então a inversão foi feita só no gatilho. Ao resubmeter,
+  // renomear/reescrever os corpos e desfazer este cruzamento.
   confirmation: {
-    name: "Confirmação de agendamento",
-    body: "Olá {{nome}}! Aqui é {{clinica}}. ✅ Seu agendamento está confirmado para {{data}} às {{hora}}. Aguardamos você! Caso precise reagendar, entre em contato.",
-    metaTemplateName: "confirmacao_consulta_iaso",
+    name: "Aviso de agendamento",
+    body: "Olá {{nome}}! Aqui é {{clinica}}. ✅ Seu agendamento está marcado para {{data}} às {{hora}}. Aguardamos você! Caso precise reagendar, entre em contato.",
+    metaTemplateName: "lembrete_consulta_iaso",
     metaLanguage: "pt_BR",
     metaVariables: ["nome", "clinica", "data", "hora"],
   },
   reminder: {
-    name: "Lembrete de consulta",
-    body: "Olá {{nome}}! 🔔 Aqui é {{clinica}}. Lembrando da sua consulta em {{data}} às {{hora}}. Te esperamos!",
-    metaTemplateName: "lembrete_consulta_iaso",
+    name: "Pedido de confirmação (véspera)",
+    body: "Olá {{nome}}! 🔔 Aqui é {{clinica}}. Sua consulta é em {{data}} às {{hora}}. Pode confirmar pra gente?",
+    metaTemplateName: "confirmacao_consulta_iaso",
     metaLanguage: "pt_BR",
     metaVariables: ["nome", "clinica", "data", "hora"],
   },
@@ -118,6 +131,11 @@ export async function getActiveTemplate(userId, type) {
         metaTemplateName: def.metaTemplateName,
         metaLanguage: def.metaLanguage ?? "pt_BR",
         metaVariables: def.metaVariables ?? [],
+        // O rótulo acompanha: confirmation/reminder trocaram de papel, e um
+        // nome antigo ("Confirmação de agendamento" no que hoje é o aviso)
+        // faria a clínica editar o campo errado. O corpo NÃO é sobrescrito —
+        // pode ter sido personalizado pela clínica.
+        name: def.name,
       },
     });
   }
@@ -241,6 +259,34 @@ export async function triggerConfirmation(userId, appointment, patient) {
     phone: patient.phone, type: "confirmation", message,
     scheduledFor: new Date(), templateId: tpl.id, tpl, vars,
   });
+}
+
+// Envio avulso disparado pela tela (ex.: reenviar aviso ao remarcar).
+// Existe para que a UI NÃO precise montar texto: passa o tipo e o agendamento,
+// e o texto sai do template aprovado. Garante que todo envio manual respeite
+// o mesmo caminho das automações — incluindo a checagem de feature.
+export async function triggerForAppointment(userId, type, appointmentId) {
+  const appt = await prisma.appointment.findFirst({
+    where: { id: appointmentId, userId },
+    include: { patient: true },
+  });
+  if (!appt?.patient?.phone) return { ok: false, reason: "sem_paciente_ou_telefone" };
+
+  const tpl = await getActiveTemplate(userId, type);
+  if (!tpl) return { ok: false, reason: "sem_template" };
+
+  const startsAt = new Date(appt.startsAt);
+  const vars = {
+    nome: appt.patient.name.split(" ")[0],
+    data: startsAt.toLocaleDateString("pt-BR"),
+    hora: startsAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+  };
+  await logAndSend({
+    userId, patientId: appt.patient.id, patientName: appt.patient.name,
+    phone: appt.patient.phone, type, message: interpolate(tpl.body, vars),
+    scheduledFor: new Date(), templateId: tpl.id, tpl, vars,
+  });
+  return { ok: true };
 }
 
 // Cron: run daily — send birthday messages

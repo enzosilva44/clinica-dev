@@ -5,10 +5,11 @@ import {
   listLogs,
   runBirthdayCron,
   runReminderCron,
+  triggerForAppointment,
 } from "./automation.service.js";
 import { prisma } from "../../config/prisma.js";
 import { sendWhatsAppMessage } from "../whatsapp/whatsapp.provider.js";
-import { checkQuota, consumeQuota } from "../billing/quota.service.js";
+import { checkQuota } from "../billing/quota.service.js";
 
 export async function getTemplates(req, res) {
   await ensureDefaultTemplates(req.user.id);
@@ -48,9 +49,17 @@ export async function getInbound(req, res) {
   res.json({ data, total, totalPages: Math.ceil(total / l) });
 }
 
+// Envio avulso a partir da tela de Agenda. NÃO aceita mais texto do cliente:
+// o corpo vem do Message Template aprovado na Meta. Texto livre só é entregue
+// dentro da janela de 24h, então "mensagem personalizada" simplesmente não
+// chegava ao paciente na maior parte dos casos — além de escapar do controle
+// de feature/cota que vive em logAndSend.
 export async function notifyCustom(req, res) {
-  const { phone, message, patientId, patientName, type = "confirmation" } = req.body;
-  if (!phone || !message) return res.status(400).json({ error: "phone e message são obrigatórios" });
+  const { appointmentId, type = "reminder" } = req.body;
+  if (!appointmentId) return res.status(400).json({ error: "appointmentId é obrigatório" });
+  if (!["reminder", "confirmation"].includes(type)) {
+    return res.status(400).json({ error: "type inválido" });
+  }
 
   // Cota de WhatsApp esgotada: pausa o envio e oferece top-up (não afeta demais módulos).
   const quota = await checkQuota(req.user.id, "whatsapp");
@@ -62,24 +71,17 @@ export async function notifyCustom(req, res) {
     });
   }
 
-  const log = await prisma.automationLog.create({
-    data: {
-      userId: req.user.id,
-      patientId: patientId || null,
-      patientName: patientName || "—",
-      phone, type, message,
-      scheduledFor: new Date(),
-      status: "pending",
-    },
-  });
-
   try {
-    await sendWhatsAppMessage(phone, message);
-    await consumeQuota(req.user.id, "whatsapp", 1, { type, source: "notifyCustom" });
-    await prisma.automationLog.update({ where: { id: log.id }, data: { status: "sent", sentAt: new Date() } });
+    const r = await triggerForAppointment(req.user.id, type, appointmentId);
+    if (!r.ok) {
+      const motivos = {
+        sem_paciente_ou_telefone: "Agendamento sem paciente ou sem telefone cadastrado.",
+        sem_template: "Nenhum modelo ativo para esse tipo de mensagem.",
+      };
+      return res.status(400).json({ error: motivos[r.reason] ?? "Não foi possível enviar." });
+    }
     res.json({ ok: true });
   } catch (err) {
-    await prisma.automationLog.update({ where: { id: log.id }, data: { status: "failed", error: err.message } });
     res.status(500).json({ error: err.message });
   }
 }

@@ -320,6 +320,7 @@ export default function Agenda() {
   const [returnSuggestion, setReturnSuggestion] = useState(null); // { date, days, patientId, professional, procedureName }
   const [activeCategories, setActiveCategories] = useState(CATEGORY_FILTERS.map((c) => c.key));
   const [confirmTemplate, setConfirmTemplate] = useState(null);
+  const [reminderTemplate, setReminderTemplate] = useState(null);
   const [sendWhatsApp, setSendWhatsApp] = useState(false);
   const [whatsappMessage, setWhatsappMessage] = useState("");
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
@@ -522,6 +523,10 @@ export default function Agenda() {
       api.get("/automations/templates").then((res) => {
         const tpl = res.data.find((t) => t.type === "confirmation");
         if (tpl) setConfirmTemplate(tpl);
+        // O reenvio na edição usa o modelo de LEMBRETE (type "reminder" na API),
+        // então o preview precisa desse, não o de confirmação.
+        const rem = res.data.find((t) => t.type === "reminder");
+        if (rem) setReminderTemplate(rem);
       }).catch(() => {});
     }
   }, [features.whatsapp]);
@@ -544,12 +549,14 @@ export default function Agenda() {
     setForm((prev) => ({ ...prev, txAmount: total > 0 ? String(total) : "" }));
   }, [form.procedures]);
 
+  // Preview da confirmação na criação. Não depende mais de toggle: o envio é
+  // automático, então a mensagem é mostrada assim que há paciente e data.
   useEffect(() => {
-    if (!editing && sendWhatsApp && form.patientId && form.selectedDate) {
+    if (!editing && form.patientId && form.selectedDate) {
       const patientName = patients.find((p) => p.id === form.patientId)?.name;
       setWhatsappMessage(buildWhatsAppMessage(confirmTemplate, patientName, form.selectedDate));
     }
-  }, [form.patientId, form.selectedDate]);
+  }, [form.patientId, form.selectedDate, editing, confirmTemplate, patients]);
 
   // Pacotes de sessão ativos do paciente selecionado (p/ vincular o agendamento).
   useEffect(() => {
@@ -598,7 +605,9 @@ export default function Agenda() {
     idempotencyKeyRef.current = crypto.randomUUID();
     const date = info?.start || new Date();
     setForm({ ...emptyForm(), selectedDate: formatForInput(date) });
-    setSendWhatsApp(confirmTemplate?.isActive ?? false);
+    // Na criação não há toggle — a confirmação é automática e o preview
+    // é montado pelo effect assim que paciente e data existirem.
+    setSendWhatsApp(false);
     setWhatsappMessage("");
     setPatientSearch("");
     setPatientResults([]);
@@ -650,7 +659,9 @@ export default function Agenda() {
       endDate: formatForInput(event.end),
       recurrenceFreq: parseRecurrenceFreq(event.extendedProps.recurrenceRule),
     });
-    const msg = buildWhatsAppMessage(confirmTemplate, event.extendedProps.patientName, event.start);
+    // type "reminder" = pedido de confirmação (véspera), que é o que o
+    // reenvio manual dispara.
+    const msg = buildWhatsAppMessage(reminderTemplate, event.extendedProps.patientName, event.start);
     setSendWhatsApp(false);
     setWhatsappMessage(msg);
     setShowModal(true);
@@ -762,23 +773,19 @@ export default function Agenda() {
         }
       }
 
-      if (features.whatsapp && sendWhatsApp && whatsappMessage) {
-        const phone = editing
-          ? editing.extendedProps.patientPhone
-          : patients.find((p) => p.id === form.patientId)?.phone;
-        const patientName = editing
-          ? editing.extendedProps.patientName
-          : patients.find((p) => p.id === form.patientId)?.name;
-        const patientId = editing
-          ? editing.extendedProps.patientId
-          : form.patientId;
-
+      // Só na EDIÇÃO. Ao criar, o backend já dispara a confirmação
+      // (triggerConfirmation em appointment.service) com o template aprovado —
+      // enviar aqui também faria o paciente receber a mesma coisa duas vezes.
+      if (editing && features.whatsapp && sendWhatsApp) {
+        const phone = editing.extendedProps.patientPhone;
         if (phone) {
           setSendingWhatsApp(true);
           await api.post("/automations/notify", {
-            phone, message: whatsappMessage,
-            patientId, patientName,
-            type: editing ? "reminder" : "confirmation",
+            phone,
+            patientId: editing.extendedProps.patientId,
+            patientName: editing.extendedProps.patientName,
+            type: "reminder",
+            appointmentId: editing.id,
           }).catch(() => {});
           setSendingWhatsApp(false);
           toast.success("Notificação enviada via WhatsApp");
@@ -1598,76 +1605,85 @@ export default function Agenda() {
                 );
               })()}
 
-              {/* WHATSAPP */}
+              {/* WHATSAPP
+                  Criar: informativo. Quem envia a confirmação é o backend
+                  (triggerConfirmation), então um toggle aqui não controlaria nada.
+                  Editar: reenvio manual do lembrete, útil ao remarcar sem esperar
+                  o cron (que roda a cada 30 min, 24h antes da consulta). */}
               {features.whatsapp && !isSimple && (
               <div className="border-t border-creme-200 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !sendWhatsApp;
-                    setSendWhatsApp(next);
-                    if (next && !whatsappMessage) {
-                      const patientName = editing
-                        ? editing.extendedProps.patientName
-                        : patients.find((p) => p.id === form.patientId)?.name;
-                      const date = form.selectedDate || editing?.start;
-                      setWhatsappMessage(buildWhatsAppMessage(confirmTemplate, patientName, date));
-                    }
-                  }}
-                  className="flex items-center justify-between w-full"
-                >
-                  <div className="flex items-center gap-2 text-sm font-medium text-verde">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${sendWhatsApp ? "bg-green-100" : "bg-creme-100"}`}>
-                      <MessageSquare size={15} className={sendWhatsApp ? "text-green-600" : "text-verde"} />
+                {!editing ? (
+                  <>
+                    <div className="flex items-center gap-2 text-sm font-medium text-verde">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-100">
+                        <MessageSquare size={15} className="text-green-600" />
+                      </div>
+                      Aviso automático por WhatsApp
                     </div>
-                    Enviar notificação via WhatsApp
-                  </div>
-                  <div className={`w-10 h-6 rounded-full transition-colors relative ${sendWhatsApp ? "bg-green-500" : "bg-gray-200"}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${sendWhatsApp ? "translate-x-4" : "translate-x-0.5"}`} />
-                  </div>
-                </button>
+                    <div className="mt-3 space-y-2">
+                      {!form.patientId ? (
+                        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                          Selecione o paciente para ver a mensagem.
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-xs text-gray-500">
+                            Ao salvar, o paciente recebe automaticamente:
+                          </p>
+                          <div className="rounded-xl p-3 text-sm bg-green-50/30 border border-ambar text-verde whitespace-pre-wrap">
+                            {whatsappMessage}
+                          </div>
+                          <p className="text-[10px] text-gray-400">
+                            Para: <span className="font-medium text-verde">
+                              {patients.find((p) => p.id === form.patientId)?.name || "—"}
+                            </span>
+                            {" · "}
+                            {patients.find((p) => p.id === form.patientId)?.phone || "sem telefone"}
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            O pedido de confirmação vai sozinho na véspera. Textos em{" "}
+                            <span className="font-medium text-verde">Automações → Modelos</span>.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setSendWhatsApp(!sendWhatsApp)}
+                      className="flex items-center justify-between w-full"
+                    >
+                      <div className="flex items-center gap-2 text-sm font-medium text-verde">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${sendWhatsApp ? "bg-green-100" : "bg-creme-100"}`}>
+                          <MessageSquare size={15} className={sendWhatsApp ? "text-green-600" : "text-verde"} />
+                        </div>
+                        Pedir confirmação agora
+                      </div>
+                      <div className={`w-10 h-6 rounded-full transition-colors relative ${sendWhatsApp ? "bg-green-500" : "bg-gray-200"}`}>
+                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${sendWhatsApp ? "translate-x-4" : "translate-x-0.5"}`} />
+                      </div>
+                    </button>
 
-                {sendWhatsApp && (
-                  <div className="mt-3 space-y-2">
-                    {!editing && !form.patientId ? (
-                      <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                        Selecione o paciente para pré-preencher a mensagem.
-                      </p>
-                    ) : null}
-                    <div className="relative">
-                      <textarea
-                        value={whatsappMessage}
-                        onChange={(e) => setWhatsappMessage(e.target.value)}
-                        rows={4}
-                        placeholder="Mensagem personalizada…"
-                        className="w-full border border-ambar rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500/20 bg-green-50/30"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const patientName = editing
-                            ? editing.extendedProps.patientName
-                            : patients.find((p) => p.id === form.patientId)?.name;
-                          const date = form.selectedDate || editing?.start;
-                          setWhatsappMessage(buildWhatsAppMessage(confirmTemplate, patientName, date));
-                        }}
-                        className="absolute bottom-2 right-2 text-[10px] text-gray-400 hover:text-verde transition"
-                      >
-                        ↺ regenerar
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-gray-400">
-                      {editing ? "Paciente:" : "Para:"} <span className="font-medium text-verde">
-                        {editing
-                          ? (editing.extendedProps.patientName || "—")
-                          : (patients.find((p) => p.id === form.patientId)?.name || "—")}
-                      </span>
-                      {" · "}
-                      {editing
-                        ? (editing.extendedProps.patientPhone || "sem telefone")
-                        : (patients.find((p) => p.id === form.patientId)?.phone || "sem telefone")}
-                    </p>
-                  </div>
+                    {sendWhatsApp && (
+                      <div className="mt-3 space-y-2">
+                        <div className="rounded-xl p-3 text-sm bg-green-50/30 border border-ambar text-verde whitespace-pre-wrap">
+                          {whatsappMessage}
+                        </div>
+                        <p className="text-[10px] text-gray-400">
+                          Paciente: <span className="font-medium text-verde">
+                            {editing.extendedProps.patientName || "—"}
+                          </span>
+                          {" · "}
+                          {editing.extendedProps.patientPhone || "sem telefone"}
+                        </p>
+                        <p className="text-[10px] text-gray-400">
+                          Sem isso, o pedido de confirmação ainda vai sozinho na véspera.
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               )}
