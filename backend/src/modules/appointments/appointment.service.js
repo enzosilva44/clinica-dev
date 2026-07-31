@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma.js";
 import { createPending } from "../financial/transaction.service.js";
 import { triggerConfirmation } from "../automations/automation.service.js";
+import { gerarCobrancaDaTransacao } from "../billing/billing.service.js";
 
 const COMPLETED_STATUSES = ["COMPLETED", "FINISHED"];
 
@@ -188,7 +189,7 @@ export async function create(data, user) {
       ? procItems[0].procedureName + (procItems.length > 1 ? ` +${procItems.length - 1}` : "")
       : appointment.procedureType || appointment.title;
 
-  await createPending(user.id, {
+  const pendingTx = await createPending(user.id, {
     appointmentId: appointment.id,
     patientId: appointment.patientId,
     description,
@@ -199,6 +200,20 @@ export async function create(data, user) {
     notes: data.txNotes || `Agendamento criado em ${new Date(appointment.startsAt).toLocaleDateString("pt-BR")} com ${appointment.professional || "profissional não informado"}.`,
     settlementType: data.txSettlementType || null,
   });
+
+  // Cobrança no Asaas, quando a clínica marcou a opção. Vence na data informada
+  // no bloco financeiro do agendamento (txDueDate → dueDate da Transaction).
+  //
+  // NÃO bloqueia: é chamada de rede a um terceiro, e um erro do gateway (CPF
+  // inválido, credencial, indisponibilidade) não pode impedir o atendimento de
+  // ser agendado. Falha vira chargeError na Transaction, que a clínica reabre
+  // no Faturamento para tentar de novo — em vez de sumir sem deixar rastro.
+  let cobranca = null;
+  if (data.gerarCobranca && pendingTx?.id) {
+    cobranca = await gerarCobrancaDaTransacao(user.id, pendingTx.id, {
+      method: data.cobrancaMethod || "pix",
+    });
+  }
 
   // Confirmação ao paciente. Não-bloqueante: falha de WhatsApp não pode
   // derrubar a criação do agendamento (mesmo padrão de triggerWelcome).
@@ -222,7 +237,7 @@ export async function create(data, user) {
     });
   }
 
-  return { ...appointment, suggestedReturn };
+  return { ...appointment, suggestedReturn, cobranca };
 }
 
 // Sugestão de retorno: usa o 1º procedimento do atendimento que exija retorno.

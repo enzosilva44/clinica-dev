@@ -1290,6 +1290,27 @@ export default function Financeiro() {
                             <span className="text-gray-300"> · taxa {tx.feePercent}%</span>
                           </p>
                         )}
+                        {/* Cobrança do gateway ainda não paga: o líquido real só
+                            chega pelo webhook. Até lá, estimativa da tabela de taxas. */}
+                        {tx.estimativa && (
+                          <p
+                            className="text-[10px] text-gray-400 leading-tight"
+                            title={`Estimativa — taxa Asaas ${fmt(tx.estimativa.taxa)} (${tx.estimativa.detalhe}) + IASOPay ${fmt(tx.estimativa.split)}. O valor final é confirmado quando o pagamento cai.`}
+                          >
+                            líq. estimado {fmt(tx.estimativa.liquido).replace("R$ ", "")}
+                          </p>
+                        )}
+                        {/* Falha ao gerar a cobrança — o agendamento foi salvo, mas
+                            o paciente não recebeu nada. Precisa ficar visível aqui,
+                            senão a clínica acha que cobrou. */}
+                        {tx.chargeError && (
+                          <p
+                            className="text-[10px] text-erro leading-tight"
+                            title={`Não foi possível gerar a cobrança: ${tx.chargeError}`}
+                          >
+                            ⚠ cobrança não gerada
+                          </p>
+                        )}
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_PILL[tx.status] || STATUS_PILL.pendente}`}>
                           {STATUS_LABEL[tx.status] || tx.status}
                         </span>

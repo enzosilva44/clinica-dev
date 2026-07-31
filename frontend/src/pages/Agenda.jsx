@@ -9,6 +9,7 @@ import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 import { Plus, X, Trash2, Calendar, MessageSquare, TrendingUp, TrendingDown, DollarSign, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import { mensagemDeErro } from "../lib/tomDeVoz";
+import { estimarLiquido, brl } from "../lib/taxas";
 import MainLayout from "../layouts/MainLayout";
 import { Card } from "../components/ui";
 import CalendarSidebar from "../components/calendar/CalendarSidebar";
@@ -275,6 +276,8 @@ function emptyForm() {
     txDueDate: "",
     txNotes: "",
     txSettlementType: "",
+    gerarCobranca: false,
+    cobrancaMethod: "pix",
   };
 }
 
@@ -549,6 +552,13 @@ export default function Agenda() {
     setForm((prev) => ({ ...prev, txAmount: total > 0 ? String(total) : "" }));
   }, [form.procedures]);
 
+  // Quanto a clínica recebe se gerar a cobrança agora — recalculado a cada
+  // mudança de valor, meio ou parcelas. Só estimativa: o líquido real vem do
+  // webhook do Asaas quando o pagamento cai.
+  const estimativaCobranca = form.gerarCobranca
+    ? estimarLiquido(form.txAmount, form.cobrancaMethod, { parcelas: form.txInstallments })
+    : null;
+
   // Preview da confirmação na criação. Não depende mais de toggle: o envio é
   // automático, então a mensagem é mostrada assim que há paciente e data.
   useEffect(() => {
@@ -757,10 +767,19 @@ export default function Agenda() {
           txDueDate: isSimple ? undefined : (form.txDueDate || undefined),
           txNotes: isSimple ? undefined : (form.txNotes || undefined),
           txSettlementType: isSimple ? undefined : (form.txSettlementType || undefined),
+          gerarCobranca: !isSimple && form.gerarCobranca ? true : undefined,
+          cobrancaMethod: !isSimple && form.gerarCobranca ? form.cobrancaMethod : undefined,
         });
         // Renova a chave para o próximo agendamento
         idempotencyKeyRef.current = crypto.randomUUID();
         toast.success(`${okMsg} criado`);
+        // A cobrança é gerada sem bloquear o agendamento: se o Asaas recusar,
+        // o atendimento é salvo do mesmo jeito e o erro fica no Faturamento.
+        const cob = res?.data?.cobranca;
+        if (cob) {
+          if (cob.ok) toast.success("Cobrança gerada no Faturamento");
+          else toast.error(`Agendamento salvo, mas a cobrança falhou: ${cob.error}. Você pode gerá-la no Faturamento.`, { duration: 9000 });
+        }
         maybeInvite("sua agenda");
 
         // Só vem preenchido quando o agendamento nasce concluído (backend decide).
@@ -1525,6 +1544,68 @@ export default function Agenda() {
                       {(Number(form.txAmount) / Number(form.txInstallments)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       {" "}— vencimento mensal a partir da data informada
                     </p>
+                  )}
+
+                  {/* COBRANÇA NO ASAAS — só na criação. Em edição a cobrança já
+                      pode existir; gerar de novo duplicaria. */}
+                  {!editing && features.faturamento && (
+                    <div className="border-t border-creme-200 pt-3 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setForm((p) => ({ ...p, gerarCobranca: !p.gerarCobranca }))}
+                        className="flex items-center justify-between w-full"
+                      >
+                        <div className="flex items-center gap-2 text-sm font-medium text-verde">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${form.gerarCobranca ? "bg-green-100" : "bg-creme-100"}`}>
+                            <DollarSign size={15} className={form.gerarCobranca ? "text-green-600" : "text-verde"} />
+                          </div>
+                          Gerar cobrança para o paciente
+                        </div>
+                        <div className={`w-10 h-6 rounded-full transition-colors relative ${form.gerarCobranca ? "bg-green-500" : "bg-gray-200"}`}>
+                          <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.gerarCobranca ? "translate-x-4" : "translate-x-0.5"}`} />
+                        </div>
+                      </button>
+
+                      {form.gerarCobranca && (
+                        <div className="mt-3 space-y-2">
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 block mb-1.5">Cobrar por</label>
+                            <select
+                              value={form.cobrancaMethod}
+                              onChange={f("cobrancaMethod")}
+                              className="w-full border border-ambar rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-verde/20"
+                            >
+                              <option value="pix">PIX</option>
+                              <option value="boleto">Boleto</option>
+                              <option value="credit_card">Cartão de crédito</option>
+                            </select>
+                          </div>
+                          {estimativaCobranca && (
+                            <div className="text-[11px] bg-creme-50 border border-creme-200 rounded-xl px-3 py-2 space-y-0.5">
+                              <div className="flex justify-between text-gray-500">
+                                <span>Valor bruto</span><span>{brl(estimativaCobranca.bruto)}</span>
+                              </div>
+                              <div className="flex justify-between text-gray-400">
+                                <span>Taxa Asaas ({estimativaCobranca.detalhe})</span>
+                                <span>− {brl(estimativaCobranca.taxa)}</span>
+                              </div>
+                              <div className="flex justify-between text-gray-400">
+                                <span>IASOPay</span><span>− {brl(estimativaCobranca.split)}</span>
+                              </div>
+                              <div className="flex justify-between font-semibold text-verde pt-1 border-t border-creme-200">
+                                <span>Você recebe (estimado)</span><span>{brl(estimativaCobranca.liquido)}</span>
+                              </div>
+                            </div>
+                          )}
+                          <p className="text-[10px] text-gray-400">
+                            A cobrança é criada ao salvar, com vencimento em{" "}
+                            {form.txDueDate
+                              ? new Date(form.txDueDate + "T12:00:00").toLocaleDateString("pt-BR")
+                              : "hoje (defina a data acima)"}.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {isCardMethod(form.txPaymentMethod) && (

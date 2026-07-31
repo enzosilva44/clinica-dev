@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { prisma } from "../../config/prisma.js";
 import { computeFee } from "./cardFee.service.js";
+import { estimarLiquido } from "../../config/taxas.js";
 
 
 // ─── include padrão ──────────────────────────────────────────────────────────
@@ -77,7 +78,38 @@ export async function findAll(userId, filters = {}) {
     where.createdAt = { gte: start, lt: end };
   }
 
-  return prisma.transaction.findMany({ where, include: INCLUDE, orderBy: { createdAt: "desc" } });
+  const rows = await prisma.transaction.findMany({
+    where, include: INCLUDE, orderBy: { createdAt: "desc" },
+  });
+  return rows.map(comEstimativa);
+}
+
+// Enquanto a cobrança do Asaas não é paga, netAmount/feeAmount estão vazios —
+// eles só chegam pelo webhook, com o netValue real. Até lá a clínica não fazia
+// ideia de quanto sobraria. Aqui devolvemos uma ESTIMATIVA calculada da tabela
+// de taxas, marcada como tal para a UI não confundir com valor realizado.
+// Só vale para cobrança que existe no Asaas (asaasChargeId) — dinheiro e
+// maquininha própria não pagam taxa de gateway.
+function comEstimativa(t) {
+  if (t.type !== "receita") return t;
+  if (t.netAmount != null) return t;          // já pago: valor real manda
+  if (!t.asaasChargeId) return t;             // não é cobrança do gateway
+
+  const est = estimarLiquido(t.amount, t.paymentMethod, {
+    parcelas: t.installments ?? 1,
+  });
+  if (!est) return t;
+
+  return {
+    ...t,
+    estimativa: {
+      bruto: est.bruto,
+      taxa: est.taxaAsaas,
+      split: est.split,
+      liquido: est.liquido,
+      detalhe: est.detalhe,
+    },
+  };
 }
 
 // ─── getSummary ───────────────────────────────────────────────────────────────

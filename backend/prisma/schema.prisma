@@ -576,6 +576,17 @@ model Transaction {
   feeAmount          Float? // custo da taxa em R$ (amount * feePercent)
   netAmount          Float? // valor líquido recebido (amount - feeAmount)
   settlementType     String? // imediato | crediario — compensação do recebimento no cartão
+  // Id da cobrança no Asaas (pay_xxx), preenchido quando a Transaction vira
+  // cobrança de verdade. Antes disso o vínculo existia só do lado de lá
+  // (externalReference aponta para cá), então não dava para saber, olhando a
+  // Transaction, se já havia cobrança — nem para evitar gerar duas.
+  asaasChargeId      String?      @unique
+  // Falha ao gerar a cobrança no Asaas. A geração é não-bloqueante (não pode
+  // derrubar o agendamento), então o erro precisa ficar visível em algum lugar
+  // — senão a clínica acha que cobrou e não cobrou. Fica na própria Transaction
+  // porque é o registro que a pessoa reabre no Faturamento para tentar de novo.
+  chargeError        String? // mensagem do Asaas (ex.: "CPF do cliente inválido")
+  chargeErrorAt      DateTime?
   // Split de pagamento (Asaas): comissão IASOPay retida na cobrança clínica→paciente.
   splitApplied       Boolean      @default(false) // true se a cobrança saiu com split
   splitType          String? // PERCENTAGE | FIXED — tipo enviado ao Asaas

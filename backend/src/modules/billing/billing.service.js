@@ -160,9 +160,12 @@ export async function createCharge(userId, data) {
   }
 
   // salva o ID do Asaas + o resultado do split no Transaction (rastreabilidade).
+  // asaasChargeId é o campo canônico; `notes` mantém o texto por compatibilidade
+  // com os registros antigos, que só tinham essa marcação.
   await prisma.transaction.update({
     where: { id: transaction.id },
     data: {
+      asaasChargeId: charge.id,
       notes: `asaas:${charge.id}`,
       splitApplied: splitResult.applied,
       splitType:    splitResult.applied ? splitResult.config.splitType  : null,
@@ -766,5 +769,75 @@ async function settleSubscriptionPayment(subscriptionId, payment) {
       },
     });
     console.log(`[webhook] Faturamento: nova baixa de ${clinic.clinicName || clinic.name} (pagamento ${paymentId}).`);
+  }
+}
+
+// Gera a cobrança no Asaas para uma Transaction que JÁ existe (a que nasce com
+// o agendamento). Diferente de createCharge, que cria a Transaction do zero —
+// usar aquele aqui duplicaria o lançamento no Financeiro.
+//
+// Não lança: a chamada vem do fluxo de criação do agendamento, que não pode
+// quebrar por causa do gateway. Falha vira chargeError na Transaction, visível
+// no Faturamento para a clínica tentar de novo.
+export async function gerarCobrancaDaTransacao(userId, transactionId, { method = "pix" } = {}) {
+  const tx = await prisma.transaction.findFirst({
+    where: { id: transactionId, userId },
+    include: { patient: true },
+  });
+  if (!tx) return { ok: false, error: "Lançamento não encontrado." };
+  if (tx.asaasChargeId) return { ok: true, alreadyExists: true, chargeId: tx.asaasChargeId };
+  if (!tx.patient) return { ok: false, error: "Lançamento sem paciente vinculado." };
+  if (!(tx.amount > 0)) return { ok: false, error: "Valor da cobrança precisa ser maior que zero." };
+
+  try {
+    const key = await resolveKey(userId);
+    const customer = await findOrCreateCustomer(userId, tx.patient);
+    const billingType = { pix: "PIX", credit_card: "CREDIT_CARD", boleto: "BOLETO" }[method] ?? "PIX";
+
+    const clinic = await prisma.user.findUnique({
+      where: { id: userId }, select: { asaasWalletId: true },
+    });
+    const splitResult = await buildSplit({
+      paymentMethod: method,
+      amount: Number(tx.amount),
+      clinicWalletId: clinic?.asaasWalletId,
+    });
+
+    // Vencimento: o que a clínica informou no agendamento. Sem data, hoje.
+    const due = tx.dueDate ? new Date(tx.dueDate) : new Date();
+    const dueDate = due.toISOString().slice(0, 10);
+
+    const charge = await asaas("POST", "/payments", {
+      customer: customer.id,
+      billingType,
+      value: Number(tx.amount),
+      dueDate,
+      description: tx.description || "Atendimento",
+      externalReference: tx.id,
+      ...(splitResult.applied ? { split: splitResult.split } : {}),
+    }, key);
+
+    await prisma.transaction.update({
+      where: { id: tx.id },
+      data: {
+        asaasChargeId: charge.id,
+        notes: `asaas:${charge.id}`,
+        paymentMethod: METHOD_LABEL[method] ?? "PIX",
+        chargeError: null,
+        chargeErrorAt: null,
+        splitApplied: splitResult.applied,
+        splitType:    splitResult.applied ? splitResult.config.splitType  : null,
+        splitValue:   splitResult.applied ? splitResult.config.splitValue : null,
+        iasoRevenue:  splitResult.applied ? splitResult.iasoRevenue       : null,
+      },
+    });
+    return { ok: true, chargeId: charge.id, invoiceUrl: charge.invoiceUrl };
+  } catch (err) {
+    // Registra a falha na Transaction para a clínica reabrir no Faturamento.
+    await prisma.transaction.update({
+      where: { id: tx.id },
+      data: { chargeError: String(err.message).slice(0, 300), chargeErrorAt: new Date() },
+    }).catch(() => {});
+    return { ok: false, error: err.message };
   }
 }
