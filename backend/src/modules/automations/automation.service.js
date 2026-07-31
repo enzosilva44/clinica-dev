@@ -4,6 +4,12 @@ import { checkQuota, consumeQuota } from "../billing/quota.service.js";
 import { getFeatures } from "../../config/features.js";
 import { dataBR, horaBR } from "../../lib/datasBR.js";
 
+// Categorias de agendamento que representam atendimento ao paciente e, por
+// isso, geram mensagem. "lembrete" e "compromisso" são anotações internas da
+// agenda — mesmo quando têm paciente vinculado, ele não foi convidado para
+// aquele horário. Espelha o requiresPatient de appointment.service.
+export const CATEGORIAS_COM_PACIENTE = ["consulta", "retorno"];
+
 // {{clinica}} = apresentação da clínica (ex.: "do consultório da Dra. Fernanda"),
 // injetada automaticamente em logAndSend. Como o número é único/compartilhado,
 // TODA mensagem abre identificando de quem é.
@@ -302,6 +308,10 @@ export async function triggerForAppointment(userId, type, appointmentId) {
     include: { patient: true },
   });
   if (!appt?.patient?.phone) return { ok: false, reason: "sem_paciente_ou_telefone" };
+  // Mesma regra do cron: lembrete/compromisso são anotações internas.
+  if (!CATEGORIAS_COM_PACIENTE.includes(appt.category)) {
+    return { ok: false, reason: "categoria_sem_mensagem" };
+  }
 
   const tpl = await getActiveTemplate(userId, type);
   if (!tpl) return { ok: false, reason: "sem_template" };
@@ -378,6 +388,12 @@ export async function runReminderCron() {
         userId,
         startsAt: { gte: windowStart, lte: windowEnd },
         status: { not: "CANCELED" },
+        // Só atendimento real fala com o paciente. As demais categorias
+        // ("lembrete", "compromisso") são anotações internas da agenda — um
+        // lembrete de retorno é a clínica lembrando de LIGAR para a pessoa,
+        // que muitas vezes nem sabe daquele horário. Pedir confirmação disso
+        // constrange o paciente e confunde a agenda.
+        category: { in: CATEGORIAS_COM_PACIENTE },
       },
       include: { patient: { select: { id: true, name: true, phone: true } } },
     });
