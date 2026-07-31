@@ -3,7 +3,7 @@ import {
   MessageSquare, History, ToggleLeft, ToggleRight,
   Edit2, Save, X, RefreshCw, CheckCircle, XCircle, Clock,
   Cake, UserPlus, CalendarCheck, Bell, Wifi, WifiOff, Eye, EyeOff, Send,
-  BarChart2, TrendingUp, DollarSign, AlertTriangle, Inbox,
+  TrendingUp, DollarSign, AlertTriangle, Inbox,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { mensagemDeErro } from "../lib/tomDeVoz";
@@ -320,7 +320,9 @@ export default function Automacoes() {
       <div className="flex gap-1 bg-creme-50 border border-creme-200 rounded-xl p-1 mb-6 w-fit">
         {/* Aba "Conexão" fica oculta no modelo de número único da plataforma —
             acessível só via o link "conecte aqui" pra quem quer usar o próprio número. */}
-        {[["templates", MessageSquare, "Templates"], ["respostas", Inbox, "Respostas"], ["historico", History, "Histórico"], ["resumo", BarChart2, "Resumo"]].map(([v, Icon, l]) => (
+        {/* Aba "Resumo" temporariamente oculta — só o botão. O conteúdo (bloco
+            tab === "resumo") segue no código para voltar depois. */}
+        {[["templates", MessageSquare, "Templates"], ["respostas", Inbox, "Respostas"], ["historico", History, "Histórico"]].map(([v, Icon, l]) => (
           <button
             key={v}
             onClick={() => setTab(v)}
