@@ -1675,3 +1675,120 @@ model WhatsappCostDaily {
   @@unique([day, category, pricing, wabaId])
   @@index([day])
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IASO SUPORTE — central de atendimento da própria IASO (estilo Zendesk).
+//
+// NÃO confundir com Contact/Conversation/Message (acima), que são o inbox de
+// cada CLÍNICA falando com SEUS pacientes. Aqui é o contrário: quem escreve é
+// o cliente da IASO (a clínica), e quem atende é a equipe interna.
+// Os dois convivem: o worker separa pelo phone_number_id que a Meta manda.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SupportDepartment {
+  id        String          @id @default(cuid())
+  key       String          @unique // comercial | suporte | financeiro | implantacao
+  name      String
+  order     Int             @default(0) // ordem de exibição no menu de triagem
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  tickets   SupportTicket[]
+}
+
+// Quem escreve para a central. O telefone é único GLOBAL (uma central, um
+// número): a mesma pessoa nunca vira dois contatos.
+model SupportContact {
+  id           String          @id @default(cuid())
+  phone        String          @unique // normalizado: só dígitos, com 55
+  waName       String? // nome que o WhatsApp informa (profile.name)
+  name         String? // nome interno, editado pelo atendente
+  clinicId     String? // cliente IASO identificado (User.id) — sem FK: pode não ser cliente
+  notes        String?
+  blocked      Boolean         @default(false) // opt-out / spam
+  firstSeenAt  DateTime        @default(now())
+  lastSeenAt   DateTime        @default(now())
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  tickets      SupportTicket[]
+
+  @@index([clinicId])
+  @@index([lastSeenAt])
+}
+
+// O chamado. Um contato pode ter VÁRIOS ao longo do tempo (modelo ticket);
+// mensagem nova entra no ticket aberto mais recente, ou abre um novo.
+model SupportTicket {
+  id             String                  @id @default(cuid())
+  number         Int                     @unique @default(autoincrement()) // #1234 p/ referência humana
+  contactId      String
+  departmentId   String?// null = ainda em triagem
+  assigneeId     String? // User.id do atendente — null = na fila
+  status         String                  @default("triagem") // triagem|aguardando|em_atendimento|resolvido|encerrado
+  priority       String                  @default("normal") // baixa|normal|alta
+  subject        String?
+  lastMessageAt  DateTime                @default(now())
+  lastPreview    String?
+  unreadCount    Int                     @default(0) // inbound não lidas pelo atendente
+  // Marcos p/ SLA — preenchidos uma única vez, no primeiro evento de cada tipo.
+  firstInboundAt DateTime? // 1ª mensagem do cliente (início da espera)
+  firstReplyAt   DateTime? // 1ª resposta humana (fecha o tempo de 1ª resposta)
+  assignedAt     DateTime?
+  resolvedAt     DateTime?
+  closedAt       DateTime?
+  closeReason    String?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  contact        SupportContact          @relation(fields: [contactId], references: [id])
+  department     SupportDepartment?      @relation(fields: [departmentId], references: [id])
+  messages       SupportMessage[]
+  assignments    SupportAssignmentLog[]
+
+  @@index([status, lastMessageAt])
+  @@index([departmentId, status])
+  @@index([assigneeId, status])
+  @@index([contactId, createdAt])
+}
+
+// Mensagem do ticket. Nota interna é a MESMA tabela com isInternalNote=true —
+// evita duas timelines para juntar na tela (e some do que vai pro cliente).
+model SupportMessage {
+  id             String        @id @default(cuid())
+  ticketId       String
+  direction      String // inbound (cliente→IASO) | outbound (IASO→cliente)
+  kind           String        @default("text") // text|button|interactive|template|image|document|audio|video|unsupported
+  text           String?
+  buttonPayload  String?
+  mediaUrl       String? // chave/URL no S3, quando anexo
+  mediaMimeType  String?
+  mediaFilename  String?
+  metaMessageId  String?       @unique // idempotência forte (inbound e outbound)
+  status         String? // outbound: sent|delivered|read|failed
+  errorMessage   String? // motivo da falha de envio
+  isInternalNote Boolean       @default(false) // true = NUNCA vai para a Meta
+  authorId       String? // User.id do atendente; null = cliente/sistema
+  authorKind     String        @default("human") // human|system|automation|template
+  sentAt         DateTime? // timestamp da Meta, quando disponível
+  createdAt      DateTime      @default(now())
+  ticket         SupportTicket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId, createdAt])
+  @@index([status])
+}
+
+// Histórico de quem assumiu/transferiu o quê — auditoria da operação.
+model SupportAssignmentLog {
+  id           String        @id @default(cuid())
+  ticketId     String
+  action       String // assumir|atribuir|transferir_atendente|transferir_departamento|liberar
+  fromUserId   String?
+  toUserId     String?
+  fromDeptId   String?
+  toDeptId     String?
+  actorId      String? // quem executou a ação
+  note         String?
+  createdAt    DateTime      @default(now())
+  ticket       SupportTicket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId, createdAt])
+}

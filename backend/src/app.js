@@ -24,6 +24,7 @@ import automationRoutes from "./modules/automations/automation.routes.js";
 import billingRoutes from "./modules/billing/billing.routes.js";
 import adminRoutes from "./modules/admin/admin.routes.js";
 import operatingSystemRoutes from "./modules/operating-system/ios.routes.js";
+import supportRoutes from "./modules/support/support.routes.js";
 import profileRoutes from "./modules/profile/profile.routes.js";
 import anamnesisRoutes from "./modules/anamnesis/anamnesis.routes.js";
 import portfolioRoutes from "./modules/portfolio/portfolio.routes.js";
@@ -80,6 +81,7 @@ app.post("/whatsapp/webhook", receiveWebhook);
 app.use("/whatsapp", whatsappEmbedRoutes);
 app.use("/billing", billingRoutes);
 app.use("/admin/ios", operatingSystemRoutes);
+app.use("/admin/support", supportRoutes); // antes de /admin: prefixo mais específico primeiro
 app.use("/admin", adminRoutes);
 app.use("/profile", profileRoutes);
 app.use("/anamnesis", anamnesisRoutes);
