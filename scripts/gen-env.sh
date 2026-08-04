@@ -19,6 +19,11 @@ set -e
   # necessário para ler o custo em /{WABA_ID}/pricing_analytics. Sem ele o
   # painel de Custo do WhatsApp não sincroniza — o envio segue normal.
   echo "WHATSAPP_WABA_ID=${WHATSAPP_WABA_ID}"
+  # Número da central de atendimento da IASO (Iaso Suporte). O worker separa o
+  # que é chamado de clínica do que é conversa de paciente comparando este id
+  # com o phone_number_id que a Meta manda. Ausente, NADA vira ticket de
+  # suporte — o lado seguro, para não sequestrar mensagem das clínicas.
+  echo "SUPPORT_PHONE_NUMBER_ID=${SUPPORT_PHONE_NUMBER_ID}"
   # Interruptor geral de envio. Default "false": variável ausente no CodeBuild
   # deixa o ambiente MUDO, nunca enviando por acidente.
   echo "WHATSAPP_SEND_ENABLED=${WHATSAPP_SEND_ENABLED:-false}"
