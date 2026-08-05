@@ -9,6 +9,7 @@ import {
   resolveTicket,
   reopenTicket,
   addInternalNote,
+  replyToContact,
   ensureDepartments,
 } from "./support.service.js";
 import { prisma } from "../../config/prisma.js";
@@ -142,6 +143,22 @@ router.post("/tickets/:id/reopen", async (req, res, next) => {
 
 // Nota interna nunca sai para a Meta — é o que a equipe escreve para si mesma.
 // Por isso funciona mesmo sem o número de suporte registrado na Cloud API.
+// Resposta do atendente ao cliente, pelo número da central.
+// Erro da Meta (fora da janela de 24h, por exemplo) volta como 400 com a
+// mensagem dela — o atendente precisa saber o motivo, não só que falhou.
+router.post("/tickets/:id/reply", async (req, res, next) => {
+  try {
+    const text = (req.body?.text ?? "").trim();
+    if (!text) return res.status(400).json({ error: "Escreva a mensagem antes de enviar." });
+    const message = await replyToContact({
+      ticketId: req.params.id, text, authorId: actorId(req),
+    });
+    return res.json(message);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
 router.post("/tickets/:id/notes", async (req, res, next) => {
   try {
     const text = (req.body?.text ?? "").trim();

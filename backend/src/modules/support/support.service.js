@@ -201,6 +201,45 @@ export async function addInternalNote({ ticketId, text, authorId }) {
   });
 }
 
+// Resposta do ATENDENTE ao cliente: envia pelo número da central e grava na
+// timeline. Envia primeiro e só grava se a Meta aceitar — o contrário mostraria
+// ao atendente uma mensagem que o cliente nunca recebeu.
+// Fora da janela de 24h a Meta recusa texto livre; o erro dela sobe como está,
+// para o atendente saber que precisa de template em vez de "falhou".
+export async function replyToContact({ ticketId, text, authorId }) {
+  const body = (text ?? "").trim();
+  if (!body) throw new Error("Escreva a mensagem antes de enviar.");
+
+  const ticket = await prisma.supportTicket.findUnique({
+    where: { id: ticketId }, include: { contact: true },
+  });
+  if (!ticket) throw new Error("Conversa não encontrada.");
+
+  const { sendWhatsAppMessage } = await import("../whatsapp/whatsapp.provider.js");
+  const sent = await sendWhatsAppMessage(ticket.contact.phone, body, {
+    phoneNumberId: process.env.SUPPORT_PHONE_NUMBER_ID,
+    accessToken: process.env.SUPPORT_ACCESS_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN,
+  });
+
+  const message = await recordOutboundSupportMessage({
+    ticketId, text: body, authorId, authorKind: "human",
+    metaMessageId: sent?.messages?.[0]?.id ?? null,
+  });
+
+  // Responder tira a conversa da fila: quem respondeu está atendendo.
+  await prisma.supportTicket.update({
+    where: { id: ticketId },
+    data: {
+      status: ticket.status === "resolvido" || ticket.status === "encerrado"
+        ? ticket.status : "em_atendimento",
+      assigneeId: ticket.assigneeId ?? authorId ?? null,
+      assignedAt: ticket.assignedAt ?? (ticket.assigneeId ? null : new Date()),
+    },
+  }).catch(() => {});
+
+  return message;
+}
+
 export async function updateOutboundStatus(metaMessageId, status) {
   if (!metaMessageId || !status) return null;
   return prisma.supportMessage
