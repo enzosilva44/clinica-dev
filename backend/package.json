@@ -7,7 +7,7 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "test:ios": "node --test src/modules/operating-system/*.test.js",
-    "test:support": "node --test src/modules/support/*.test.js",
+    "test:support": "node --test --experimental-test-module-mocks src/modules/support/*.test.js src/modules/whatsapp-embed/*.test.js",
     "seed:admin": "node prisma/seed-admin.js",
     "postinstall": "prisma generate"
   },

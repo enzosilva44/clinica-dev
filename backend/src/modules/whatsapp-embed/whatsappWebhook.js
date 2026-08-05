@@ -2,6 +2,12 @@ import crypto from "crypto";
 import { prisma } from "../../config/prisma.js";
 import { processInboundMessage } from "../automations/inbound.service.js";
 import { enqueueWebhookEvent } from "../conversations/webhook/webhookEvent.service.js";
+import {
+  isSupportNumber,
+  recordInboundSupportMessage,
+  recordOutboundSupportMessage,
+  updateOutboundStatus as updateSupportOutboundStatus,
+} from "../support/support.service.js";
 
 const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN;
 const APP_SECRET = process.env.APP_SECRET;
@@ -36,6 +42,44 @@ function isValidSignature(req) {
   }
 }
 
+// Eventos da central de suporte: grava o ticket e, se a triagem decidiu uma
+// resposta automática, envia. O envio respeita o kill switch do provider — com
+// WHATSAPP_SEND_ENABLED != true nada sai, mas o ticket é registrado igual.
+// Falha ao responder nunca perde a mensagem do cliente, que já está gravada.
+async function handleSupportChange(value) {
+  const waName = value.contacts?.[0]?.profile?.name ?? null;
+
+  for (const msg of value.messages || []) {
+    const result = await recordInboundSupportMessage(msg, { waName });
+    if (!result?.reply) continue;
+
+    try {
+      const { sendWhatsAppMessage } = await import("../whatsapp/whatsapp.provider.js");
+      const sent = await sendWhatsAppMessage(msg.from, result.reply.text, {
+        phoneNumberId: process.env.SUPPORT_PHONE_NUMBER_ID,
+        accessToken: process.env.SUPPORT_ACCESS_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN,
+      });
+      await recordOutboundSupportMessage({
+        ticketId: result.ticketId,
+        text: result.reply.text,
+        authorKind: "automation",
+        metaMessageId: sent?.messages?.[0]?.id ?? null,
+      });
+    } catch (e) {
+      await recordOutboundSupportMessage({
+        ticketId: result.ticketId,
+        text: result.reply.text,
+        authorKind: "automation",
+      }).catch(() => {});
+      console.error("[support] falha ao enviar resposta automática:", e.message);
+    }
+  }
+
+  for (const st of value.statuses || []) {
+    if (st.id && st.status) await updateSupportOutboundStatus(st.id, st.status).catch(() => {});
+  }
+}
+
 // POST — eventos: status de entrega, mensagens recebidas, status de template.
 export async function receiveWebhook(req, res) {
   if (!isValidSignature(req)) {
@@ -54,6 +98,18 @@ export async function receiveWebhook(req, res) {
         // Não bloqueia nem substitui o fluxo de automações abaixo — a Fase 2
         // do módulo passa a consumir esta fila. Best-effort, nunca quebra o webhook.
         await enqueueWebhookEvent(change).catch(() => {});
+
+        // IASO SUPORTE: eventos do número da central não são conversa de
+        // paciente — viram ticket e saem daqui. Sem este desvio a mensagem cai
+        // no fluxo de automações abaixo e é descartada por não casar com
+        // nenhum paciente. Com SUPPORT_PHONE_NUMBER_ID ausente o teste é
+        // sempre falso e nada muda para as clínicas.
+        if (isSupportNumber(value.metadata?.phone_number_id)) {
+          await handleSupportChange(value).catch((e) =>
+            console.error("[whatsapp-webhook] suporte:", e.message)
+          );
+          continue;
+        }
 
         // Status de entrega das mensagens que enviamos (sent/delivered/read/failed).
         for (const status of value.statuses || []) {
