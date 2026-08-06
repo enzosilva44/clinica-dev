@@ -33,6 +33,16 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading,      setLoading]      = useState(false);
 
+  // Chegou aqui porque a sessão venceu (PrivateRoute ou interceptor de 401).
+  // Sem este aviso a pessoa era devolvida ao login sem entender por quê e
+  // achava que o sistema tinha perdido os dados dela.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("sessao") === "expirada") {
+      toast("Sua sessão expirou. Entre novamente para continuar.", { icon: "🔒" });
+      window.history.replaceState({}, "", "/login");
+    }
+  }, []);
+
   async function handleLogin(e) {
     e.preventDefault();
     setLoading(true);

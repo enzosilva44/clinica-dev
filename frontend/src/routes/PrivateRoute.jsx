@@ -1,5 +1,7 @@
 import { Navigate } from "react-router-dom";
 
+import { isTokenExpired, clearSession } from "../services/session";
+
 // Corte da regra de contratação obrigatória. Contas criadas ANTES desta data
 // (legadas) passam livres mesmo sem assinatura; a partir dela, todo cadastro
 // novo precisa concluir /contratar antes de usar o sistema.
@@ -15,6 +17,14 @@ export default function PrivateRoute({
 
   if (!token) {
     return <Navigate to="/" />;
+  }
+
+  // Token vencido: a sessão acabou. Limpamos o resto antes de mandar para o
+  // login, senão o `user` velho continuaria em localStorage e as regras abaixo
+  // (trocar senha, contratar, bloqueio) decidiriam com base em dados obsoletos.
+  if (isTokenExpired(token)) {
+    clearSession();
+    return <Navigate to="/login?sessao=expirada" replace />;
   }
 
   let stored = {};

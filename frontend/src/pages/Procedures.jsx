@@ -37,6 +37,7 @@ export default function Procedures() {
       setProcedures(response.data);
     } catch (error) {
       console.error(error);
+      toast.error("Não conseguimos carregar os procedimentos. Tente de novo.");
       toast.error(mensagemDeErro(error, "carregar os procedimentos"));
     } finally {
       setLoading(false);

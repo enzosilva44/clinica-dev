@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Plus, Users, Search, Sparkles, X, Upload, CalendarClock } from "lucide-react";
+import { Plus, Users, Search, Sparkles, X, Upload, CalendarClock, AlertCircle } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import { Card, Button } from "../components/ui";
 import Spinner from "../components/ui/Spinner";
@@ -59,6 +59,7 @@ export default function Patients() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   async function loadReturnSuggestions() {
     setLoadingSuggestions(true);
@@ -79,8 +80,12 @@ export default function Patients() {
       setPatients(res.data.data);
       setTotalPages(res.data.totalPages);
       setTotal(res.data.total);
+      setLoadError(false);
     } catch (error) {
+      // Falha ao carregar NÃO é o mesmo que "nenhum paciente": sinalizamos o
+      // erro para a tela avisar, em vez de mostrar o vazio de sempre.
       console.error(error);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -289,6 +294,19 @@ export default function Patients() {
 
       {loading ? (
         <Spinner />
+      ) : loadError ? (
+        <div className="flex flex-col items-center justify-center py-28 text-center">
+          <div className="w-16 h-16 bg-creme-100 rounded-2xl flex items-center justify-center mb-4">
+            <AlertCircle size={28} className="text-erro" />
+          </div>
+          <h2 className="text-xl font-semibold text-verde-900 mb-2">Não conseguimos carregar seus pacientes</h2>
+          <p className="text-gray-500 mb-6 max-w-sm">
+            Seus dados estão salvos — foi a conexão com o servidor que falhou. Tente de novo.
+          </p>
+          <Button onClick={() => { setLoading(true); loadPatients(); }}>
+            Tentar de novo
+          </Button>
+        </div>
       ) : patients.length === 0 && !search ? (
         <div className="flex flex-col items-center justify-center py-28 text-center">
           <div className="w-16 h-16 bg-creme-100 rounded-2xl flex items-center justify-center mb-4">

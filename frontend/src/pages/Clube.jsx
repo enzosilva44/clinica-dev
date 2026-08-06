@@ -88,7 +88,9 @@ export default function Clube() {
       setMembers(membersRes.data);
       setAlerts(alertsRes.data);
     } catch (e) {
+      // Falha de carga não pode virar tela vazia silenciosa: avisa quem está usando.
       console.error(e);
+      toast.error("Não conseguimos carregar o Clube. Tente de novo.");
       toast.error(mensagemDeErro(e, "carregar os dados do clube"));
     } finally {
       setLoading(false);

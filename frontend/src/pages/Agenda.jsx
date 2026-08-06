@@ -487,7 +487,9 @@ export default function Agenda() {
 
       setAllEvents([...apptEvents, ...finEvents]);
     } catch (error) {
+      // Agenda vazia por erro é perigoso: parece "sem atendimentos hoje".
       console.error(error);
+      toast.error("Não conseguimos carregar a agenda. Tente de novo.");
     }
   }
 
