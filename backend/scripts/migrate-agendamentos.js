@@ -13,38 +13,96 @@ const norm = (s) => (s || "").trim().toLowerCase().normalize("NFD").replace(/[̀
 
 // category: consulta (padrão p/ paciente) | retorno | compromisso (pessoal/bloqueio)
 // end: "HH:MM" opcional. Sem proc + sem end → 60min.
+// Fonte: prints da agenda do sistema antigo enviados em 10/08/2026 (semanas
+// 20/07 → 24/10). Substituem a coleta de julho — a agenda mudou desde então.
 const AG = [
-  // ── Semana 19–25/07 ──
-  { date: "2026-07-21", start: "10:00", patient: "Glaucia Amélia Rissato" },
-  { date: "2026-07-23", start: "10:00", patient: "Gabriela Marques" },
-  { date: "2026-07-24", start: "14:00", patient: "Joelma Cristina de Frei" },
-  { date: "2026-07-24", start: "14:30", end: "15:00", patient: "Nayara Cristina da Silva", proc: "HIPRO RETORNO", category: "retorno" },
-  { date: "2026-07-24", start: "14:30", end: "15:00", patient: "Luana Aparecida Vilela R", proc: "Retorno", category: "retorno" },
-  { date: "2026-07-24", start: "17:00", end: "17:30", patient: "Alessandra Damante Gar", proc: "HIPRO RETORNO", category: "retorno" },
-  { date: "2026-07-24", start: "17:00", end: "20:00", patient: "Talita Keler Borges da Sil", proc: "Preenchimento Queixo" },
+  // ── Semana 20–25/07 ──
+  { date: "2026-07-20", start: "09:30", title: "Compromisso Pessoal", category: "compromisso" },
   { date: "2026-07-22", start: "09:30", end: "10:30", title: "Reunião Calixto", category: "compromisso" },
+  { date: "2026-07-22", start: "11:00", end: "12:00", patient: "Lucia Elena Moris", proc: "Toxina Botulínica 3 regiões" },
+  { date: "2026-07-22", start: "13:00", end: "14:00", title: "Nariz botolifting", category: "compromisso" },
+  { date: "2026-07-22", start: "14:00", end: "15:00", patient: "Ledinilde Ramos de Souza Silva", proc: "Toxina Botulínica 3 regiões" },
+  { date: "2026-07-22", start: "15:00", end: "16:00", patient: "Luciana De Jesus", proc: "Toxina Botulínica 3 regiões" },
+  { date: "2026-07-22", start: "15:30", end: "16:30", patient: "Talia Becari da Silva", proc: "Toxina Botulínica 3 regiões" },
+  { date: "2026-07-24", start: "14:00", patient: "Daiana Herrer" },
+  { date: "2026-07-24", start: "14:30", patient: "Luana Aparec" },
+  { date: "2026-07-24", start: "15:55", patient: "Joelma Cristina de Freitas Santos" },
 
-  // ── Semana 26/07–01/08 ──
-  { date: "2026-07-27", start: "10:00", patient: "Marta Alves Marzagao" },
-  { date: "2026-07-27", start: "16:30", end: "17:30", patient: "João Pedro Vieira Campos", proc: "Retorno", category: "retorno" },
+  // ── Semana 27/07–01/08 ──
+  { date: "2026-07-27", start: "14:00", title: "Compromisso Pessoal", category: "compromisso" },
   { date: "2026-07-28", start: "10:00", end: "11:00", title: "Unha de gel", category: "compromisso" },
-  { date: "2026-07-29", start: "09:00", end: "10:00", title: "Lembrar Maíra do retoque", category: "compromisso" },
-  { date: "2026-07-29", start: "17:00", end: "17:40", patient: "Isadora Lizo Limonti Lem", proc: "Avaliação" },
-  { date: "2026-07-30", start: "10:30", patient: "Débora de Oliveira da C" },
-  { date: "2026-07-30", start: "14:30", patient: "Ana Carolina Nascimen" },
+  { date: "2026-07-28", start: "12:00", end: "13:00", title: "Pegar coisas Glaucia e botox Marta", category: "compromisso" },
+  { date: "2026-07-28", start: "15:00", end: "16:00", title: "Ver ap", category: "compromisso" },
+  { date: "2026-07-29", start: "15:30", patient: "Glaucia Amélia Rissato" },
+  { date: "2026-07-29", start: "16:30", patient: "Marta Alves Marzagao" },
+  { date: "2026-07-30", start: "10:00", patient: "Isadora Lizo L" },
+  { date: "2026-07-30", start: "10:30", patient: "Débora de Oli" },
+  { date: "2026-07-30", start: "12:30", end: "13:30", patient: "Maria Teresa da Costa Andrade", proc: "PEIM" },
+  { date: "2026-07-31", start: "10:30", end: "11:30", patient: "Marianee Alves Pereira", proc: "Preenchimento labial" },
   { date: "2026-07-31", start: "14:30", end: "15:30", patient: "Gabriela Mariana Mendonça", proc: "Preenchimento Queixo" },
-  { date: "2026-07-31", start: "15:30", end: "18:30", patient: "Laura Gomes de Campos C", proc: "Preenchimento Malar" },
+  { date: "2026-08-01", start: "10:00", patient: "Zilda Françolim Barros" },
 
-  // ── Ago / Set ──
-  { date: "2026-08-07", start: "18:30", patient: "Isabel Cristina Garcia" },
+  // ── Semana 03–08/08 ──
+  { date: "2026-08-03", start: "14:00", end: "15:00", title: "Médico", category: "compromisso" },
+  { date: "2026-08-03", start: "17:00", patient: "Grasiela Grandi" },
+  { date: "2026-08-05", start: "09:00", patient: "Ledinilde Ramos de Souza Silva" },
+  { date: "2026-08-05", start: "11:00", end: "12:00", patient: "Solange de Souza Melo", proc: "Toxina Botulínica 3 regiões + Preenchimento labial" },
+  { date: "2026-08-05", start: "13:10", end: "14:10", patient: "Regislaine dos Santos", proc: "PEIM" },
+  { date: "2026-08-05", start: "15:00", patient: "Caroline Crist" },
+  { date: "2026-08-05", start: "15:10", title: "Compromisso Pessoal", category: "compromisso" },
+  { date: "2026-08-05", start: "16:00", end: "17:00", title: "Hidratação angelita", category: "compromisso" },
+  { date: "2026-08-05", start: "17:00", patient: "Lucia Elena Moris" },
+  { date: "2026-08-06", start: "15:30", patient: "Luciana De Jesus Costa" },
+  { date: "2026-08-06", start: "17:30", patient: "Talia Becari da Silva" },
+  { date: "2026-08-06", start: "18:42", end: "19:42", patient: "Laura Luiza Dias Souza", proc: "Toxina Botulínica 3 regiões" },
+  { date: "2026-08-07", start: "09:00", end: "10:00", title: "Liberação", category: "compromisso" },
+  { date: "2026-08-07", start: "12:30", end: "13:30", patient: "Maíra Xavier Cintra", proc: "PEIM + Toxina Botulínica Masseter" },
+  { date: "2026-08-07", start: "13:30", title: "Compromisso Pessoal", category: "compromisso" },
+  { date: "2026-08-07", start: "14:00", end: "15:30", patient: "Laura Gomes de", proc: "Preenchimento Malar" },
+  { date: "2026-08-07", start: "15:05", end: "16:05", patient: "Laura Gomes de", proc: "Retorno", category: "retorno" },
+  { date: "2026-08-07", start: "16:00", patient: "Elaine Cristina Correia" },
+
+  // ── Semana 10–15/08 ──
+  { date: "2026-08-10", start: "12:30", patient: "Ana laura França Santana" },
+  { date: "2026-08-10", start: "13:00", end: "18:00", title: "Captação conteúdo", category: "compromisso" },
+  { date: "2026-08-11", start: "09:00", end: "19:00", title: "Atender Ipuã", category: "compromisso", allDay: true },
+  { date: "2026-08-13", start: "14:00", end: "15:00", patient: "Ana Carolina Guimarães", proc: "Preenchimento labial" },
+  { date: "2026-08-13", start: "16:00", patient: "Giovana Araújo" },
+  { date: "2026-08-13", start: "17:00", end: "23:00", patient: "Caroline Cristina Vieira de Souza", proc: "Toxina Botulínica 3 regiões + Preenchimento Malar" },
+  { date: "2026-08-14", start: "15:00", patient: "Josilene Cristina dos Santos Pereira" },
+  { date: "2026-08-14", start: "16:00", patient: "Laura Gomes de Campos Castro" },
+  { date: "2026-08-14", start: "17:00", patient: "João Pedro Vieira Campos" },
+  { date: "2026-08-14", start: "18:30", patient: "Isabel Cristina Ferreira" },
+
+  // ── Semana 17–22/08 ──
+  { date: "2026-08-17", start: "10:30", end: "11:30", patient: "Camila Cristiane Ferreira Bandeira", proc: "Preenchimento labial" },
+  { date: "2026-08-18", start: "10:00", patient: "Glaucia Amélia Rissato" },
+  { date: "2026-08-20", start: "09:30", patient: "Laura Luiza Dias Souza" },
+  { date: "2026-08-20", start: "10:00", patient: "Solange de Souza Melo" },
+  { date: "2026-08-20", start: "10:30", patient: "Débora de Oliveira da Cunha" },
+  { date: "2026-08-21", start: "14:00", end: "15:00", patient: "Laura Gomes de Campos Castro", proc: "Retorno", category: "retorno" },
+
+  // ── Semana 24–29/08 ──
+  { date: "2026-08-25", start: "10:00", end: "11:00", title: "Compromisso Pessoal", category: "compromisso" },
+  { date: "2026-08-29", start: "13:00", patient: "Daiana Herrera" },
+  { date: "2026-08-29", start: "13:30", end: "14:30", patient: "Luciana Maria Ferreira Penha", proc: "HIPRO FULL FACE" },
+  { date: "2026-08-29", start: "14:30", end: "15:30", patient: "Eliana Aparecida Lemes Oliveira Teodoro", proc: "HIPRO PESCOÇO" },
+  { date: "2026-08-29", start: "15:30", patient: "Júlia Santana Ferreira" },
+  { date: "2026-08-29", start: "16:15", end: "17:15", patient: "Sabrina Carla Garcia de Barros", proc: "HIPRO FULL FACE" },
+  { date: "2026-08-29", start: "17:15", patient: "Roberta Aguiar da Silva" },
+
+  // ── Semana 31/08–05/09 ──
   { date: "2026-08-31", start: "14:00", patient: "Solange de Souza Melo" },
+  { date: "2026-09-02", start: "13:30", end: "14:30", patient: "Regislaine dos Santos", proc: "PEIM" },
+  { date: "2026-09-03", start: "12:30", end: "13:30", patient: "Maria Teresa da Costa Andrade", proc: "PEIM" },
 
-  // ── Bloqueios ──
+  // ── Set / Out ──
   { date: "2026-09-11", start: "09:00", end: "19:00", title: "Serra da canastra", category: "compromisso", allDay: true },
   { date: "2026-09-12", start: "09:00", end: "19:00", title: "Serra da canastra", category: "compromisso", allDay: true },
   { date: "2026-10-15", start: "09:00", end: "19:00", title: "Praia", category: "compromisso", allDay: true },
   { date: "2026-10-16", start: "09:00", end: "19:00", title: "Praia", category: "compromisso", allDay: true },
   { date: "2026-10-17", start: "09:00", end: "19:00", title: "Praia", category: "compromisso", allDay: true },
+  { date: "2026-10-23", start: "17:00", end: "18:00", patient: "Grasiela Grandi", proc: "Toxina Botulínica 3 regiões", notes: "Botox brinde" },
 ];
 
 // Brasília (UTC-3) → Date UTC
@@ -111,17 +169,23 @@ async function main() {
     // Pula: ambíguos E pacientes não encontrados (a.patient definido mas sem match).
     const pular = ambiguo || (a.patient && !patientId);
     if (commit && !pular) {
-      await prisma.appointment.create({
-        data: {
-          title,
-          startsAt, endsAt,
-          category,
-          status: "SCHEDULED",
-          isAllDay: !!a.allDay,
-          procedureType: a.proc || null,
-          patient: patientId ? { connect: { id: patientId } } : undefined,
-          user: { connect: { id: user.id } },
-        },
+      // Chave estável (conta + data/hora + quem) → re-rodar não duplica.
+      const idempotencyKey = `migr:${user.id}:${a.date}T${a.start}:${norm(a.patient || a.title || "")}`;
+      const dados = {
+        title,
+        startsAt, endsAt,
+        category,
+        status: "SCHEDULED",
+        isAllDay: !!a.allDay,
+        procedureType: a.proc || null,
+        notes: a.notes || null,
+        patient: patientId ? { connect: { id: patientId } } : undefined,
+        user: { connect: { id: user.id } },
+      };
+      await prisma.appointment.upsert({
+        where: { idempotencyKey },
+        update: dados,
+        create: { ...dados, idempotencyKey },
       });
     }
   }
