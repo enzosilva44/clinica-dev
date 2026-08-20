@@ -4,6 +4,7 @@ import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { prisma } from "../../config/prisma.js";
 import { isBillingExempt, PLAN_ARR, PLAN_MRR } from "../../config/plans.js";
 import { getMetrics, getCost, getBackups, INFRA_IDS } from "../../providers/infra/aws.infra.js";
+import { cancelSubscription } from "../billing/contract.service.js";
 
 const router = Router();
 router.use(authMiddleware);
@@ -129,12 +130,17 @@ router.delete("/clinics/:id", async (req, res) => {
 
     const userId = req.params.id;
     const target = await prisma.user.findUnique({
-      where: { id: userId }, select: { id: true, role: true, name: true, email: true },
+      where: { id: userId },
+      select: { id: true, role: true, name: true, email: true, asaasSubscriptionId: true },
     });
     if (!target) return res.status(404).json({ error: "Clínica não encontrada." });
     if (target.role !== "PROFESSIONAL") {
       return res.status(400).json({ error: "Só é possível excluir contas de clínica." });
     }
+
+    // Cancela a assinatura no Asaas ANTES de apagar: depois do delete perdemos o
+    // asaasSubscriptionId e a mensalidade seguiria sendo emitida para sempre.
+    const subCanceled = await cancelSubscription(target);
 
     // Remove todas as relações diretas da clínica; filhos com onDelete:Cascade
     // (BudgetItem, ProtocolSession, etc.) são removidos automaticamente.
@@ -168,7 +174,15 @@ router.delete("/clinics/:id", async (req, res) => {
       prisma.user.delete({ where: { id: userId } }),
     ]);
 
-    await audit(req, { action: "clinic.delete", targetType: "clinic", targetId: userId, targetName: target.name, detail: { email: target.email } });
+    await audit(req, {
+      action: "clinic.delete", targetType: "clinic", targetId: userId, targetName: target.name,
+      detail: {
+        email: target.email,
+        asaasSubscriptionId: target.asaasSubscriptionId || null,
+        // false com assinatura preenchida = cancelar falhou: conferir no Asaas.
+        subscriptionCanceled: subCanceled,
+      },
+    });
     res.json({ ok: true });
   } catch (e) { res.status(400).json({ error: e.message }); }
 });

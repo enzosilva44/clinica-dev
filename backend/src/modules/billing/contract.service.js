@@ -76,6 +76,22 @@ async function createSubscription(user, plan, card, trialEnd) {
   return { subscription, price, hasCard };
 }
 
+// Cancela a assinatura recorrente da clínica na conta Asaas da Iaso.
+// Sem isso o Asaas continua emitindo a mensalidade todo mês mesmo depois da
+// conta ser excluída aqui — a assinatura vive lá, não no nosso banco.
+// Deletar a subscription também remove as cobranças dela ainda não pagas.
+// Não lança: a exclusão da conta não pode falhar por causa do Asaas.
+export async function cancelSubscription(user) {
+  if (!user?.asaasSubscriptionId) return false;
+  try {
+    await asaas("DELETE", `/subscriptions/${user.asaasSubscriptionId}`, null, iasoKey());
+    return true;
+  } catch (e) {
+    console.error(`[cancelSubscription] ${user.asaasSubscriptionId}:`, e.message);
+    return false;
+  }
+}
+
 // Registra a mensalidade no Financeiro do Admin (aba Faturamento) como
 // lançamento recorrente aprovado.
 async function registerFinancialEntry(user, plan, price) {

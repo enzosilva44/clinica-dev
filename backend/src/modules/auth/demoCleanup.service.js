@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma.js";
+import { cancelSubscription } from "../billing/contract.service.js";
 
 // Remove contas demo temporárias já expiradas (demoExpiresAt < agora).
 // As relações User → * NÃO têm onDelete: Cascade no schema, então apagamos
@@ -8,12 +9,18 @@ import { prisma } from "../../config/prisma.js";
 export async function cleanupExpiredDemos() {
   const expired = await prisma.user.findMany({
     where: { plan: "demo", demoExpiresAt: { lt: new Date() } },
-    select: { id: true },
+    select: { id: true, asaasSubscriptionId: true },
   });
 
   let removed = 0;
-  for (const { id: userId } of expired) {
+  for (const user of expired) {
+    const userId = user.id;
     try {
+      // Antes de apagar: cancela a assinatura no Asaas. Uma demo normalmente não
+      // tem, mas se chegou a contratar, o delete sozinho deixaria a mensalidade
+      // sendo emitida indefinidamente sem conta correspondente aqui.
+      await cancelSubscription(user);
+
       // Evolution não tem userId (usa patientId/createdById) — apaga pelos
       // pacientes do usuário e pelas evoluções que ele criou.
       const patients = await prisma.patient.findMany({ where: { userId }, select: { id: true } });
