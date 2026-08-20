@@ -15,12 +15,20 @@
 // que vira o array de parâmetros no envio, então trocá-la aqui troca o
 // significado da mensagem que chega no cliente.
 
+// `status` reflete a análise da Meta, e é atualizado À MÃO aqui quando o
+// template sai de PENDING (conferir em WhatsApp Manager → Modelos de mensagem,
+// ou via GET /{WABA}/message_templates). Só "APPROVED" pode ser enviado: com
+// qualquer outro valor a Meta recusa com 132001, então a tela desabilita a
+// opção em vez de deixar o atendente descobrir clicando.
 export const OUTREACH_TEMPLATES = [
   {
     name: "prospeccao_iaso",
     label: "Prospecção — primeiro contato",
     description:
       "Apresenta a IASO para quem nunca falou com a gente. Categoria MARKETING, com opt-out.",
+    // Submetido em 19/08/2026 (id 1077894137965802). Trocar para "APPROVED"
+    // quando a Meta aprovar — é isso que libera o envio na Central.
+    status: "PENDING",
     category: "MARKETING",
     language: "pt_BR",
     fields: [
@@ -53,8 +61,49 @@ export const OUTREACH_TEMPLATES = [
   },
 ];
 
+// Template só de teste, para os testes da janela de 24h e do ciclo de conversa
+// não dependerem do status real de um template de produção — que muda quando a
+// Meta aprova ou reprova, e faria a suíte quebrar sozinha.
+// Fora de NODE_ENV=test ele não existe, então nunca aparece para o atendente.
+const TEMPLATE_DE_TESTE = {
+  name: "_teste_iaso",
+  label: "Teste automatizado",
+  description: "Não aparece na Central — existe só para a suíte de testes.",
+  status: "APPROVED",
+  category: "UTILITY",
+  language: "pt_BR",
+  fields: [
+    { key: "nome", label: "Nome", required: true, maxLength: 60 },
+    { key: "mensagem", label: "Mensagem", required: true, multiline: true, maxLength: 600 },
+  ],
+  preview: "Olá {{1}}! {{2}}",
+};
+
 export function findOutreachTemplate(name) {
+  if (name === TEMPLATE_DE_TESTE.name && process.env.NODE_ENV === "test") {
+    return TEMPLATE_DE_TESTE;
+  }
   return OUTREACH_TEMPLATES.find((t) => t.name === name) ?? null;
+}
+
+// Só template aprovado sai. Sem esta checagem o atendente escreve a mensagem
+// inteira, clica em enviar e recebe o 132001 cru da Meta ("template name does
+// not exist"), que não diz que é só esperar a análise terminar.
+export function assertTemplateEnviavel(template) {
+  if (template.status === "APPROVED") return;
+
+  if (template.status === "PENDING") {
+    throw new Error(
+      `O modelo "${template.label}" ainda está em análise pela Meta. ` +
+      "Assim que for aprovado, o envio funciona — nada precisa ser refeito aqui."
+    );
+  }
+  if (template.status === "REJECTED") {
+    throw new Error(
+      `O modelo "${template.label}" foi reprovado pela Meta e precisa ser reescrito e reenviado.`
+    );
+  }
+  throw new Error(`O modelo "${template.label}" ainda não está liberado para envio.`);
 }
 
 // Valida o que o atendente preencheu e devolve os valores na ordem das

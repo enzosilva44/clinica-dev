@@ -344,9 +344,8 @@ export async function getConversationWindow(ticketId) {
 export async function startSupportConversation({
   phone, waName, templateName, values = {}, authorId, departmentKey,
 }) {
-  const { findOutreachTemplate, buildTemplateParams, renderTemplateText } = await import(
-    "./support.templates.js"
-  );
+  const { findOutreachTemplate, buildTemplateParams, renderTemplateText, assertTemplateEnviavel } =
+    await import("./support.templates.js");
 
   const normalized = normPhone(phone);
   if (!normalized) throw new Error("Informe o número de WhatsApp do contato.");
@@ -358,6 +357,10 @@ export async function startSupportConversation({
 
   const template = findOutreachTemplate(templateName);
   if (!template) throw new Error("Escolha um modelo de mensagem para iniciar a conversa.");
+
+  // Antes de qualquer efeito: template não aprovado é recusado pela Meta, e
+  // seguir daqui só criaria contato para uma mensagem que não vai sair.
+  assertTemplateEnviavel(template);
 
   const params = buildTemplateParams(template, values);
 

@@ -1,5 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  // O CodeBuild roda em Amazon Linux (rhel) e a EC2 é Ubuntu (debian): sem o
+  // alvo debian explícito, o node_modules chega em produção com o engine errado
+  // e TODA query falha com "could not locate the Query Engine". Acontecia a cada
+  // deploy, e só era percebido pela tela que alguém abrisse primeiro.
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {

@@ -91,7 +91,7 @@ test("conversa que nós iniciamos fica com a janela FECHADA até a pessoa respon
   const r = await startSupportConversation({
     phone: PHONE,
     waName: "Lead Teste",
-    templateName: "prospeccao_iaso",
+    templateName: "_teste_iaso",
     values: { nome: "Lead", mensagem: "Queria te apresentar a IASO." },
   });
   assert.equal(r.ok, true);
@@ -116,7 +116,7 @@ test("ticket iniciado pela central nasce fora da triagem e com dono", async (t) 
 
   const r = await startSupportConversation({
     phone: PHONE,
-    templateName: "prospeccao_iaso",
+    templateName: "_teste_iaso",
     values: { nome: "Lead", mensagem: "Oi!" },
     authorId: "user-teste-1",
   });
@@ -148,7 +148,7 @@ test("resposta do contato ABRE a janela de 24h", async (t) => {
 
   const r = await startSupportConversation({
     phone: PHONE,
-    templateName: "prospeccao_iaso",
+    templateName: "_teste_iaso",
     values: { nome: "Lead", mensagem: "Oi!" },
   });
 
@@ -179,7 +179,7 @@ test("janela expira 24h após o último inbound, não após a nossa resposta", a
     await import("./support.service.js");
 
   const r = await startSupportConversation({
-    phone: PHONE, templateName: "prospeccao_iaso", values: { nome: "Lead", mensagem: "Oi!" },
+    phone: PHONE, templateName: "_teste_iaso", values: { nome: "Lead", mensagem: "Oi!" },
   });
 
   // Inbound de 25h atrás: a janela já deveria estar fechada.
@@ -219,7 +219,7 @@ test("texto livre com a janela fechada é barrado antes de chamar a Meta", async
   const { startSupportConversation, replyToContact } = await import("./support.service.js");
 
   const r = await startSupportConversation({
-    phone: PHONE, templateName: "prospeccao_iaso", values: { nome: "Lead", mensagem: "Oi!" },
+    phone: PHONE, templateName: "_teste_iaso", values: { nome: "Lead", mensagem: "Oi!" },
   });
 
   await assert.rejects(
@@ -246,8 +246,8 @@ test("não abre conversa paralela quando já existe uma viva", async (t) => {
   const { startSupportConversation } = await import("./support.service.js");
 
   const values = { nome: "Lead", mensagem: "Oi!" };
-  const primeira = await startSupportConversation({ phone: PHONE, templateName: "prospeccao_iaso", values });
-  const segunda = await startSupportConversation({ phone: PHONE, templateName: "prospeccao_iaso", values });
+  const primeira = await startSupportConversation({ phone: PHONE, templateName: "_teste_iaso", values });
+  const segunda = await startSupportConversation({ phone: PHONE, templateName: "_teste_iaso", values });
 
   assert.equal(segunda.ok, false);
   assert.equal(segunda.reason, "ja_existe");
@@ -267,10 +267,37 @@ test("recusa número curto demais antes de enviar", async (t) => {
 
   await assert.rejects(
     () => startSupportConversation({
-      phone: "119999", templateName: "prospeccao_iaso", values: { nome: "A", mensagem: "b" },
+      phone: "119999", templateName: "_teste_iaso", values: { nome: "A", mensagem: "b" },
     }),
     /inválido/
   );
+});
+
+test("modelo em análise não é enviado, e explica o motivo", async (t) => {
+  let tentouEnviar = false;
+  t.mock.module("../whatsapp/whatsapp.provider.js", {
+    namedExports: {
+      sendWhatsAppTemplate: async () => { tentouEnviar = true; return {}; },
+      sendWhatsAppMessage: async () => ({}),
+    },
+  });
+  const { startSupportConversation } = await import("./support.service.js");
+  const { OUTREACH_TEMPLATES } = await import("./support.templates.js");
+
+  const pendente = OUTREACH_TEMPLATES.find((x) => x.status !== "APPROVED");
+  if (!pendente) return; // todos aprovados: nada a testar aqui
+
+  await assert.rejects(
+    () => startSupportConversation({
+      phone: PHONE, templateName: pendente.name,
+      values: { nome: "Lead", mensagem: "Oi!" },
+    }),
+    /em análise pela Meta/
+  );
+  // Nada de criar contato para uma mensagem que a Meta vai recusar.
+  assert.equal(tentouEnviar, false);
+  const c = await prisma.supportContact.findUnique({ where: { phone: PHONE } });
+  assert.equal(c, null, "não deve criar contato quando o modelo não pode ser enviado");
 });
 
 test("recusa modelo que não está no catálogo", async (t) => {
