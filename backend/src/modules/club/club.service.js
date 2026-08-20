@@ -65,6 +65,28 @@ export async function deletePlan(id, userId) {
 
 // ─── MEMBROS ─────────────────────────────────────────────────────────────────
 
+// Situação da solicitação enviada ao Financeiro na venda do plano. O Clube não
+// dá baixa — só mostra em que pé está o pedido, para a clínica não precisar
+// abrir o Financeiro para saber se aquela adesão já foi recebida.
+function withCharge(member) {
+  const txs = member.transactions ?? [];
+  const recebido = txs.some((t) => t.status === "confirmado" || t.status === "pago");
+  const aguardando = txs.some((t) => t.status === "pendente");
+
+  return {
+    ...member,
+    transactions: undefined,
+    charge: txs.length === 0
+      ? null // plano gratuito, ou adesão anterior ao vínculo com o Financeiro
+      : {
+          status: recebido ? "recebido" : aguardando ? "aguardando" : "cancelado",
+          amount: txs.reduce((s, t) => s + t.amount, 0),
+          dueDate: txs[0].dueDate,
+          paidAt: txs.find((t) => t.paidAt)?.paidAt ?? null,
+        },
+  };
+}
+
 // Anexa saldo (contratado − realizado = restante) por item do plano a cada membro.
 function withBalances(member) {
   const items = member.plan.items.map((item) => {
@@ -89,11 +111,15 @@ export async function findAllMembers(userId, filters = {}) {
       patient: { select: { id: true, name: true, phone: true } },
       plan: { include: { items: true } },
       applications: { orderBy: { appliedAt: "desc" } },
+      transactions: {
+        select: { id: true, status: true, amount: true, dueDate: true, paidAt: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  return members.map(withBalances);
+  return members.map(withBalances).map(withCharge);
 }
 
 export async function createMember(userId, data) {
@@ -117,12 +143,19 @@ export async function createMember(userId, data) {
     },
   });
 
-  // Gera cobrança pendente no financeiro
+  // Solicita o recebimento ao Financeiro. É lá que a clínica dá a baixa (o
+  // Clube não confirma pagamento sozinho) — daqui sai só o pedido, já com
+  // vencimento na adesão e vínculo ao membro, para o Clube conseguir mostrar
+  // depois se a solicitação foi liquidada.
   if (plan.price > 0) {
     await createPending(userId, {
       description: `Clube: ${plan.name} — ${member.patient.name}`,
       amount: plan.price,
       patientId: data.patientId,
+      category: "Clube",
+      paymentMethod: data.paymentMethod || null,
+      dueDate: member.startDate,
+      clubMemberId: member.id,
     });
   }
 

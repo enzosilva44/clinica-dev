@@ -529,6 +529,11 @@ model ClubMember {
   userId        String
   createdAt     DateTime          @default(now())
   applications  ClubApplication[]
+  // Solicitações lançadas no Financeiro pela venda deste plano. A liquidação
+  // continua sendo feita no Financeiro; aqui o Clube só consegue mostrar se o
+  // que ele pediu já entrou (antes não havia como saber, o vínculo era só o
+  // texto da descrição).
+  transactions  Transaction[]
   patient       Patient           @relation(fields: [patientId], references: [id])
   plan          ClubPlan          @relation(fields: [planId], references: [id])
   user          User              @relation(fields: [userId], references: [id])
@@ -592,10 +597,15 @@ model Transaction {
   splitType          String? // PERCENTAGE | FIXED — tipo enviado ao Asaas
   splitValue         Float? // valor/percentual configurado no momento da cobrança
   iasoRevenue        Float? // R$ estimado da comissão IASOPay nesta cobrança
+  // Venda do Clube que originou esta solicitação (ver ClubMember.transactions).
+  clubMemberId       String?
   appointment        Appointment? @relation(fields: [appointmentId], references: [id])
   budget             Budget?      @relation(fields: [budgetId], references: [id])
+  clubMember         ClubMember?  @relation(fields: [clubMemberId], references: [id], onDelete: SetNull)
   patient            Patient?     @relation(fields: [patientId], references: [id])
   user               User         @relation(fields: [userId], references: [id])
+
+  @@index([clubMemberId])
 }
 
 model PatientPhoto {

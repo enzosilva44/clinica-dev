@@ -24,6 +24,32 @@ function daysLabel(days) {
   return `${days}d`;
 }
 
+// A venda do plano lança a solicitação no Financeiro; a baixa é dada lá, não
+// aqui. Esta coluna é só leitura — evita abrir o Financeiro para descobrir se a
+// adesão já foi recebida.
+function ChargeStatus({ charge }) {
+  if (!charge) return <span className="text-sm text-gray-400">—</span>;
+
+  const estilo = {
+    recebido: "bg-verde-50 text-verde",
+    aguardando: "bg-[#FAF0E4] text-ambar-600",
+    cancelado: "bg-gray-100 text-gray-500",
+  }[charge.status];
+
+  const rotulo = {
+    recebido: "Recebido",
+    aguardando: "No Financeiro",
+    cancelado: "Cancelado",
+  }[charge.status];
+
+  return (
+    <div>
+      <span className={`text-xs px-2 py-1 rounded-full font-bold ${estilo}`}>{rotulo}</span>
+      <p className="text-xs text-gray-400 mt-1 font-mono">{fmt(charge.amount)}</p>
+    </div>
+  );
+}
+
 export default function Clube() {
   const [tab, setTab] = useState("planos");
   const [plans, setPlans] = useState([]);
@@ -331,6 +357,7 @@ export default function Clube() {
                       <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide">Adesão</th>
                       <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide">Validade</th>
                       <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide">Pagamento</th>
+                      <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide">Financeiro</th>
                       <th className="text-left px-5 py-3 text-gray-500 text-[11px] font-bold uppercase tracking-wide">Status</th>
                       <th className="px-5 py-3" />
                     </tr>
@@ -346,6 +373,7 @@ export default function Clube() {
                         <td className="px-5 py-3.5 text-sm text-gray-500 font-mono">{new Date(m.startDate).toLocaleDateString("pt-BR")}</td>
                         <td className="px-5 py-3.5 text-sm text-gray-500 font-mono">{m.endDate ? new Date(m.endDate).toLocaleDateString("pt-BR") : "—"}</td>
                         <td className="px-5 py-3.5 text-sm text-gray-500">{m.paymentMethod || "—"}</td>
+                        <td className="px-5 py-3.5"><ChargeStatus charge={m.charge} /></td>
                         <td className="px-5 py-3.5">
                           <select
                             value={m.status}
