@@ -63,6 +63,19 @@ async function consumePackageSession(appt, userId) {
   }
 }
 
+// A sessão de pacote (Clube ou orçamento-pacote) JÁ FOI PAGA na venda do
+// pacote — é lá que o dinheiro entra, e a cobrança da venda vive no Financeiro
+// desde então. Gerar mais uma pendência aqui, com o preço de tabela do
+// procedimento, contava a mesma receita duas vezes.
+//
+// Exceção: valor digitado à mão no bloco financeiro do agendamento. Serve para
+// o extra que o plano não cobre (produto vendido na hora, sessão adicional
+// além do saldo). Zero e vazio continuam significando "não cobra".
+function cobraSessao(appt, data) {
+  if (!appt.packageOrigin) return true;
+  return Number(data.txAmount) > 0;
+}
+
 // Devolve a sessão que este agendamento havia consumido (ao cancelar/reabrir).
 async function releasePackageSession(appointmentId) {
   await prisma.budgetSession.deleteMany({ where: { appointmentId } });
@@ -189,17 +202,19 @@ export async function create(data, user) {
       ? procItems[0].procedureName + (procItems.length > 1 ? ` +${procItems.length - 1}` : "")
       : appointment.procedureType || appointment.title;
 
-  const pendingTx = await createPending(user.id, {
-    appointmentId: appointment.id,
-    patientId: appointment.patientId,
-    description,
-    amount: data.txAmount !== undefined ? Number(data.txAmount) : amount,
-    paymentMethod: data.txPaymentMethod || null,
-    installments: data.txInstallments ? Number(data.txInstallments) : 1,
-    dueDate: data.txDueDate || null,
-    notes: data.txNotes || `Agendamento criado em ${new Date(appointment.startsAt).toLocaleDateString("pt-BR")} com ${appointment.professional || "profissional não informado"}.`,
-    settlementType: data.txSettlementType || null,
-  });
+  const pendingTx = cobraSessao(appointment, data)
+    ? await createPending(user.id, {
+        appointmentId: appointment.id,
+        patientId: appointment.patientId,
+        description,
+        amount: data.txAmount !== undefined ? Number(data.txAmount) : amount,
+        paymentMethod: data.txPaymentMethod || null,
+        installments: data.txInstallments ? Number(data.txInstallments) : 1,
+        dueDate: data.txDueDate || null,
+        notes: data.txNotes || `Agendamento criado em ${new Date(appointment.startsAt).toLocaleDateString("pt-BR")} com ${appointment.professional || "profissional não informado"}.`,
+        settlementType: data.txSettlementType || null,
+      })
+    : null;
 
   // Cobrança no Asaas, quando a clínica marcou a opção. Vence na data informada
   // no bloco financeiro do agendamento (txDueDate → dueDate da Transaction).
@@ -468,9 +483,26 @@ export async function update(
     await releasePackageSession(updated.id);
   }
 
+  // Agendamento avulso que passou a ser sessão de pacote: a pendência criada
+  // automaticamente antes do vínculo virou cobrança indevida (a venda do pacote
+  // já cobrou). Remove — mas só se ainda é pendência pura: valor já recebido ou
+  // cobrança viva no Asaas fica de pé, para o Financeiro não perder o rastro.
+  const virouPacote = !appointment.packageOrigin && !!updated.packageOrigin;
+  if (virouPacote) {
+    await prisma.transaction.deleteMany({
+      where: {
+        appointmentId: updated.id,
+        userId,
+        status: { notIn: TX_LIQUIDADAS },
+        asaasChargeId: null,
+      },
+    });
+  }
+
   // Ao concluir, cria transação pendente no financeiro (se ainda não existir).
   // createPending é idempotente por appointmentId (não duplica se já houver).
-  if (data.status === "COMPLETED" || data.status === "FINISHED") {
+  // Sessão de pacote não cobra: a venda do pacote já cobrou (ver cobraSessao).
+  if ((data.status === "COMPLETED" || data.status === "FINISHED") && cobraSessao(updated, data)) {
     // Soma os procedimentos do agendamento; fallback p/ preço-por-nome legado.
     let amount = updated.procedures.reduce((s, p) => s + (p.total || 0), 0);
     if (amount === 0 && updated.procedureType) {

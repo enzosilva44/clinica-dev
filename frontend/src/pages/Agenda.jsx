@@ -545,15 +545,24 @@ export default function Agenda() {
     return () => clearInterval(timer);
   }, []);
 
+  // Sessão de pacote: o atendimento desconta saldo de um plano do Clube ou de um
+  // orçamento-pacote que o paciente JÁ PAGOU na venda. Não cobra de novo.
+  const emPacote = form.inPackage && !!form.packageRef;
+
   // auto-preenche o valor financeiro com a SOMA dos procedimentos (continua editável).
+  // Em sessão de pacote o valor nasce vazio: preenchido só se houver extra a cobrar.
   useEffect(() => {
     if (editing) return;
+    if (emPacote) {
+      setForm((prev) => (prev.txAmount === "" ? prev : { ...prev, txAmount: "" }));
+      return;
+    }
     const total = form.procedures.reduce(
       (s, i) => s + (Number(i.quantity) || 1) * (Number(i.unitPrice) || 0),
       0
     );
     setForm((prev) => ({ ...prev, txAmount: total > 0 ? String(total) : "" }));
-  }, [form.procedures]);
+  }, [form.procedures, emPacote]);
 
   // Quanto a clínica recebe se gerar a cobrança agora — recalculado a cada
   // mudança de valor, meio ou parcelas. Só estimativa: o líquido real vem do
@@ -721,6 +730,10 @@ export default function Agenda() {
         packageMemberId: pkgMemberId || null,
       };
 
+      // Sessão de pacote só cobra se a clínica digitou um extra (backend aplica
+      // a mesma regra em cobraSessao — aqui é só para não pedir cobrança à toa).
+      const cobra = form.gerarCobranca && (!emPacote || Number(form.txAmount) > 0);
+
       if (editing) {
         const res = await api.put(`/appointments/${editing.id}`, {
           title: form.title,
@@ -770,9 +783,11 @@ export default function Agenda() {
           txDueDate: isSimple ? undefined : (form.txDueDate || undefined),
           txNotes: isSimple ? undefined : (form.txNotes || undefined),
           txSettlementType: isSimple ? undefined : (form.txSettlementType || undefined),
-          gerarCobranca: !isSimple && form.gerarCobranca ? true : undefined,
-          cobrancaMethod: !isSimple && form.gerarCobranca ? form.cobrancaMethod : undefined,
-          enviarCobrancaWhatsapp: !isSimple && form.gerarCobranca && form.enviarCobrancaWhatsapp ? true : undefined,
+          // Sessão de pacote sem extra digitado não tem o que cobrar: sem valor,
+          // a cobrança no Asaas nasceria zerada.
+          gerarCobranca: !isSimple && cobra ? true : undefined,
+          cobrancaMethod: !isSimple && cobra ? form.cobrancaMethod : undefined,
+          enviarCobrancaWhatsapp: !isSimple && cobra && form.enviarCobrancaWhatsapp ? true : undefined,
         });
         // Renova a chave para o próximo agendamento
         idempotencyKeyRef.current = crypto.randomUUID();
@@ -1489,6 +1504,13 @@ export default function Agenda() {
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
                     <DollarSign size={12} /> Financeiro
                   </p>
+
+                  {emPacote && (
+                    <p className="text-[11px] text-verde bg-verde-50 border border-creme-200 rounded-xl px-3 py-2">
+                      Sessão de pacote: <strong>não gera cobrança</strong> — o paciente já pagou na
+                      venda do pacote. Preencha um valor só se houver algo extra a cobrar hoje.
+                    </p>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
