@@ -74,6 +74,39 @@ const TEMPLATES = [
     ],
   },
   {
+    // v2 do confirmacao_consulta_iaso: muda só o fecho da segunda frase
+    // ("a gente ajeita" → "a gente organiza tudo para você"). Nome novo em vez de
+    // editar o v1 porque editar devolve o template APROVADO para análise — e a
+    // confirmação é o template mais usado: ficar sem ele para de confirmar
+    // consulta em todas as clínicas. Com nome novo, o v1 segue no ar até este
+    // ser aprovado, e a troca é uma linha no service.
+    //
+    // Variáveis e botões IDÊNTICOS ao v1 de propósito: mesma ordem
+    // ["nome","clinica","data","hora"] e mesmos títulos de botão, que são o
+    // gatilho do roteamento da resposta. Trocar o nome do template não mexe em
+    // mais nada no backend.
+    name: "confirmacao_consulta_iaso_v2",
+    category: "UTILITY",
+    language: "pt_BR",
+    components: [
+      {
+        // Ordem: {{1}} nome, {{2}} clinica, {{3}} data, {{4}} hora.
+        type: "BODY",
+        text:
+          "Olá {{1}}! Aqui é {{2}}. ✅ Sua consulta está marcada para {{3}} às {{4}}.\n\n" +
+          "Pode confirmar pra gente? Se precisar remarcar, é só tocar abaixo que a gente organiza tudo para você.",
+        example: { body_text: [["Maria", "do consultório da Dra. Fernanda", "28/07/2026", "15:30"]] },
+      },
+      {
+        type: "BUTTONS",
+        buttons: [
+          { type: "QUICK_REPLY", text: "Confirmar presença" },
+          { type: "QUICK_REPLY", text: "Preciso remarcar" },
+        ],
+      },
+    ],
+  },
+  {
     name: "retorno_paciente_iaso",
     category: "UTILITY",
     language: "pt_BR",
@@ -174,6 +207,37 @@ const TEMPLATES = [
           "Olá {{1}}! 🎂 Aqui é {{2}}. Passando pra desejar um feliz aniversário!\n\n" +
           "Que seu dia seja especial. 🎉",
         example: { body_text: [["Maria", "do consultório da Dra. Fernanda"]] },
+      },
+    ],
+  },
+  {
+    // Central IASO iniciando conversa com quem NUNCA escreveu para a gente
+    // (prospecção). Fora da janela de 24h só template sai — e conversa fria não
+    // cabe em UTILITY: submeter como MARKETING é o honesto, e evita a
+    // reclassificação da Meta (que viria de qualquer jeito, com nota de
+    // qualidade pior). Por ser MARKETING, opt-out no corpo, igual ao
+    // reativacao_paciente_iaso.
+    //
+    // O {{2}} é escrito pelo atendente na hora do envio — é onde entra o motivo
+    // do contato. Vazio ou genérico demais é o que faz a Meta reprovar.
+    name: "prospeccao_iaso",
+    category: "MARKETING",
+    language: "pt_BR",
+    components: [
+      {
+        // Ordem: {{1}} nome, {{2}} mensagem do atendente.
+        type: "BODY",
+        text:
+          "Olá {{1}}! Aqui é a IASO Tecnologia, sistema de gestão para clínicas de estética. 💚\n\n" +
+          "{{2}}\n\n" +
+          "Se quiser saber mais, é só responder esta mensagem.\n" +
+          "Se preferir não receber mais contatos, responda SAIR.",
+        example: {
+          body_text: [[
+            "Fernanda",
+            "Vi que você atende harmonização em Ribeirão e queria te mostrar como a IASO organiza agenda, prontuário e financeiro num lugar só.",
+          ]],
+        },
       },
     ],
   },

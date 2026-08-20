@@ -11,7 +11,10 @@ import {
   addInternalNote,
   replyToContact,
   ensureDepartments,
+  startSupportConversation,
+  getConversationWindow,
 } from "./support.service.js";
+import { OUTREACH_TEMPLATES } from "./support.templates.js";
 import { prisma } from "../../config/prisma.js";
 
 // Central de atendimento da própria IASO. Consumido pelo admin-app (gateway),
@@ -61,6 +64,46 @@ router.get("/overview", async (_req, res, next) => {
 router.get("/departments", async (_req, res, next) => {
   try {
     return res.json(await ensureDepartments());
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// Modelos que a Central pode usar para iniciar conversa. A tela monta o
+// formulário a partir daqui (rótulo + campos), então acrescentar um template no
+// catálogo já o faz aparecer para o atendente, sem mexer no front.
+router.get("/templates", (_req, res) => {
+  return res.json(OUTREACH_TEMPLATES);
+});
+
+// Nova conversa: nós procurando o cliente. Só template — a janela de 24h está
+// fechada por definição para quem nunca nos escreveu.
+router.post("/conversations", async (req, res, next) => {
+  try {
+    const { phone, waName, templateName, values, departmentKey } = req.body ?? {};
+    const result = await startSupportConversation({
+      phone, waName, templateName, values, departmentKey, authorId: actorId(req),
+    });
+
+    // Já existe conversa viva com esse contato: 409 com o ticket, para a tela
+    // levar o atendente até lá em vez de criar uma paralela.
+    if (!result.ok) {
+      return res.status(409).json({
+        error: "Já existe uma conversa aberta com este contato.",
+        ...result,
+      });
+    }
+    return res.status(201).json(result);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+// Estado da janela de 24h — a tela consulta ao abrir a conversa e ao voltar do
+// background, porque a janela fecha sozinha com o tempo passando.
+router.get("/tickets/:id/window", async (req, res, next) => {
+  try {
+    return res.json(await getConversationWindow(req.params.id));
   } catch (err) {
     return next(err);
   }
@@ -155,6 +198,11 @@ router.post("/tickets/:id/reply", async (req, res, next) => {
     });
     return res.json(message);
   } catch (err) {
+    // Janela fechada não é erro de digitação: a tela precisa reagir bloqueando
+    // a caixa e oferecendo template, então vai em 403 com o estado da janela.
+    if (err.code === "window_closed") {
+      return res.status(403).json({ error: err.message, code: err.code, window: err.window });
+    }
     return res.status(400).json({ error: err.message });
   }
 });

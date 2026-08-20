@@ -47,6 +47,15 @@ const LANGUAGE = "pt_BR";
 const PARAMS = ["Maria", "do consultório Dra. Fernanda", "Este mês, avaliação de skincare sem custo pra clientes que voltam."];
 ```
 
+### prospeccao_iaso
+```js
+const TEMPLATE_NAME = "prospeccao_iaso";
+const LANGUAGE = "pt_BR";
+// Quem fala é a IASO, não uma clínica: a 2ª variável NÃO é a apresentação —
+// é a mensagem que o atendente escreve na hora do envio.
+const PARAMS = ["Fernanda", "Vi que você atende harmonização em Ribeirão e queria te mostrar como a IASO organiza agenda, prontuário e financeiro num lugar só."];
+```
+
 ### aviso_fatura_iaso
 ```js
 const TEMPLATE_NAME = "aviso_fatura_iaso";

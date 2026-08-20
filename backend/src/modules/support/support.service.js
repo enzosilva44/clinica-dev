@@ -168,6 +168,42 @@ async function decideAutoReply({ ticket, isNewTicket, answer }) {
   return { text: invalidOptionText(), kind: "invalid" };
 }
 
+// Push no celular da equipe a cada mensagem que chega na central. Ninguém fica
+// com a Central aberta o dia todo, e cliente esperando resposta é o pior lugar
+// para descobrir isso tarde.
+//
+// Fica FORA de recordInboundSupportMessage de propósito: aquela função é pura
+// (sem rede) para os testes. Aqui é o efeito, chamado pelos webhooks.
+//
+// Não notifica evento reentregue (`duplicated`) nem contato bloqueado — a Meta
+// reenvia o mesmo evento com frequência, e cada reentrega viraria um push.
+export async function notifySupportInbound(result, msg) {
+  if (!result || result.duplicated || result.skipped || !result.ticketId) return false;
+
+  const { sendPush } = await import("../../providers/notifications/pushover.provider.js");
+
+  const ticket = await prisma.supportTicket.findUnique({
+    where: { id: result.ticketId },
+    include: { contact: true, department: true },
+  }).catch(() => null);
+
+  const quem = ticket?.contact?.waName || ticket?.contact?.phone || normPhone(msg?.from) || "desconhecido";
+  const texto = msg?.text?.body
+    || msg?.interactive?.button_reply?.title
+    || msg?.interactive?.list_reply?.title
+    || msg?.button?.text
+    || `[${msg?.type || "mensagem"}]`;
+
+  const base = process.env.ADMIN_APP_URL;
+
+  return sendPush({
+    title: result.isNewTicket ? `Central IASO · nova conversa` : `Central IASO · ${quem}`,
+    message: result.isNewTicket ? `${quem}:\n${texto}` : texto,
+    url: base ? `${base.replace(/\/$/, "")}/tecnologia/suporte` : null,
+    urlTitle: base ? "Abrir a Central" : null,
+  });
+}
+
 // ─── saída: resposta do atendente ────────────────────────────────────────────
 
 export async function recordOutboundSupportMessage({
@@ -215,6 +251,22 @@ export async function replyToContact({ ticketId, text, authorId }) {
   });
   if (!ticket) throw new Error("Conversa não encontrada.");
 
+  // Barra antes de gastar a chamada à Meta. Sem isso o atendente recebe o
+  // 131047 cru ("Message failed to send because more than 24 hours have
+  // passed…"), que não diz o que fazer. A janela é a mesma regra da tela, então
+  // os dois lados nunca discordam.
+  const window = await getConversationWindow(ticketId);
+  if (!window.open) {
+    const err = new Error(
+      window.reason === "sem_resposta"
+        ? "Este contato ainda não respondeu. Até a primeira resposta, só dá para enviar um modelo aprovado."
+        : "A janela de 24h fechou. Para reabrir a conversa, envie um modelo aprovado."
+    );
+    err.code = "window_closed";
+    err.window = window;
+    throw err;
+  }
+
   const { sendWhatsAppMessage } = await import("../whatsapp/whatsapp.provider.js");
   const sent = await sendWhatsAppMessage(ticket.contact.phone, body, {
     phoneNumberId: process.env.SUPPORT_PHONE_NUMBER_ID,
@@ -238,6 +290,144 @@ export async function replyToContact({ ticketId, text, authorId }) {
   }).catch(() => {});
 
   return message;
+}
+
+// ─── janela de 24h ───────────────────────────────────────────────────────────
+
+// A Meta só aceita texto livre nas 24h seguintes à ÚLTIMA MENSAGEM DO CLIENTE.
+// Fora disso, só template aprovado — texto livre volta com erro 131047.
+//
+// A pegadinha que define o desenho: enviar template NÃO abre a janela. Só a
+// resposta da pessoa abre. Então depois de disparar uma prospecção o atendente
+// continua sem poder escrever livremente, e uma tela que não mostrasse isso
+// deixaria ele digitando uma mensagem que a Meta vai recusar.
+//
+// Calculado a partir do último inbound (sem campo novo no schema): lastMessageAt
+// do ticket serve para ordenar a fila, mas é tocado por mensagem NOSSA também —
+// usá-lo aqui daria janela aberta para sempre, bastando o atendente responder.
+export const WINDOW_HOURS = 24;
+
+export async function getConversationWindow(ticketId) {
+  const lastInbound = await prisma.supportMessage.findFirst({
+    where: { ticketId, direction: "inbound" },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true, sentAt: true },
+  });
+
+  // Nunca respondeu: conversa que nós iniciamos e que segue só de ida.
+  if (!lastInbound) {
+    return { open: false, expiresAt: null, lastInboundAt: null, reason: "sem_resposta" };
+  }
+
+  const base = lastInbound.sentAt ?? lastInbound.createdAt;
+  const expiresAt = new Date(base.getTime() + WINDOW_HOURS * 3600 * 1000);
+
+  return {
+    open: expiresAt > new Date(),
+    expiresAt,
+    lastInboundAt: base,
+    reason: expiresAt > new Date() ? "aberta" : "expirada",
+  };
+}
+
+// ─── saída: conversa iniciada pela Central ───────────────────────────────────
+
+// Nós ligando para o cliente, e não o contrário. Cria contato + ticket JÁ FORA
+// da triagem: o menu de departamentos existe para descobrir o que a pessoa quer,
+// e quem liga já sabe — mandar o menu para quem nós procuramos seria absurdo.
+//
+// O ticket nasce em "em_atendimento" com assignee de quem iniciou: a conversa
+// tem dono desde o primeiro instante, então não passa pela fila.
+//
+// Envia primeiro e só grava se a Meta aceitar, igual a replyToContact: gravar
+// antes mostraria ao atendente uma mensagem que o cliente nunca recebeu.
+export async function startSupportConversation({
+  phone, waName, templateName, values = {}, authorId, departmentKey,
+}) {
+  const { findOutreachTemplate, buildTemplateParams, renderTemplateText } = await import(
+    "./support.templates.js"
+  );
+
+  const normalized = normPhone(phone);
+  if (!normalized) throw new Error("Informe o número de WhatsApp do contato.");
+  // 55 + DDD + 8 ou 9 dígitos. Número curto demais é erro de digitação, e a
+  // Meta aceitaria o envio para outro número qualquer.
+  if (normalized.length < 12 || normalized.length > 13) {
+    throw new Error("Número de WhatsApp inválido — use DDD + número.");
+  }
+
+  const template = findOutreachTemplate(templateName);
+  if (!template) throw new Error("Escolha um modelo de mensagem para iniciar a conversa.");
+
+  const params = buildTemplateParams(template, values);
+
+  const contact = await upsertContact(normalized, waName);
+  if (contact.blocked) {
+    throw new Error("Este contato pediu para não receber mensagens (opt-out).");
+  }
+
+  // Conversa viva com essa pessoa: continuar nela em vez de abrir uma paralela,
+  // que deixaria o histórico partido em dois lugares.
+  const existing = await findOpenTicket(contact.id);
+  if (existing) {
+    return { ok: false, reason: "ja_existe", ticketId: existing.id };
+  }
+
+  const department = departmentKey
+    ? await prisma.supportDepartment.findUnique({ where: { key: departmentKey } })
+    : null;
+
+  const { sendWhatsAppTemplate } = await import("../whatsapp/whatsapp.provider.js");
+  const sent = await sendWhatsAppTemplate(normalized, template.name, params, {
+    phoneNumberId: process.env.SUPPORT_PHONE_NUMBER_ID,
+    accessToken: process.env.SUPPORT_ACCESS_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN,
+    language: template.language,
+  });
+
+  const now = new Date();
+  const text = renderTemplateText(template, params);
+
+  const ticket = await prisma.supportTicket.create({
+    data: {
+      contactId: contact.id,
+      departmentId: department?.id ?? null,
+      assigneeId: authorId ?? null,
+      // Fora da triagem de propósito — ver comentário no topo da função.
+      status: "em_atendimento",
+      subject: department?.name ?? template.label,
+      assignedAt: authorId ? now : null,
+      lastMessageAt: now,
+      lastPreview: text.slice(0, 120),
+      // firstInboundAt fica null: o cliente ainda não falou. É isso que faz o
+      // SLA de 1ª resposta não contar tempo de uma conversa que nós iniciamos.
+    },
+  });
+
+  await prisma.supportMessage.create({
+    data: {
+      ticketId: ticket.id,
+      direction: "outbound",
+      kind: "template",
+      text,
+      metaMessageId: sent?.messages?.[0]?.id ?? null,
+      authorId: authorId ?? null,
+      authorKind: "template",
+      status: "sent",
+      sentAt: now,
+    },
+  });
+
+  await prisma.supportAssignmentLog.create({
+    data: {
+      ticketId: ticket.id,
+      action: "assumir",
+      toUserId: authorId ?? null,
+      actorId: authorId ?? null,
+      note: `conversa iniciada pela central (${template.name})`,
+    },
+  });
+
+  return { ok: true, ticketId: ticket.id, contactId: contact.id, text };
 }
 
 export async function updateOutboundStatus(metaMessageId, status) {
@@ -344,7 +534,35 @@ export async function listTickets({ status, departmentId, assigneeId, page = 1, 
     prisma.supportTicket.count({ where }),
   ]);
 
-  return { data: rows, total, totalPages: Math.ceil(total / l) };
+  // Estado da janela de cada linha numa consulta só. Chamar
+  // getConversationWindow por ticket seria N+1 numa tela que lista 25 de uma vez.
+  const ids = rows.map((t) => t.id);
+  const ultimosInbound = ids.length
+    ? await prisma.supportMessage.groupBy({
+        by: ["ticketId"],
+        where: { ticketId: { in: ids }, direction: "inbound" },
+        _max: { createdAt: true },
+      })
+    : [];
+
+  const porTicket = new Map(ultimosInbound.map((g) => [g.ticketId, g._max.createdAt]));
+  const agora = Date.now();
+
+  const data = rows.map((t) => {
+    const last = porTicket.get(t.id) ?? null;
+    const expiresAt = last ? new Date(last.getTime() + WINDOW_HOURS * 3600 * 1000) : null;
+    return {
+      ...t,
+      window: {
+        open: Boolean(expiresAt && expiresAt.getTime() > agora),
+        expiresAt,
+        lastInboundAt: last,
+        reason: !last ? "sem_resposta" : expiresAt.getTime() > agora ? "aberta" : "expirada",
+      },
+    };
+  });
+
+  return { data, total, totalPages: Math.ceil(total / l) };
 }
 
 export async function getTicket(id) {
@@ -357,7 +575,10 @@ export async function getTicket(id) {
     where: { ticketId: id },
     orderBy: { createdAt: "asc" },
   });
-  return { ...ticket, messages };
+  // A tela precisa da janela junto do ticket: é ela que decide se a caixa de
+  // resposta fica liberada ou bloqueada com aviso.
+  const window = await getConversationWindow(id);
+  return { ...ticket, messages, window };
 }
 
 export async function markTicketRead(id) {

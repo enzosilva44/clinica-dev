@@ -10,6 +10,7 @@ import { prisma } from "../../../config/prisma.js";
 import { recordInboundMessage, updateOutboundStatus } from "../conversation.service.js";
 import {
   isSupportNumber,
+  notifySupportInbound,
   recordInboundSupportMessage,
   recordOutboundSupportMessage,
   updateOutboundStatus as updateSupportStatus,
@@ -59,6 +60,7 @@ async function processSupportEvent(value) {
 
   for (const msg of value.messages || []) {
     const result = await recordInboundSupportMessage(msg, { waName });
+    await notifySupportInbound(result, msg);
     if (!result?.reply) continue;
 
     try {

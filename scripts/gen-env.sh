@@ -24,6 +24,13 @@ set -e
   # com o phone_number_id que a Meta manda. Ausente, NADA vira ticket de
   # suporte — o lado seguro, para não sequestrar mensagem das clínicas.
   echo "SUPPORT_PHONE_NUMBER_ID=${SUPPORT_PHONE_NUMBER_ID}"
+  # Pushover: push no celular da equipe a cada mensagem nova na Central. Ausente,
+  # a notificação é no-op — a mensagem é gravada do mesmo jeito, só não avisa.
+  echo "PUSHOVER_TOKEN=${PUSHOVER_TOKEN}"
+  echo "PUSHOVER_USER_KEY=${PUSHOVER_USER_KEY}"
+  # URL do painel interno (clinica-admin-app). Só serve para o push abrir a
+  # Central com um toque; sem ela a notificação chega sem link.
+  echo "ADMIN_APP_URL=${ADMIN_APP_URL}"
   # Interruptor geral de envio. Default "false": variável ausente no CodeBuild
   # deixa o ambiente MUDO, nunca enviando por acidente.
   echo "WHATSAPP_SEND_ENABLED=${WHATSAPP_SEND_ENABLED:-false}"

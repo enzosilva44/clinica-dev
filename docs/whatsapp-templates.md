@@ -52,6 +52,25 @@ Pode confirmar pra gente? Se precisar remarcar, é só tocar abaixo que a gente 
 > Os cliques chegam no webhook como `button` reply — dá pra tratar em
 > `whatsappWebhook.js` pra atualizar o status do agendamento.
 
+### 2b. `confirmacao_consulta_iaso_v2` — substituto, aguardando aprovação
+Submetido em 19/08/2026 (id `2520896925086964`). Muda **só** o fecho da segunda
+frase; variáveis e botões são idênticos ao v1.
+
+```
+Olá {{1}}! Aqui é {{2}}. ✅ Sua consulta está marcada para {{3}} às {{4}}.
+
+Pode confirmar pra gente? Se precisar remarcar, é só tocar abaixo que a gente organiza tudo para você.
+```
+
+Nome novo em vez de editar o v1 porque editar devolve o template aprovado para
+análise, e sem ele nenhuma clínica confirma consulta enquanto a Meta não
+responde.
+
+**Quando for aprovado**, a troca é uma linha — `metaTemplateName` em
+`backend/src/modules/automations/automation.service.js:54`. Nada mais muda: a
+ordem das variáveis e os títulos dos botões (que são o gatilho do roteamento da
+resposta) continuam iguais.
+
 ---
 
 ## 3a. Retorno / pós-atendimento (UTILITY-safe)  →  `retorno_paciente_iaso`
@@ -103,6 +122,31 @@ Você pode pagar pelo link abaixo. Se já pagou, pode ignorar — pode levar at�
 **Variáveis do CORPO:** `{{1}}` nome · `{{2}}` clinica · `{{3}}` valor · `{{4}}` vencimento
 
 > ⚠️ Financeiro é sensível na Meta. Mantenha factual, sem pressão/ameaça.
+
+---
+
+## 5. Prospecção pela Central IASO  →  `prospeccao_iaso`
+**Categoria: MARKETING** — com opt-out. Único template dos daqui em que **quem
+fala é a IASO**, não a clínica: serve para a Central iniciar conversa com quem
+nunca escreveu para a gente.
+
+**Corpo:**
+```
+Olá {{1}}! Aqui é a IASO Tecnologia, sistema de gestão para clínicas de estética. 💚
+
+{{2}}
+
+Se quiser saber mais, é só responder esta mensagem.
+Se preferir não receber mais contatos, responda SAIR.
+```
+**Variáveis:** `{{1}}` nome · `{{2}}` mensagem escrita pelo atendente no envio
+
+> Enviar o template **não abre** a janela de 24h — só a resposta da pessoa abre.
+> Até ela responder, texto livre é recusado pela Meta (erro `131047`). Por isso o
+> corpo pede resposta explicitamente.
+
+> Vai na WABA do **número da central** (`SUPPORT_PHONE_NUMBER_ID`), que pode não
+> ser a mesma dos templates das clínicas. O script aceita o WABA como argumento.
 
 ---
 

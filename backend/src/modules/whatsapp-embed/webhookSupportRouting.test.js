@@ -8,12 +8,13 @@ import crypto from "node:crypto";
 process.env.SUPPORT_PHONE_NUMBER_ID = "1278044038716755";
 process.env.APP_SECRET = "s";
 
-const calls = { support: 0, inbound: 0 };
+const calls = { support: 0, inbound: 0, push: 0 };
 
 test.mock.module("../support/support.service.js", {
   namedExports: {
     isSupportNumber: (id) => Boolean(id) && String(id) === process.env.SUPPORT_PHONE_NUMBER_ID,
     recordInboundSupportMessage: async () => { calls.support++; return { reply: null }; },
+    notifySupportInbound: async () => { calls.push++; },
     recordOutboundSupportMessage: async () => {},
     updateOutboundStatus: async () => {},
   },
@@ -40,11 +41,13 @@ function reqFor(phoneNumberId) {
 const res = { sendStatus() {} };
 
 test("evento da central vira ticket e não entra no fluxo de pacientes", async () => {
-  calls.support = 0; calls.inbound = 0;
+  calls.support = 0; calls.inbound = 0; calls.push = 0;
   await receiveWebhook(reqFor("1278044038716755"), res);
   await new Promise((r) => setTimeout(r, 50));
   assert.equal(calls.support, 1);
   assert.equal(calls.inbound, 0);
+  // Mensagem gravada sem avisar ninguém é mensagem que fica sem resposta.
+  assert.equal(calls.push, 1);
 });
 
 test("evento de clínica segue no fluxo de pacientes, intocado", async () => {

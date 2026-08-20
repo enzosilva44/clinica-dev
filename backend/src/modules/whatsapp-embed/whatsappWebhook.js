@@ -4,6 +4,7 @@ import { processInboundMessage } from "../automations/inbound.service.js";
 import { enqueueWebhookEvent } from "../conversations/webhook/webhookEvent.service.js";
 import {
   isSupportNumber,
+  notifySupportInbound,
   recordInboundSupportMessage,
   recordOutboundSupportMessage,
   updateOutboundStatus as updateSupportOutboundStatus,
@@ -51,6 +52,7 @@ async function handleSupportChange(value) {
 
   for (const msg of value.messages || []) {
     const result = await recordInboundSupportMessage(msg, { waName });
+    await notifySupportInbound(result, msg);
     if (!result?.reply) continue;
 
     try {
