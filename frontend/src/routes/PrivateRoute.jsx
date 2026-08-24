@@ -7,6 +7,22 @@ import { isTokenExpired, clearSession } from "../services/session";
 // novo precisa concluir /contratar antes de usar o sistema.
 const CONTRACT_GATE_CUTOFF = new Date("2026-07-27T00:00:00Z");
 
+// ORDEM DAS GUARDAS — a parte fácil de quebrar.
+//
+// Cada rota de exceção libera só a SUA pendência (/trocar-senha permite senha
+// pendente, /contratar permite falta de assinatura). Uma conta com as DUAS
+// pendências ao mesmo tempo — criada pelo admin depois do corte, que é o caso
+// de toda clínica cadastrada à mão — fazia as duas telas se expulsarem em
+// looping, e o app abria em branco no primeiro acesso.
+//
+// A senha vem primeiro e as demais guardas só valem depois dela. Ao mexer
+// aqui, confira estes casos:
+//
+//   senha pendente + sem assinatura  → /trocar-senha  (e fica lá)
+//   só sem assinatura                → /contratar
+//   legada (pré-corte)               → passa
+//   demo, ou assinatura ativa        → passa
+
 export default function PrivateRoute({
   children,
   allowPasswordChange = false,
@@ -37,7 +53,13 @@ export default function PrivateRoute({
 
   // Contratação obrigatória (só contas novas): sem assinatura ativa, manda para
   // /contratar. Demos (que exploram antes de contratar) e legados ficam de fora.
-  if (!allowContract && needsContract(stored)) {
+  //
+  // A senha pendente tem precedência: conta criada pelo admin chega com as DUAS
+  // pendências (senha provisória + sem assinatura), e sem esta condição as duas
+  // telas se expulsavam em looping — /trocar-senha mandava para /contratar, que
+  // mandava de volta — - deixando a tela branca no primeiro acesso. Além do
+  // loop, pedir cartão a quem ainda está com senha provisória é fora de ordem.
+  if (!allowContract && !stored.mustChangePassword && needsContract(stored)) {
     return <Navigate to="/contratar" />;
   }
 
@@ -50,7 +72,9 @@ export default function PrivateRoute({
 }
 
 // Conta nova (pós-corte), sem assinatura e que não é demo → precisa contratar.
-function needsContract(user) {
+// Exportada porque a tela de troca de senha decide o destino com a MESMA regra:
+// duplicá-la lá faria as duas divergirem no dia em que o corte mudasse.
+export function needsContract(user) {
   if (user.subscriptionStatus) return false;        // já contratou
   if (user.demoExpiresAt) return false;             // conta demo: fluxo próprio
   if (!user.createdAt) return false;                // sem data → trata como legado

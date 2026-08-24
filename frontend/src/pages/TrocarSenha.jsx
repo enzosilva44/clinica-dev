@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { needsContract } from "../routes/PrivateRoute";
 import api from "../services/api";
 import toast from "react-hot-toast";
 
@@ -27,7 +28,14 @@ export default function TrocarSenha() {
       await api.patch("/profile/password", { currentPassword, newPassword });
       updateUser({ mustChangePassword: false });
       toast.success("Senha redefinida com sucesso!");
-      navigate("/dashboard");
+      // Conta criada pelo admin chega com senha provisória E sem assinatura.
+      // Resolvida a senha, o próximo passo é contratar — mandar para o dashboard
+      // só provocaria mais um redirecionamento na cara da pessoa.
+      // Lê do localStorage (mesma fonte do PrivateRoute): `user` do contexto
+      // pode não trazer createdAt/subscriptionStatus, e a regra ficaria cega.
+      let stored = {};
+      try { stored = JSON.parse(localStorage.getItem("user") || "{}"); } catch { stored = {}; }
+      navigate(needsContract(stored) ? "/contratar" : "/dashboard");
     } catch (err) {
       toast.error(err?.response?.data?.error || "Erro ao redefinir a senha");
     } finally {
