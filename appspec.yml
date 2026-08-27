@@ -1,6 +1,19 @@
 version: 0.0
 os: linux
 
+# Sem isto, o CodeDeploy ABORTA o Install ao encontrar um arquivo que ele não
+# instalou (erro "a specified file already exists at this location"). Foi o que
+# travou todo deploy entre 20/08 e 27/08/2026: o engine do Prisma
+# libquery_engine-debian-openssl-3.0.x.so.node foi criado à mão na EC2 e passou
+# a colidir com o do artifact. Pior, o Install falhando dispara o
+# `onFailure: ROLLBACK` do pipeline, e a execução de ROLLBACK aparece no console
+# como "Succeeded" — o deploy parecia ter subido sem nunca ter subido.
+#
+# A raiz continua sendo o buildspec empacotar node_modules junto (o que põe
+# milhares de binários sob o controle do CodeDeploy); enquanto isso não mudar,
+# OVERWRITE é o que mantém o Install idempotente.
+file_exists_behavior: OVERWRITE
+
 # Copia o conteúdo do build para a EC2
 files:
   - source: /
