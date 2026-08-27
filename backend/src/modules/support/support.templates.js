@@ -26,9 +26,9 @@ export const OUTREACH_TEMPLATES = [
     label: "Prospecção — primeiro contato",
     description:
       "Apresenta a IASO para quem nunca falou com a gente. Categoria MARKETING, com opt-out.",
-    // Submetido em 19/08/2026 (id 1077894137965802). Trocar para "APPROVED"
-    // quando a Meta aprovar — é isso que libera o envio na Central.
-    status: "PENDING",
+    // Submetido em 19/08/2026, aprovado pela Meta em 27/08/2026
+    // (id 1077894137965802).
+    status: "APPROVED",
     category: "MARKETING",
     language: "pt_BR",
     fields: [

@@ -51,7 +51,12 @@ const DEFAULT_TEMPLATES = {
   reminder: {
     name: "Pedido de confirmação (véspera)",
     body: "Olá {{nome}}! 🔔 Aqui é {{clinica}}. Sua consulta é em {{data}} às {{hora}}. Pode confirmar pra gente?",
-    metaTemplateName: "confirmacao_consulta_iaso",
+    // v2 aprovado pela Meta em 27/08/2026 (id 2520896925086964): mesmo corpo e
+    // mesmos dois quick replies, só o fecho da frase mudou ("a gente ajeita" →
+    // "a gente organiza tudo para você"). Nome novo em vez de editar o
+    // original, porque editar devolve o template para análise e nesse meio
+    // tempo nenhuma clínica confirmaria consulta.
+    metaTemplateName: "confirmacao_consulta_iaso_v2",
     metaLanguage: "pt_BR",
     metaVariables: ["nome", "clinica", "data", "hora"],
   },
