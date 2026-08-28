@@ -45,6 +45,40 @@ export async function sendEmailOtp(to, code, documentName) {
   });
 }
 
+// Link de redefinição de senha. O link carrega o token em texto puro — é a única
+// hora em que ele existe fora do hash guardado no banco.
+export async function sendPasswordResetEmail(to, { name, resetUrl, expiraEmMinutos }) {
+  if (!process.env.SMTP_HOST && !process.env.SMTP_USER) {
+    console.warn(`[PasswordReset] SMTP não configurado. Link para ${to}: ${resetUrl}`);
+    return;
+  }
+
+  const transport = createTransport();
+  await transport.sendMail({
+    from: FROM,
+    to,
+    subject: "Redefinição de senha | Iasoclin",
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff;border:1px solid #E8E0D2;border-radius:12px">
+        <h2 style="color:#1F4D46;margin:0 0 8px">Redefinir sua senha</h2>
+        <p style="color:#555;font-size:14px;margin:0 0 20px">
+          Olá${name ? `, ${name}` : ""}! Recebemos um pedido para redefinir a senha da sua conta.
+          Clique no botão abaixo para criar uma nova.
+        </p>
+        <div style="text-align:center;margin-bottom:24px">
+          <a href="${resetUrl}" style="display:inline-block;background:#1F4D46;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px">Criar nova senha</a>
+        </div>
+        <p style="color:#888;font-size:12px;margin:0">
+          Este link expira em <strong>${expiraEmMinutos} minutos</strong> e só pode ser usado uma vez.<br>
+          Se você não pediu para redefinir sua senha, pode ignorar este e-mail — nada muda.
+        </p>
+        <hr style="border:none;border-top:1px solid #E8E0D2;margin:24px 0">
+        <p style="color:#aaa;font-size:11px;margin:0">Iasoclin · Tecnologia que cuida de quem cuida.</p>
+      </div>
+    `,
+  });
+}
+
 // E-mail de boas-vindas / acesso após contratação self-service.
 export async function sendAccessEmail(to, { name, loginUrl }) {
   if (!process.env.SMTP_HOST && !process.env.SMTP_USER) {

@@ -9,6 +9,7 @@ import { seedDefaultFolders } from "../../shared/defaultFolders.js";
 import { saveFile } from "../../providers/storage/index.js";
 import { buildStorageKey } from "../../providers/storage/storageKey.js";
 import { solidPng, DEMO_PORTFOLIO_COLORS } from "./demoImage.js";
+import { sendPasswordResetEmail } from "../../providers/notifications/email.provider.js";
 import { accessState } from "../billing/access.js";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -536,6 +537,146 @@ export async function googleLogin(req, res) {
 
     return res.status(401).json({
       error: "Login com Google inválido",
+    });
+  }
+}
+
+// Janela de validade do link de redefinição.
+const RESET_TOKEN_TTL_MIN = 60;
+// Freio anti-abuso: sem isso, o endpoint vira uma metralhadora de e-mail contra
+// qualquer endereço. Contamos por usuário no banco (e não por IP) porque atrás do
+// CloudFront todo mundo chega com o mesmo IP — rate limit por IP puniria todas as
+// clínicas juntas.
+const RESET_MAX_POR_JANELA = 3;
+
+function hashResetToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+// POST /auth/forgot-password
+export async function forgotPassword(req, res) {
+  const email = String(req.body?.email ?? "").trim();
+
+  // A resposta é sempre idêntica, exista a conta ou não: caso contrário a tela
+  // vira um oráculo para descobrir quais e-mails são clientes da Iasoclin.
+  const respostaNeutra = {
+    message:
+      "Se este e-mail estiver cadastrado, enviamos um link para você criar uma nova senha. Dê uma olhada na caixa de entrada.",
+  };
+
+  if (!email) {
+    return res.status(400).json({ error: "Informe seu e-mail para continuar." });
+  }
+
+  try {
+    // Busca insensível a maiúsculas: o cadastro e o login não normalizam o
+    // e-mail, então ele está no banco como a pessoa digitou. Um findUnique exato
+    // falharia silenciosamente para quem cadastrou com maiúscula — ela veria a
+    // mensagem de sucesso e nunca receberia o e-mail.
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+    });
+
+    if (!user) {
+      return res.json(respostaNeutra);
+    }
+
+    // Contas que entram pelo Google não têm senha própria para redefinir.
+    if (user.authProvider === "google") {
+      return res.json(respostaNeutra);
+    }
+
+    const desdeUmaHora = new Date(Date.now() - RESET_TOKEN_TTL_MIN * 60 * 1000);
+    const pedidosRecentes = await prisma.passwordResetToken.count({
+      where: { userId: user.id, createdAt: { gte: desdeUmaHora } },
+    });
+
+    if (pedidosRecentes >= RESET_MAX_POR_JANELA) {
+      // Mesmo bloqueado, devolvemos a resposta neutra — sinalizar o bloqueio
+      // também entregaria que a conta existe.
+      return res.json(respostaNeutra);
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: hashResetToken(token),
+        expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MIN * 60 * 1000),
+      },
+    });
+
+    // Mesmo fallback do billing.service.js: é o domínio onde as clínicas logam.
+    const base = (process.env.APP_URL || "https://sistema.iasoclin.com.br").replace(/\/$/, "");
+    const resetUrl = `${base}/redefinir-senha?token=${token}`;
+
+    await sendPasswordResetEmail(user.email, {
+      name: user.nickname || user.name,
+      resetUrl,
+      expiraEmMinutos: RESET_TOKEN_TTL_MIN,
+    });
+
+    return res.json(respostaNeutra);
+  } catch (error) {
+    console.error("[forgotPassword]", error);
+
+    return res.status(500).json({
+      error: "Não conseguimos enviar o e-mail agora. Tente de novo em instantes.",
+    });
+  }
+}
+
+// POST /auth/reset-password
+export async function resetPassword(req, res) {
+  const token = String(req.body?.token ?? "").trim();
+  const newPassword = String(req.body?.newPassword ?? "");
+
+  if (!token) {
+    return res.status(400).json({ error: "Link inválido. Peça um novo e-mail de redefinição." });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: "A nova senha deve ter ao menos 6 caracteres." });
+  }
+
+  try {
+    const registro = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash: hashResetToken(token) },
+      include: { user: true },
+    });
+
+    const expirado = registro && registro.expiresAt < new Date();
+
+    if (!registro || registro.usedAt || expirado) {
+      return res.status(400).json({
+        error: "Este link expirou ou já foi usado. Peça um novo e-mail de redefinição.",
+      });
+    }
+
+    const hash = await bcrypt.hash(newPassword, 8);
+
+    // Tudo numa transação: se a senha muda, os tokens têm que morrer junto.
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: registro.userId },
+        // mustChangePassword sai de cena: ela acabou de escolher a senha dela.
+        data: { password: hash, mustChangePassword: false },
+      }),
+      prisma.passwordResetToken.updateMany({
+        where: { userId: registro.userId, usedAt: null },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    return res.json({
+      message: "Senha redefinida! Agora é só entrar com a nova senha.",
+    });
+  } catch (error) {
+    console.error("[resetPassword]", error);
+
+    return res.status(500).json({
+      error: "Não conseguimos redefinir sua senha agora. Tente de novo em instantes.",
     });
   }
 }

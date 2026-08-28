@@ -28,6 +28,8 @@ import Mais from "../pages/Mais";
 import ComeceAgora from "../pages/ComeceAgora";
 import Contratar from "../pages/Contratar";
 import AcessoBloqueado from "../pages/AcessoBloqueado";
+import EsqueciSenha from "../pages/EsqueciSenha";
+import RedefinirSenha from "../pages/RedefinirSenha";
 
 export default function AppRoutes() {
   return (
@@ -41,6 +43,9 @@ export default function AppRoutes() {
       <Route path="/cadastro" element={<Signup />} />
       <Route path="/comece-agora" element={<ComeceAgora />} />
       <Route path="/demo" element={<Navigate to="/comece-agora" replace />} />
+      {/* Recuperação de senha: públicas por definição — quem esqueceu não loga */}
+      <Route path="/esqueci-senha"    element={<EsqueciSenha />} />
+      <Route path="/redefinir-senha"  element={<RedefinirSenha />} />
 
       {/* ── Troca de senha obrigatória (1º acesso) ── */}
       <Route path="/trocar-senha"      element={<PrivateRoute allowPasswordChange><TrocarSenha /></PrivateRoute>} />

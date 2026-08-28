@@ -111,7 +111,23 @@ model User {
   usageEvents           UsageEvent[]
   iosMemberships        IosMembership[]
   iosPositions          IosPosition[]        @relation("IosPositionOccupant")
+  passwordResetTokens   PasswordResetToken[]
   clinic                Clinic?              @relation(fields: [clinicId], references: [id])
+}
+
+// Token de "esqueci minha senha". Guardamos o HASH do token, nunca o token em si:
+// quem lesse a tabela conseguiria redefinir a senha de qualquer clínica.
+// Uso único (usedAt) e expiração curta — ver auth.controller.js.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // Saldo/consumo do ciclo atual por tenant (User) e por recurso medido.
