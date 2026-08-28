@@ -31,7 +31,6 @@ import portfolioRoutes from "./modules/portfolio/portfolio.routes.js";
 import packagesRoutes from "./modules/packages/packages.routes.js";
 import protocolRoutes from "./modules/protocols/protocol.routes.js";
 import whatsappEmbedRoutes from "./modules/whatsapp-embed/whatsappEmbed.routes.js";
-import conversationRoutes from "./modules/conversations/conversation.routes.js";
 import { verifyWebhook, receiveWebhook } from "./modules/whatsapp-embed/whatsappWebhook.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -73,7 +72,6 @@ app.use("/reports", authMiddleware, requireFeature("analytics"), reportsRoutes);
 app.use("/photos", photoRoutes);
 app.use("/portfolio", authMiddleware, requireFeature("portfolio"), portfolioRoutes);
 app.use("/automations", authMiddleware, requireFeature("whatsapp"), automationRoutes);
-app.use("/conversations", conversationRoutes);
 // Webhook público da Meta (sem authMiddleware — a Meta chama sem nosso token).
 app.get("/whatsapp/webhook", verifyWebhook);
 app.post("/whatsapp/webhook", receiveWebhook);

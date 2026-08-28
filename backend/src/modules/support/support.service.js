@@ -1,7 +1,7 @@
 // Iaso Suporte — central de atendimento da própria IASO.
 // Quem escreve é o cliente (clínica/lead); quem atende é a equipe interna.
-// Roda em paralelo ao inbox por clínica (conversations/) — a separação é feita
-// pelo phone_number_id que a Meta manda em cada evento.
+// Identificado pelo phone_number_id que a Meta manda em cada evento: o número
+// da central vira ticket aqui, os demais seguem para as automações da clínica.
 import { prisma } from "../../config/prisma.js";
 import {
   DEPARTMENTS,

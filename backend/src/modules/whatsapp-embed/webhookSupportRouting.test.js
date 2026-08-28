@@ -22,9 +22,6 @@ test.mock.module("../support/support.service.js", {
 test.mock.module("../automations/inbound.service.js", {
   namedExports: { processInboundMessage: async () => { calls.inbound++; } },
 });
-test.mock.module("../conversations/webhook/webhookEvent.service.js", {
-  namedExports: { enqueueWebhookEvent: async () => {} },
-});
 
 const { receiveWebhook } = await import("./whatsappWebhook.js");
 

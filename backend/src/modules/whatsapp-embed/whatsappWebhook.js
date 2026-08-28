@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import { prisma } from "../../config/prisma.js";
 import { processInboundMessage } from "../automations/inbound.service.js";
-import { enqueueWebhookEvent } from "../conversations/webhook/webhookEvent.service.js";
 import {
   isSupportNumber,
   notifySupportInbound,
@@ -95,11 +94,6 @@ export async function receiveWebhook(req, res) {
     for (const entry of entries) {
       for (const change of entry.changes || []) {
         const value = change.value || {};
-
-        // Iaso Conversas: enfileira o change cru na fila durável (idempotente).
-        // Não bloqueia nem substitui o fluxo de automações abaixo — a Fase 2
-        // do módulo passa a consumir esta fila. Best-effort, nunca quebra o webhook.
-        await enqueueWebhookEvent(change).catch(() => {});
 
         // IASO SUPORTE: eventos do número da central não são conversa de
         // paciente — viram ticket e saem daqui. Sem este desvio a mensagem cai
