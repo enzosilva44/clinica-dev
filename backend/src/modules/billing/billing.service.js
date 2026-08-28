@@ -595,11 +595,23 @@ export async function handleWebhook(event) {
   if (!payment) return;
 
   // ── Assinatura SaaS (mensalidade Iaso → clínica) ──────────────────────────
-  // Pagamentos de subscription trazem payment.subscription (ID da assinatura),
-  // que casa com User.asaasSubscriptionId. Reconcilia o status de acesso.
+  // Pagamentos de subscription trazem payment.subscription (ID da assinatura).
+  // ATENÇÃO: a presença de `subscription` NÃO basta para dizer que é a mensalidade
+  // do Iaso — a clínica também vende recorrência/parcelado para o PACIENTE, e o
+  // Asaas manda esses eventos pelo mesmo webhook. Tratar todo evento com
+  // `subscription` como mensalidade fazia a cobrança da paciente cair no ramo
+  // errado e sair pelo `return`, sem nunca dar baixa na Transaction.
+  // Só é mensalidade se a assinatura existir de fato em User.asaasSubscriptionId.
   if (payment.subscription) {
-    await reconcileSubscription(type, payment.subscription, payment);
-    return; // eventos de subscription não têm externalReference de Transaction
+    const isSaasSubscription = await prisma.user.findFirst({
+      where: { asaasSubscriptionId: payment.subscription },
+      select: { id: true },
+    });
+    if (isSaasSubscription) {
+      await reconcileSubscription(type, payment.subscription, payment);
+      return; // mensalidade não tem externalReference de Transaction
+    }
+    // Não é mensalidade: segue como cobrança da clínica → paciente (abaixo).
   }
 
   // ── Cobrança avulsa (Financeiro da clínica → paciente) ────────────────────
@@ -697,6 +709,8 @@ async function reconcileSubscription(type, subscriptionId, payment) {
     data,
   });
   if (res.count === 0) {
+    // Só chega aqui em corrida (assinatura desvinculada entre a checagem do
+    // handleWebhook e este update) — não mais para cobrança de paciente.
     console.warn(`[webhook] subscription ${subscriptionId} sem clínica correspondente (evento ${type}).`);
     return;
   }
