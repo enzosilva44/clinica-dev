@@ -1,12 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../services/api";
+import { clearSession } from "../services/session";
 import toast from "react-hot-toast";
 
 export default function RedefinirSenha() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
   const navigate = useNavigate();
+
+  // Quem abre um link de recuperação pode ter uma sessão antiga viva no
+  // navegador — e aí o app o joga para o /trocar-senha (que pede a senha ATUAL,
+  // justamente a que ele não tem) antes desta tela aparecer. Derrubar a sessão
+  // na entrada garante que o link de e-mail sempre caia aqui.
+  useEffect(() => { clearSession(); }, []);
   const [newPassword, setNewPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [saving, setSaving] = useState(false);

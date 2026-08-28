@@ -607,8 +607,10 @@ export async function forgotPassword(req, res) {
       },
     });
 
-    // Mesmo fallback do billing.service.js: é o domínio onde as clínicas logam.
-    const base = (process.env.APP_URL || "https://sistema.iasoclin.com.br").replace(/\/$/, "");
+    // Domínio onde as clínicas realmente entram. APP_URL não é emitida pelo
+    // gen-env.sh, então na prática vale este fallback — se um dia a variável for
+    // cadastrada no CodeBuild, ela assume.
+    const base = (process.env.APP_URL || "https://iasoclin.com.br").replace(/\/$/, "");
     const resetUrl = `${base}/redefinir-senha?token=${token}`;
 
     await sendPasswordResetEmail(user.email, {
