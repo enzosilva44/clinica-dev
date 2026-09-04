@@ -11,12 +11,12 @@ import MainLayout from "../layouts/MainLayout";
 import { Card, Spinner } from "../components/ui";
 import api from "../services/api";
 import ConnectWhatsAppButton from "../components/whatsapp/ConnectWhatsAppButton";
+import { whatsappHref } from "../config/contato.js";
 
-// WhatsApp de suporte/comercial — mesma env var usada no resto do app.
-const WHATSAPP_COMMERCIAL = import.meta.env.VITE_WHATSAPP_COMMERCIAL || "";
-const suporteHref = WHATSAPP_COMMERCIAL
-  ? `https://wa.me/${WHATSAPP_COMMERCIAL}?text=${encodeURIComponent("Olá! Quero usar meu próprio número de WhatsApp nas automações. Podem me ajudar?")}`
-  : "";
+// WhatsApp de suporte — fonte única em config/contato.js.
+const suporteHref = whatsappHref(
+  "Olá! Quero usar meu próprio número de WhatsApp nas automações. Podem me ajudar?"
+);
 
 const TYPE_META = {
   birthday:     { label: "Feliz aniversário",        icon: Cake,          color: "#C4895A", desc: "Enviada no dia do aniversário do paciente (todos os dias às 09h)." },

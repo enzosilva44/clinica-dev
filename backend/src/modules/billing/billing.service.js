@@ -2,6 +2,7 @@ import { prisma } from "../../config/prisma.js";
 import { checkQuota, consumeQuota } from "./quota.service.js";
 import { buildSplit } from "./split.service.js";
 import { getFeatures } from "../../config/features.js";
+import { sendAccessEmail } from "../../providers/notifications/email.provider.js";
 
 const BASE_URL = process.env.ASAAS_URL ?? "https://sandbox.asaas.com/api/v3";
 
@@ -691,10 +692,18 @@ async function reconcileSubscription(type, subscriptionId, payment) {
   if (!status) return; // evento sem impacto no acesso
 
   const data = { subscriptionStatus: status };
+  // Quem contratou direto (pending_payment) está esperando ESTE evento para
+  // receber o acesso — precisamos saber disso antes do update sobrescrever.
+  let liberouContratacaoDireta = false;
   if (status === "active") {
     // Pagou: trial virou assinatura paga e zera qualquer atraso pendente.
     data.trialEndsAt = null;
     data.overdueSince = null;
+    const antes = await prisma.user.findFirst({
+      where: { asaasSubscriptionId: subscriptionId },
+      select: { subscriptionStatus: true },
+    });
+    liberouContratacaoDireta = antes?.subscriptionStatus === "pending_payment";
   } else if (status === "past_due") {
     // Marca o início do atraso só uma vez (a carência de 10 dias conta daqui).
     const u = await prisma.user.findFirst({
@@ -715,6 +724,21 @@ async function reconcileSubscription(type, subscriptionId, payment) {
     return;
   }
   console.log(`[webhook] assinatura ${subscriptionId} → status=${status} (${res.count} clínica[s]).`);
+
+  // Contratação direta: o pagamento acabou de liberar o acesso. O e-mail de
+  // boas-vindas não foi enviado na contratação justamente para sair agora.
+  if (liberouContratacaoDireta) {
+    const clinic = await prisma.user.findFirst({
+      where: { asaasSubscriptionId: subscriptionId },
+      select: { email: true, name: true },
+    });
+    if (clinic) {
+      await sendAccessEmail(clinic.email, { name: clinic.name }).catch((e) =>
+        console.error("[webhook] sendAccessEmail:", e.message)
+      );
+      console.log(`[webhook] acesso liberado por pagamento — ${clinic.email}`);
+    }
+  }
 
   // Baixa no Faturamento (Admin) — regime de caixa: só quando o dinheiro cai
   // (PAYMENT_RECEIVED). Uma entrada efetivada por pagamento.

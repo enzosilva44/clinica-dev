@@ -65,9 +65,17 @@ model User {
   asaasAccountId        String?
   asaasAccountStatus    String?
   asaasSubscriptionId   String? // assinatura recorrente Asaas (mensalidade SaaS)
-  subscriptionStatus    String? // trialing | active | past_due | suspended | canceled
+  subscriptionStatus    String? // trialing | active | past_due | suspended | canceled | pending_payment
   trialEndsAt           DateTime? // fim do trial (1ª cobrança acontece nesta data)
   overdueSince          DateTime? // início do atraso; após GRACE dias sem pagar, acesso bloqueia
+  // Modalidade contratada: anual_avista | anual_parcelado | mensal.
+  // billingCycle (acima) segue como "anual"/"mensal" para os relatórios; este
+  // campo é o que distingue as DUAS anuais, que têm o mesmo preço mas formas de
+  // pagamento diferentes.
+  modalidade            String? // anual_avista | anual_parcelado | mensal
+  // Fim do compromisso de 12 meses (só nas modalidades anuais). Cancelar antes
+  // desta data cobra a diferença para o preço mensal cheio dos meses usados.
+  compromissoAte        DateTime?
   // Ciclo de vida self-service
   demoExpiresAt         DateTime? // conta demo temporária expira nesta data (cron limpa)
   leadSource            String? // "self-service" | "assistido"

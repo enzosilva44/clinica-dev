@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { prisma } from "../../config/prisma.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireFeature } from "../../middlewares/feature.middleware.js";
 import {
@@ -46,7 +47,7 @@ router.post("/webhook", async (req, res) => {
 // mas precisam poder contratar. Só exige estar autenticado.
 router.post("/contratar", authMiddleware, async (req, res) => {
   try {
-    const u = await contratar(req.user.id, req.body);
+    const { user: u, cobranca } = await contratar(req.user.id, req.body);
     // devolve só os campos públicos (nunca o password hash).
     // subscriptionStatus + createdAt são essenciais: o gate do frontend
     // (PrivateRoute) usa esses campos para reconhecer a conta como já
@@ -58,13 +59,44 @@ router.post("/contratar", authMiddleware, async (req, res) => {
         featureOverrides: u.featureOverrides ?? {}, avatarUrl: u.avatarUrl,
         demoExpiresAt: u.demoExpiresAt ?? null,
         subscriptionStatus: u.subscriptionStatus ?? null,
+        billingCycle: u.billingCycle ?? null,
+        modalidade: u.modalidade ?? null,
         createdAt: u.createdAt ?? null,
       },
+      // link do checkout Asaas — a tela de pagamento da contratação direta
+      cobranca: cobranca ?? null,
     });
   } catch (e) {
     console.error("[/billing/contratar]", e.message);
     res.status(400).json({ error: e.message });
   }
+});
+
+// ── situação da assinatura (usada pela tela de pagamento pendente) ─────────────
+// A tela consulta periodicamente para liberar o acesso assim que o webhook do
+// Asaas confirmar o pagamento — sem obrigar o cliente a deslogar e entrar de
+// novo. Fica antes do requireFeature: quem está em pending_payment ainda não
+// tem plano liberado, mas precisa justamente desta resposta.
+router.get("/assinatura", authMiddleware, async (req, res) => {
+  try {
+    const u = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        subscriptionStatus: true, plan: true, billingCycle: true,
+        trialEndsAt: true, asaasSubscriptionId: true,
+      },
+    });
+    if (!u) return res.status(404).json({ error: "Usuário não encontrado." });
+
+    res.json({
+      subscriptionStatus: u.subscriptionStatus ?? null,
+      plan: u.plan ?? null,
+      billingCycle: u.billingCycle ?? null,
+      trialEndsAt: u.trialEndsAt ?? null,
+      // o que a tela realmente quer saber: já posso entrar?
+      liberado: u.subscriptionStatus !== "pending_payment",
+    });
+  } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 // ── cotas de uso (todos os planos têm; NÃO exige faturamento) ───────────────────

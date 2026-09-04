@@ -8,12 +8,20 @@
 export const GRACE_DAYS = 10; // dias de carência após o vencimento antes de bloquear
 
 // Retorna o estado de acesso derivado do user.
-//   state:      "ok" | "grace" | "blocked"
+//   state:      "ok" | "grace" | "blocked" | "pending_payment"
 //   daysLeft:   dias restantes de carência (só em "grace")
 //   overdue:    boolean — há atraso em aberto (grace OU blocked)
 export function accessState(user) {
   const status = user?.subscriptionStatus;
   const overdueSince = user?.overdueSince ? new Date(user.overdueSince) : null;
+
+  // Contratação direta (sem trial): a conta existe mas o acesso só abre quando
+  // o Asaas confirma o pagamento. Diferente de "blocked" — não é inadimplência,
+  // é uma compra ainda não paga — então tem estado próprio e vem antes de
+  // qualquer checagem de atraso.
+  if (status === "pending_payment") {
+    return { state: "pending_payment", daysLeft: null, overdue: false };
+  }
 
   // Sem atraso registrado: acesso liberado (trialing, active, sem assinatura, ADMIN…).
   if (!overdueSince || (status !== "past_due" && status !== "suspended")) {

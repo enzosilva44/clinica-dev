@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { runBirthdayCron, runReminderCron } from "./automation.service.js";
 import { cleanupExpiredDemos } from "../auth/demoCleanup.service.js";
 import { syncWhatsappCost } from "../whatsapp/whatsappCost.service.js";
+import { reconcileTrials } from "../billing/trialReconcile.service.js";
 
 export function startAutomationCrons() {
   // Every day at 09:00 — birthday messages
@@ -35,6 +36,16 @@ export function startAutomationCrons() {
       const r = await syncWhatsappCost({ forcar: true });
       console.log(`[Cron] custo WhatsApp: ${r.linhas} linha(s) atualizada(s).`);
     } catch (e) { console.error("[Cron] whatsapp cost error:", e.message); }
+  });
+
+  // Todo dia às 08:00 — confere se os trials vencidos viraram cobrança de fato.
+  // Sem isso um trial que o Asaas não cobrou fica "trialing" para sempre e a
+  // clínica usa o sistema de graça sem que ninguém perceba. O job só alerta;
+  // não bloqueia acesso nem cobra ninguém por conta própria.
+  cron.schedule("0 8 * * *", async () => {
+    console.log("[Cron] Reconciliando trials vencidos…");
+    try { await reconcileTrials(); }
+    catch (e) { console.error("[Cron] trial reconcile error:", e.message); }
   });
 
   console.log("[Cron] Automation crons scheduled.");

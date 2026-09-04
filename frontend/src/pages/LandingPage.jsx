@@ -7,14 +7,15 @@ import {
 } from "lucide-react";
 import { LogoMark } from "../components/ui/Logo.jsx";
 import { PLANS, ANNUAL_DISCOUNT, BRL } from "../config/plans.js";
+import { whatsappHref } from "../config/contato.js";
 
 // URL da área administrativa (app separado)
 const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || "https://admin.iasoclin.com.br";
 
 // WhatsApp comercial (plano Enterprise / "Falar com a gente").
-const WHATSAPP_NUMBER = "5511930779474";
-const WHATSAPP_MSG = "Olá! Tenho interesse no plano Clínica do IasoClin e gostaria de falar com vocês.";
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MSG)}`;
+const WHATSAPP_URL = whatsappHref(
+  "Olá! Tenho interesse no plano Clínica do IasoClin e gostaria de falar com vocês."
+);
 
 function Logo({ light = false }) {
   return (

@@ -60,12 +60,20 @@ export function AuthProvider({ children }) {
 
   // `redirectTo` permite o fluxo self-service mandar o recém-cadastrado para a
   // contratação (/contratar) em vez do dashboard.
-  async function registerAndLogin(data, redirectTo = "/dashboard") {
+  // Cria a conta e deixa a sessão pronta, SEM navegar. Quem chama decide o
+  // destino — no cadastro unificado é preciso contratar antes de saber para
+  // onde ir (dashboard no trial, tela de pagamento na contratação direta).
+  async function registerSession(data) {
     const response = await api.post("/auth/register", data);
     const { token, user } = response.data;
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
     setUser(user);
+    return user;
+  }
+
+  async function registerAndLogin(data, redirectTo = "/dashboard") {
+    await registerSession(data);
     navigate(redirectTo);
   }
 
@@ -84,6 +92,7 @@ export function AuthProvider({ children }) {
         login,
         loginWithGoogle,
         registerAndLogin,
+        registerSession,
         updateUser,
         logout,
       }}

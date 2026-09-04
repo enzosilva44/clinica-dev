@@ -1,16 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Check, ChevronRight, ChevronLeft, Eye, EyeOff,
-  User, Phone, MapPin, Lock,
+  User, Phone, MapPin, Lock, CreditCard, ShieldCheck,
   CalendarCheck, Map, FileSignature, MessageSquare,
   Sparkles, Package, Shield, BarChart2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { mensagemDeErro } from "../lib/tomDeVoz";
+import { isValidCpf, isValidCnpj } from "../lib/documentos.js";
 import { useAuth } from "../contexts/AuthContext";
 import { LogoMark } from "../components/ui/Logo.jsx";
-import { PLANS as ALL_PLANS, PLANS_BY_ID } from "../config/plans.js";
+import { PLANS as ALL_PLANS, PLANS_BY_ID, ANNUAL_DISCOUNT, BRL } from "../config/plans.js";
+import { LGPD_TEXT, LGPD_TITLE, LGPD_VERSION } from "../content/legal/lgpd.js";
+import { CONTRACT_TEXT, CONTRACT_TITLE, CONTRACT_VERSION } from "../content/legal/contrato.js";
+import { getLeadOrigin } from "../lib/leadOrigin.js";
+import api from "../services/api.js";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -41,13 +46,35 @@ const PLANS = ALL_PLANS
 
 const PLAN_FEATURES_ICONS = [CalendarCheck, Map, FileSignature, MessageSquare, Sparkles, Package, Shield, BarChart2];
 
+const PCT = `${Math.round(ANNUAL_DISCOUNT * 100)}%`;
+
+// Caixa de texto legal rolável + checkbox de aceite.
+function LegalBox({ title, text, checked, onChange }) {
+  return (
+    <div className="mb-5">
+      <p className="text-sm font-bold text-[#141414] mb-1">{title}</p>
+      <p className="text-[11px] text-ambar font-semibold mb-2">⚠️ Rascunho — texto pendente de revisão jurídica.</p>
+      <div className="border border-creme-200 rounded-xl p-4 h-40 overflow-y-auto bg-creme-50 text-xs text-gray-600 whitespace-pre-line leading-relaxed mb-3">
+        {text}
+      </div>
+      <label className="flex items-start gap-2.5 cursor-pointer">
+        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)}
+          className="mt-0.5 w-4 h-4 accent-verde" />
+        <span className="text-sm text-gray-700">Li e concordo com {title.toLowerCase()}.</span>
+      </label>
+    </div>
+  );
+}
+
 // ── step indicator ────────────────────────────────────────────────────────────
 
 const STEPS = [
   { id: 1, icon: BarChart2,   label: "Plano"     },
-  { id: 2, icon: User,        label: "Dados"     },
-  { id: 3, icon: MapPin,      label: "Endereço"  },
-  { id: 4, icon: Lock,        label: "Acesso"    },
+  { id: 2, icon: CreditCard,  label: "Contrato"  },
+  { id: 3, icon: User,        label: "Dados"     },
+  { id: 4, icon: MapPin,      label: "Endereço"  },
+  { id: 5, icon: ShieldCheck, label: "Termos"    },
+  { id: 6, icon: Lock,        label: "Acesso"    },
 ];
 
 function StepIndicator({ current }) {
@@ -74,7 +101,8 @@ function StepIndicator({ current }) {
 // ── main component ────────────────────────────────────────────────────────────
 
 export default function Signup() {
-  const { registerAndLogin, loginWithGoogle } = useAuth();
+  const { registerSession, loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
   const googleRef = useRef(null);
   const googleRenderedRef = useRef(false);
 
@@ -84,7 +112,15 @@ export default function Signup() {
   // step 1
   const [plan, setPlan] = useState("solo");
 
-  // step 2
+  // step 2 (contrato: modalidade + forma de entrada)
+  const [modalidade, setModalidade] = useState("anual_parcelado");
+  const [entrada, setEntrada]       = useState("trial");
+
+  // step 5 (termos)
+  const [lgpdOk,     setLgpdOk]     = useState(false);
+  const [contractOk, setContractOk] = useState(false);
+
+  // step 3 (dados pessoais)
   const [personType,     setPersonType]     = useState("pf");
   const [fullName,       setFullName]       = useState("");
   const [nickname,       setNickname]       = useState("");
@@ -98,7 +134,7 @@ export default function Signup() {
   const [cnpj,           setCnpj]           = useState("");
   const [rg,             setRg]             = useState("");
 
-  // step 3
+  // step 4 (endereço)
   const [zipCode,       setZipCode]       = useState("");
   const [street,        setStreet]        = useState("");
   const [addressNumber, setAddressNumber] = useState("");
@@ -108,7 +144,7 @@ export default function Signup() {
   const [state,         setState]         = useState("");
   const [zipLoading,    setZipLoading]    = useState(false);
 
-  // step 4
+  // step 6 (acesso)
   const [email,       setEmail]       = useState("");
   const [password,    setPassword]    = useState("");
   const [confirm,     setConfirm]     = useState("");
@@ -116,7 +152,7 @@ export default function Signup() {
 
   // Google button
   useEffect(() => {
-    if (step !== 4) return;
+    if (step !== 6) return;
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId || !googleRef.current || googleRenderedRef.current) return;
     function render() {
@@ -157,11 +193,24 @@ export default function Signup() {
   }
 
   function validateStep() {
-    if (step === 2) {
+    if (step === 3) {
       if (!fullName.trim()) { toast.error("Informe o nome completo"); return false; }
       if (!phone.trim())    { toast.error("Informe o telefone"); return false; }
+      // CPF/CNPJ é obrigatório: sem ele o Asaas não emite a cobrança da
+      // mensalidade — nem no fim do trial, nem na contratação direta.
+      if (personType === "pj") {
+        if (!cnpj.trim())      { toast.error("Informe o CNPJ"); return false; }
+        if (!isValidCnpj(cnpj)) { toast.error("CNPJ inválido"); return false; }
+      } else {
+        if (!cpf.trim())      { toast.error("Informe o CPF"); return false; }
+        if (!isValidCpf(cpf)) { toast.error("CPF inválido"); return false; }
+      }
     }
-    if (step === 4) {
+    if (step === 5) {
+      if (!lgpdOk)     { toast.error("Aceite os termos de LGPD para continuar."); return false; }
+      if (!contractOk) { toast.error("Aceite o contrato para continuar."); return false; }
+    }
+    if (step === 6) {
       if (!email.trim())          { toast.error("Informe o e-mail"); return false; }
       if (password.length < 6)    { toast.error("Senha deve ter ao menos 6 caracteres"); return false; }
       if (password !== confirm)   { toast.error("As senhas não coincidem"); return false; }
@@ -180,12 +229,19 @@ export default function Signup() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  // Cria a conta e já contrata em seguida — o cadastro é o único caminho de
+  // entrada, então tudo (plano, modalidade, aceites) é resolvido aqui.
+  //
+  // A ORDEM importa: /billing/contratar exige estar autenticado (usa req.user),
+  // por isso a conta é criada primeiro e a sessão fica pronta antes da
+  // contratação. O destino final depende da forma de entrada — trial vai ao
+  // dashboard, contratação direta vai pagar.
   async function handleSubmit(e) {
     e.preventDefault();
     if (!validateStep()) return;
     setLoading(true);
     try {
-      await registerAndLogin({
+      await registerSession({
         name: fullName.trim(),
         email: email.trim().toLowerCase(),
         password,
@@ -208,15 +264,58 @@ export default function Signup() {
         state: state || null,
         zipCode: zipCode.replace(/\D/g, "") || null,
         plan,
-      }, "/contratar"); // dados fiscais já coletados; segue para termos + pagamento
+      });
     } catch (err) {
       toast.error(mensagemDeErro(err, "criar a conta"));
+      setLoading(false);
+      return;
+    }
+
+    // Conta criada e sessão ativa. Agora a contratação.
+    try {
+      const origin = getLeadOrigin();
+      const { data } = await api.post("/billing/contratar", {
+        plan,
+        modalidade,
+        entrada,
+        lgpdVersion: LGPD_VERSION,
+        contractVersion: CONTRACT_VERSION,
+        acquisitionChannel: origin?.acquisitionChannel || null,
+      });
+
+      if (data?.user) {
+        localStorage.setItem("user", JSON.stringify({
+          ...JSON.parse(localStorage.getItem("user") || "{}"),
+          ...data.user,
+        }));
+      }
+
+      if (entrada === "direto" && data?.cobranca?.invoiceUrl) {
+        // Abre o checkout do Asaas e leva à tela de espera: o acesso só é
+        // liberado quando o webhook confirmar o pagamento.
+        window.open(data.cobranca.invoiceUrl, "_blank", "noopener");
+        navigate("/pagamento-pendente");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      // A conta EXISTE e a pessoa está logada — só a contratação falhou. Mandar
+      // para /contratar deixa ela concluir sem recadastrar nada.
+      toast.error(mensagemDeErro(err, "concluir a contratação"));
+      navigate("/contratar");
     } finally {
       setLoading(false);
     }
   }
 
   const selectedPlan = PLANS.find((p) => p.id === plan);
+  const planoSel = PLANS_BY_ID[plan];
+  const ehAnual = modalidade.startsWith("anual");
+  // Valor da PRIMEIRA cobrança — o que o cliente paga agora (ou no 15º dia).
+  const valorCobrado =
+    modalidade === "anual_avista" ? planoSel.annualTotal
+    : modalidade === "anual_parcelado" ? planoSel.annualMonthly
+    : planoSel.monthly;
 
   return (
     <div className="min-h-screen bg-creme-50 flex flex-col items-center justify-start px-4 py-10">
@@ -281,8 +380,117 @@ export default function Signup() {
           </div>
         )}
 
-        {/* ── STEP 2: DADOS PESSOAIS ─────────────────────────────────────────── */}
+        {/* ── STEP 2: CONTRATO (modalidade + forma de entrada) ──────────────── */}
         {step === 2 && (
+          <div className="bg-white rounded-3xl border border-creme-100 p-8 shadow-sm">
+            <h2 className="text-xl font-bold text-verde mb-1">Como você quer pagar</h2>
+            <p className="text-xs text-gray-400 mb-6">
+              Plano <strong>{planoSel.name}</strong>. Você paga na página segura do
+              Asaas — por PIX, cartão ou boleto.
+            </p>
+
+            <label className={LABEL}>Forma de pagamento</label>
+            <div className="space-y-3 mb-6">
+              <button onClick={() => setModalidade("anual_parcelado")}
+                className={`w-full text-left border rounded-xl px-5 py-4 transition relative ${
+                  modalidade === "anual_parcelado" ? "border-verde bg-verde/5" : "border-creme-200 hover:border-creme-300"
+                }`}>
+                <span className="absolute top-3 right-3 text-[10px] font-bold text-white bg-ambar px-2 py-0.5 rounded-full">
+                  -{PCT} · recomendado
+                </span>
+                <p className="font-bold text-sm text-[#141414] mb-1">
+                  Anual parcelado — {BRL(planoSel.annualMonthly)}/mês
+                </p>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Você fecha 12 meses mas paga <strong>uma parcela por mês</strong>,
+                  sem comprometer o limite do cartão de uma vez.
+                  {" "}<strong>Preço garantido</strong> durante todo o período.
+                </p>
+              </button>
+
+              <button onClick={() => setModalidade("anual_avista")}
+                className={`w-full text-left border rounded-xl px-5 py-4 transition relative ${
+                  modalidade === "anual_avista" ? "border-verde bg-verde/5" : "border-creme-200 hover:border-creme-300"
+                }`}>
+                <span className="absolute top-3 right-3 text-[10px] font-bold text-white bg-ambar px-2 py-0.5 rounded-full">
+                  -{PCT}
+                </span>
+                <p className="font-bold text-sm text-[#141414] mb-1">
+                  Anual à vista — {BRL(planoSel.annualTotal)}
+                </p>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Paga o ano inteiro de uma vez e economiza{" "}
+                  <strong>{BRL(planoSel.savings)}</strong>.
+                  {" "}<strong>Preço garantido</strong> durante todo o período.
+                </p>
+              </button>
+
+              <button onClick={() => setModalidade("mensal")}
+                className={`w-full text-left border rounded-xl px-5 py-4 transition ${
+                  modalidade === "mensal" ? "border-verde bg-verde/5" : "border-creme-200 hover:border-creme-300"
+                }`}>
+                <p className="font-bold text-sm text-[#141414] mb-1">
+                  Mensal — {planoSel.priceMonthlyLabel}/mês
+                </p>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Sem compromisso, cancele quando quiser. O valor
+                  {" "}<strong>não fica travado</strong> e está sujeito a reajuste.
+                </p>
+              </button>
+            </div>
+
+            {ehAnual && (
+              <p className="text-[11px] text-gray-400 -mt-3 mb-5 leading-relaxed">
+                Ao contratar uma modalidade anual você garante o preço por 12 meses.
+                Em caso de cancelamento antes do prazo, os meses já usados passam a
+                valer o preço mensal cheio ({planoSel.priceMonthlyLabel}) e a
+                diferença é cobrada.
+              </p>
+            )}
+
+            <label className={LABEL}>Como quer começar</label>
+            <div className="space-y-3">
+              <button onClick={() => setEntrada("trial")}
+                className={`w-full text-left border rounded-xl px-5 py-4 transition ${
+                  entrada === "trial" ? "border-verde bg-verde/5" : "border-creme-200 hover:border-creme-300"
+                }`}>
+                <p className="font-bold text-sm text-verde mb-1">Testar 14 dias grátis</p>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Acesso liberado <strong>assim que terminar o cadastro</strong>. A
+                  primeira cobrança de <strong>{BRL(valorCobrado)}</strong> acontece
+                  só no <strong>15º dia</strong>.
+                </p>
+              </button>
+
+              <button onClick={() => setEntrada("direto")}
+                className={`w-full text-left border rounded-xl px-5 py-4 transition ${
+                  entrada === "direto" ? "border-verde bg-verde/5" : "border-creme-200 hover:border-creme-300"
+                }`}>
+                <p className="font-bold text-sm text-verde mb-1">
+                  Contratar agora — {BRL(valorCobrado)}
+                </p>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Sem período de teste. Geramos a cobrança ao final do cadastro e o
+                  acesso é liberado <strong>assim que o pagamento for confirmado</strong>.
+                </p>
+              </button>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button onClick={back}
+                className="flex-1 border border-creme-200 py-3 rounded-xl text-sm hover:bg-creme-50 transition flex items-center justify-center gap-2">
+                <ChevronLeft size={16} /> Voltar
+              </button>
+              <button onClick={next}
+                className="flex-1 bg-verde hover:bg-verde-900 text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
+                Continuar <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: DADOS PESSOAIS ─────────────────────────────────────────── */}
+        {step === 3 && (
           <div className="bg-white rounded-3xl border border-creme-100 p-8 shadow-sm">
             <h2 className="text-xl font-bold text-verde mb-1">Dados pessoais e da clínica</h2>
             <p className="text-xs text-gray-400 mb-6">Informações do responsável e da clínica.</p>
@@ -350,7 +558,7 @@ export default function Signup() {
               {personType === "pf" ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={LABEL}>CPF</label>
+                    <label className={LABEL}>CPF *</label>
                     <input value={cpf} onChange={(e) => setCpf(maskCpf(e.target.value))}
                       placeholder="000.000.000-00" inputMode="numeric" className={INPUT} />
                   </div>
@@ -362,7 +570,7 @@ export default function Signup() {
                 </div>
               ) : (
                 <div>
-                  <label className={LABEL}>CNPJ</label>
+                  <label className={LABEL}>CNPJ *</label>
                   <input value={cnpj} onChange={(e) => setCnpj(maskCnpj(e.target.value))}
                     placeholder="00.000.000/0000-00" inputMode="numeric" className={INPUT} />
                 </div>
@@ -414,8 +622,8 @@ export default function Signup() {
           </div>
         )}
 
-        {/* ── STEP 3: ENDEREÇO ──────────────────────────────────────────────── */}
-        {step === 3 && (
+        {/* ── STEP 4: ENDEREÇO ──────────────────────────────────────────────── */}
+        {step === 4 && (
           <div className="bg-white rounded-3xl border border-creme-100 p-8 shadow-sm">
             <h2 className="text-xl font-bold text-verde mb-1">Endereço</h2>
             <p className="text-xs text-gray-400 mb-6">Endereço da clínica ou responsável.</p>
@@ -486,8 +694,33 @@ export default function Signup() {
           </div>
         )}
 
-        {/* ── STEP 4: ACESSO ────────────────────────────────────────────────── */}
-        {step === 4 && (
+        {/* ── STEP 5: TERMOS (LGPD + contrato) ──────────────────────────────── */}
+        {step === 5 && (
+          <div className="bg-white rounded-3xl border border-creme-100 p-8 shadow-sm">
+            <h2 className="text-xl font-bold text-verde mb-1">Termos e contrato</h2>
+            <p className="text-xs text-gray-400 mb-6">
+              Leia e aceite para concluir a contratação do plano{" "}
+              <strong>{planoSel.name}</strong>.
+            </p>
+
+            <LegalBox title={LGPD_TITLE} text={LGPD_TEXT} checked={lgpdOk} onChange={setLgpdOk} />
+            <LegalBox title={CONTRACT_TITLE} text={CONTRACT_TEXT} checked={contractOk} onChange={setContractOk} />
+
+            <div className="flex gap-3 mt-6">
+              <button onClick={back}
+                className="flex-1 border border-creme-200 py-3 rounded-xl text-sm hover:bg-creme-50 transition flex items-center justify-center gap-2">
+                <ChevronLeft size={16} /> Voltar
+              </button>
+              <button onClick={next}
+                className="flex-1 bg-verde hover:bg-verde-900 text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
+                Continuar <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 6: ACESSO ────────────────────────────────────────────────── */}
+        {step === 6 && (
           <div className="bg-white rounded-3xl border border-creme-100 p-8 shadow-sm">
             <h2 className="text-xl font-bold text-verde mb-1">Criar acesso</h2>
             <p className="text-xs text-gray-400 mb-6">Configure seu e-mail e senha para entrar no sistema.</p>
@@ -537,7 +770,11 @@ export default function Signup() {
                 </button>
                 <button type="submit" disabled={loading}
                   className="flex-1 bg-verde hover:bg-verde-900 disabled:opacity-60 text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
-                  {loading ? "Criando conta…" : <><Check size={15} /> Criar conta</>}
+                  {loading
+                    ? "Criando conta…"
+                    : entrada === "direto"
+                      ? <><Check size={15} /> Criar conta e pagar</>
+                      : <><Check size={15} /> Criar conta e começar</>}
                 </button>
               </div>
             </form>

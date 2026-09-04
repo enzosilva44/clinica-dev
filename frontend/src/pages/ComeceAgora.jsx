@@ -9,9 +9,7 @@ import LeadCaptureModal from "../components/demo/LeadCaptureModal.jsx";
 import { captureLeadOrigin, getLeadOrigin } from "../lib/leadOrigin.js";
 import api from "../services/api.js";
 
-// Número comercial de WhatsApp — AINDA NÃO DEFINIDO.
-// Preencher a env VITE_WHATSAPP_COMMERCIAL (formato internacional, ex: 5511999998888).
-const WHATSAPP_COMMERCIAL = import.meta.env.VITE_WHATSAPP_COMMERCIAL || "";
+import { whatsappHref as montaWhatsapp } from "../config/contato.js";
 
 // Módulos do sistema — textos escritos do zero para a página de captação.
 const MODULOS = [
@@ -43,9 +41,7 @@ export default function ComeceAgora() {
   // Captura UTM/origem assim que a página abre.
   useEffect(() => { captureLeadOrigin(); }, []);
 
-  const whatsappHref = WHATSAPP_COMMERCIAL
-    ? `https://wa.me/${WHATSAPP_COMMERCIAL}?text=${encodeURIComponent("Olá! Quero saber mais sobre o Iasoclin.")}`
-    : null;
+  const whatsappHref = montaWhatsapp("Olá! Quero saber mais sobre o Iasoclin.");
 
   function abrirModal() {
     setErro("");
@@ -85,24 +81,14 @@ export default function ComeceAgora() {
         >
           Testar demo grátis <ChevronRight size={16} />
         </button>
-        {whatsappHref ? (
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noreferrer"
-            className="border border-creme-200 text-verde px-6 py-3.5 rounded-xl font-medium text-sm hover:bg-creme-50 transition flex items-center justify-center gap-2"
-          >
-            <MessageCircle size={16} /> Falar no WhatsApp
-          </a>
-        ) : (
-          <button
-            disabled
-            title="Número de WhatsApp comercial ainda não configurado (VITE_WHATSAPP_COMMERCIAL)"
-            className="border border-creme-200 text-gray-400 px-6 py-3.5 rounded-xl font-medium text-sm cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <MessageCircle size={16} /> Falar no WhatsApp
-          </button>
-        )}
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noreferrer"
+          className="border border-creme-200 text-verde px-6 py-3.5 rounded-xl font-medium text-sm hover:bg-creme-50 transition flex items-center justify-center gap-2"
+        >
+          <MessageCircle size={16} /> Falar no WhatsApp
+        </a>
       </div>
     );
   }

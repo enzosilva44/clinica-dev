@@ -31,10 +31,21 @@ export async function blockOverdue(req, res, next) {
     });
     if (!user || user.role === "ADMIN") return next();
 
-    if (accessState(user).state === "blocked") {
+    const { state } = accessState(user);
+
+    if (state === "blocked") {
       return res.status(403).json({
         error: "Acesso suspenso por falta de pagamento.",
         code: "SUBSCRIPTION_BLOCKED",
+      });
+    }
+
+    // Contratou direto (sem trial) e ainda não pagou: a conta existe, mas o
+    // app só abre quando o webhook do Asaas confirmar o pagamento.
+    if (state === "pending_payment") {
+      return res.status(403).json({
+        error: "Confirme o pagamento para liberar o acesso.",
+        code: "PAYMENT_PENDING",
       });
     }
 

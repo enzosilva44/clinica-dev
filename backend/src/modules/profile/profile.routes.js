@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { prisma } from "../../config/prisma.js";
+import { isValidCpf, isValidCnpj } from "../../lib/documentos.js";
 
 const router = Router();
 router.use(authMiddleware);
@@ -44,6 +45,16 @@ router.patch("/", async (req, res) => {
           : req.body[key] || null;
       }
     }
+
+    // Documento é o que permite o Asaas emitir a cobrança. Aceita apagar
+    // (null), mas nunca gravar um número inválido.
+    if (data.cpf && !isValidCpf(data.cpf)) {
+      return res.status(400).json({ error: "CPF inválido." });
+    }
+    if (data.cnpj && !isValidCnpj(data.cnpj)) {
+      return res.status(400).json({ error: "CNPJ inválido." });
+    }
+
     const user = await prisma.user.update({
       where: { id: req.user.id },
       data,

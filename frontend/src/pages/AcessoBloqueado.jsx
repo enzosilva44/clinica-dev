@@ -3,7 +3,7 @@ import { Lock, MessageCircle, LogOut } from "lucide-react";
 import { LogoMark } from "../components/ui/Logo.jsx";
 import { useAuth } from "../contexts/AuthContext";
 
-const WHATSAPP_COMMERCIAL = import.meta.env.VITE_WHATSAPP_COMMERCIAL || "";
+import { whatsappHref as montaWhatsapp } from "../config/contato.js";
 
 // Tela cheia mostrada quando o acesso foi suspenso por falta de pagamento
 // (passados os 10 dias de carência). Caminhos de saída: falar no WhatsApp
@@ -12,11 +12,9 @@ export default function AcessoBloqueado() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const whatsappHref = WHATSAPP_COMMERCIAL
-    ? `https://wa.me/${WHATSAPP_COMMERCIAL}?text=${encodeURIComponent(
-        `Olá! Sou da ${user?.clinicName || user?.name || "minha clínica"} e preciso de ajuda para regularizar o pagamento do Iasoclin.`
-      )}`
-    : null;
+  const whatsappHref = montaWhatsapp(
+    `Olá! Sou da ${user?.clinicName || user?.name || "minha clínica"} e preciso de ajuda para regularizar o pagamento do Iasoclin.`
+  );
 
   return (
     <div className="min-h-screen bg-creme-50 flex items-center justify-center px-6 font-sans">

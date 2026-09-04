@@ -63,6 +63,15 @@ export default function PrivateRoute({
     return <Navigate to="/contratar" />;
   }
 
+  // Contratou direto (sem trial) e ainda não pagou: a conta existe, mas o app
+  // só abre quando o webhook do Asaas confirmar. Sem esta guarda o usuário
+  // entraria e levaria 403 em toda chamada — telas vazias sem explicação.
+  // Vem antes do bloqueio por inadimplência: são coisas diferentes, e esta é
+  // a que se aplica a quem nunca chegou a pagar.
+  if (!allowBlocked && stored.subscriptionStatus === "pending_payment") {
+    return <Navigate to="/pagamento-pendente" />;
+  }
+
   // Inadimplência: passada a carência de 10 dias, tranca tudo até regularizar.
   if (!allowBlocked && stored.accessState === "blocked") {
     return <Navigate to="/acesso-bloqueado" />;

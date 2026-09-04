@@ -28,6 +28,7 @@ import Mais from "../pages/Mais";
 import ComeceAgora from "../pages/ComeceAgora";
 import Contratar from "../pages/Contratar";
 import AcessoBloqueado from "../pages/AcessoBloqueado";
+import PagamentoPendente from "../pages/PagamentoPendente";
 import EsqueciSenha from "../pages/EsqueciSenha";
 import RedefinirSenha from "../pages/RedefinirSenha";
 
@@ -55,6 +56,9 @@ export default function AppRoutes() {
 
       {/* ── Acesso suspenso por inadimplência (após carência) ── */}
       <Route path="/acesso-bloqueado"  element={<PrivateRoute allowBlocked><AcessoBloqueado /></PrivateRoute>} />
+
+      {/* ── Contratou direto e ainda não pagou: espera o webhook do Asaas ── */}
+      <Route path="/pagamento-pendente" element={<PrivateRoute allowBlocked><PagamentoPendente /></PrivateRoute>} />
 
       {/* ── Sistema clínica ── */}
       <Route path="/dashboard"         element={<PrivateRoute><Dashboard /></PrivateRoute>} />

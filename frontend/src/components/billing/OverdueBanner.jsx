@@ -1,7 +1,7 @@
 import { AlertTriangle, MessageCircle } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 
-const WHATSAPP_COMMERCIAL = import.meta.env.VITE_WHATSAPP_COMMERCIAL || "";
+import { whatsappHref as montaWhatsapp } from "../../config/contato.js";
 
 // Barra de aviso exibida durante a carência de 10 dias após o vencimento
 // (accessState === "grace"). Alerta que o acesso será bloqueado e oferece o
@@ -14,11 +14,9 @@ export default function OverdueBanner() {
   const dias = user?.graceDaysLeft;
   const prazo = dias > 1 ? `${dias} dias` : dias === 1 ? "1 dia" : "hoje";
 
-  const whatsappHref = WHATSAPP_COMMERCIAL
-    ? `https://wa.me/${WHATSAPP_COMMERCIAL}?text=${encodeURIComponent(
-        `Olá! Sou da ${user?.clinicName || user?.name || "minha clínica"} e quero regularizar o pagamento do Iasoclin.`
-      )}`
-    : null;
+  const whatsappHref = montaWhatsapp(
+    `Olá! Sou da ${user?.clinicName || user?.name || "minha clínica"} e quero regularizar o pagamento do Iasoclin.`
+  );
 
   return (
     <div className="w-full bg-ambar text-white">
