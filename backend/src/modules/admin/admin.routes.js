@@ -824,7 +824,6 @@ router.get("/financial/billing", async (req, res) => {
       select: {
         id: true, name: true, clinicName: true, email: true,
         plan: true, billingCycle: true, createdAt: true,
-        cardBrand: true, cardLast4: true, cardHolderName: true, cardExpiry: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -853,17 +852,15 @@ router.get("/financial/billing", async (req, res) => {
       const exempt   = isExempt(c.email);
       const expected = exempt ? 0 : (isAnual ? (PLAN_ARR[c.plan] ?? 0) : (PLAN_MRR[c.plan] ?? 0));
       const paid     = paidMap[c.id] ?? null;
-      const method   = c.cardBrand && c.cardLast4
-        ? `${c.cardBrand} ****${c.cardLast4}`
-        : null;
+      // Forma de pagamento vem do que o Asaas confirmou (a clínica escolhe
+      // PIX/boleto/cartão no checkout dele) — não guardamos dados de cartão.
+      const method   = paid?.paymentMethod ?? null;
 
       return {
         id: c.id, name: display, email: c.email,
         plan: c.plan, billingCycle: c.billingCycle ?? "mensal", expected, paid,
         exempt,
         paymentMethod: method,
-        cardHolderName: c.cardHolderName,
-        cardExpiry: c.cardExpiry,
         since: c.createdAt,
         status: (exempt || expected === 0) ? "isento" : paid ? "pago" : "pendente",
       };

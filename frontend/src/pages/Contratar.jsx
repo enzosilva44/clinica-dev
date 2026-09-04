@@ -108,7 +108,6 @@ export default function Contratar() {
         contractVersion: CONTRACT_VERSION,
         // Sem cartão: backend abre a assinatura como UNDEFINED e o cliente
         // escolhe PIX/cartão/boleto na 1ª cobrança (fim do trial).
-        card: null,
         acquisitionChannel: origin?.acquisitionChannel || null,
       });
       // Atualiza o usuário logado (agora conta real, plano contratado).

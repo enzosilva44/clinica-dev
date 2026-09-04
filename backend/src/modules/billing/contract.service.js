@@ -26,7 +26,12 @@ function trialEndDate() {
 
 // Cria (ou reusa) o customer da clínica na conta Asaas da Iaso e abre a
 // assinatura recorrente mensal do plano contratado.
-async function createSubscription(user, plan, card, trialEnd) {
+//
+// Dados de cartão NUNCA passam por aqui: a assinatura sai sempre como
+// billingType UNDEFINED e o cliente escolhe PIX/cartão/boleto no checkout
+// hospedado do Asaas (1ª cobrança emitida no fim do trial). Isso mantém a
+// aplicação fora do escopo PCI-DSS.
+async function createSubscription(user, plan, trialEnd) {
   const key = iasoKey();
   const price = monthlyPlanValue(plan);
 
@@ -37,43 +42,16 @@ async function createSubscription(user, plan, card, trialEnd) {
     cpfCnpj: (user.cpf || user.cnpj || "").replace(/\D/g, "") || undefined,
   }, key);
 
-  const cpfCnpj = (user.cpf || user.cnpj || "").replace(/\D/g, "") || undefined;
-  const hasCard = !!(card?.number && card?.holderName && card?.expiry && card?.cvv);
-
-  // Sem cartão: billingType UNDEFINED — o cliente escolhe PIX/cartão/boleto no
-  // checkout da 1ª cobrança (emitida pelo Asaas no fim do trial). Com cartão:
-  // débito automático recorrente já tokenizado.
-  const body = {
+  const subscription = await asaas("POST", "/subscriptions", {
     customer: customer.id,
-    billingType: hasCard ? "CREDIT_CARD" : "UNDEFINED",
+    billingType: "UNDEFINED",
     value: price,
     nextDueDate: trialEnd.toISOString().slice(0, 10),
     cycle: "MONTHLY",
     description: `Iasoclin — plano ${plan}`,
-  };
+  }, key);
 
-  if (hasCard) {
-    const [expMonth, expYear] = (card.expiry || "").split("/");
-    body.creditCard = {
-      holderName: card.holderName,
-      number: card.number,
-      expiryMonth: expMonth,
-      expiryYear: expYear?.length === 2 ? `20${expYear}` : expYear,
-      ccv: card.cvv,
-    };
-    body.creditCardHolderInfo = {
-      name: card.holderName,
-      email: user.email,
-      cpfCnpj,
-      postalCode: (user.zipCode || "").replace(/\D/g, "") || undefined,
-      addressNumber: user.addressNumber || "0",
-      phone: (user.phone || "").replace(/\D/g, "") || undefined,
-    };
-  }
-
-  const subscription = await asaas("POST", "/subscriptions", body, key);
-
-  return { subscription, price, hasCard };
+  return { subscription, price };
 }
 
 // Cancela a assinatura recorrente da clínica na conta Asaas da Iaso.
@@ -156,22 +134,16 @@ async function upsertLead(user, acquisitionChannel, value) {
 // Fluxo self-service completo: Fechamento + Onboarding automáticos.
 // `user` é o registro logado (conta demo sendo promovida, ou conta real).
 export async function contratar(userId, payload) {
-  const { plan, lgpdVersion, contractVersion, card, acquisitionChannel } = payload;
+  const { plan, lgpdVersion, contractVersion, acquisitionChannel } = payload;
 
   if (!isContractablePlan(plan)) throw new Error("Plano inválido.");
-  // Cartão é opcional: sem ele, a assinatura sai como UNDEFINED e o cliente
-  // escolhe a forma de pagamento (PIX/cartão/boleto) na 1ª cobrança do trial.
-  const hasCardInput = !!(card?.number || card?.holderName || card?.expiry || card?.cvv);
-  if (hasCardInput && !(card.number && card.holderName && card.expiry && card.cvv)) {
-    throw new Error("Dados do cartão incompletos.");
-  }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error("Usuário não encontrado.");
 
   // 1. Assinatura recorrente Asaas — 1ª cobrança no fim do trial (D+15).
   const trialEnd = trialEndDate();
-  const { subscription, price, hasCard } = await createSubscription(user, plan, card, trialEnd);
+  const { subscription, price } = await createSubscription(user, plan, trialEnd);
 
   // 2. Promove a conta demo → real, grava aceites e limpa a expiração.
   const updated = await prisma.user.update({
@@ -191,11 +163,6 @@ export async function contratar(userId, payload) {
       // conta passa a ser ativa/em uso — alimenta o score de CS (loginCount/lastLoginAt)
       lastLoginAt: new Date(),
       loginCount: user.loginCount > 0 ? undefined : 1,
-      // guarda só os dados de exibição do cartão (não o número completo)
-      cardBrand: hasCard ? (subscription.creditCard?.creditCardBrand || null) : null,
-      cardLast4: hasCard ? (subscription.creditCard?.creditCardNumber?.slice(-4) || card.number.slice(-4)) : null,
-      cardHolderName: hasCard ? card.holderName : null,
-      cardExpiry: hasCard ? card.expiry : null,
     },
   });
 

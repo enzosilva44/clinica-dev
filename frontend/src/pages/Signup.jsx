@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Check, ChevronRight, ChevronLeft, Eye, EyeOff,
-  User, Phone, MapPin, CreditCard, Lock,
+  User, Phone, MapPin, Lock,
   CalendarCheck, Map, FileSignature, MessageSquare,
   Sparkles, Package, Shield, BarChart2,
 } from "lucide-react";
@@ -18,9 +18,6 @@ function maskCpf(v)    { return v.replace(/\D/g,"").slice(0,11).replace(/(\d{3})
 function maskCnpj(v)   { return v.replace(/\D/g,"").slice(0,14).replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/,"$1.$2.$3/$4-$5").replace(/-$/,"").replace(/\/$/,""); }
 function maskPhone(v)  { const d=v.replace(/\D/g,"").slice(0,11); return d.length>10?d.replace(/(\d{2})(\d{5})(\d{4})/,"($1) $2-$3"):d.replace(/(\d{2})(\d{4})(\d{0,4})/,"($1) $2-$3").replace(/-$/,""); }
 function maskZip(v)    { return v.replace(/\D/g,"").slice(0,8).replace(/(\d{5})(\d{0,3})/,"$1-$2").replace(/-$/,""); }
-function maskCard(v)   { return v.replace(/\D/g,"").slice(0,16).replace(/(\d{4})/g,"$1 ").trim(); }
-function maskExpiry(v) { return v.replace(/\D/g,"").slice(0,4).replace(/(\d{2})(\d{0,2})/,"$1/$2").replace(/\/$/,""); }
-function maskCvv(v)    { return v.replace(/\D/g,"").slice(0,4); }
 
 const INPUT = "w-full border border-creme-200 bg-white rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-verde/20 focus:border-verde transition";
 const LABEL = "text-xs font-semibold text-gray-500 mb-1.5 block";
@@ -50,8 +47,7 @@ const STEPS = [
   { id: 1, icon: BarChart2,   label: "Plano"     },
   { id: 2, icon: User,        label: "Dados"     },
   { id: 3, icon: MapPin,      label: "Endereço"  },
-  { id: 4, icon: CreditCard,  label: "Pagamento" },
-  { id: 5, icon: Lock,        label: "Acesso"    },
+  { id: 4, icon: Lock,        label: "Acesso"    },
 ];
 
 function StepIndicator({ current }) {
@@ -71,54 +67,6 @@ function StepIndicator({ current }) {
           )}
         </div>
       ))}
-    </div>
-  );
-}
-
-// ── card preview ──────────────────────────────────────────────────────────────
-
-function CardPreview({ number, name, expiry, flipped }) {
-  const display = number.padEnd(16,"•").replace(/(.{4})/g,"$1 ").trim();
-  return (
-    <div className={`relative w-full h-44 perspective-1000 cursor-pointer select-none`} style={{ perspective: 1000 }}>
-      <div className={`relative w-full h-full transition-transform duration-500`}
-        style={{ transformStyle: "preserve-3d", transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}>
-        {/* Front */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-verde to-[#2D6B60] p-6 flex flex-col justify-between shadow-xl"
-          style={{ backfaceVisibility: "hidden" }}>
-          <div className="flex justify-between items-start">
-            <p className="text-white/70 text-xs font-semibold tracking-widest uppercase">IasoClin Pay</p>
-            <div className="flex gap-1">
-              <div className="w-8 h-8 rounded-full bg-ambar opacity-80" />
-              <div className="w-8 h-8 rounded-full bg-ambar opacity-50 -ml-4" />
-            </div>
-          </div>
-          <div>
-            <p className="text-white text-lg font-mono tracking-widest mb-3">{display}</p>
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-white/50 text-[10px] uppercase mb-0.5">Titular</p>
-                <p className="text-white text-xs font-semibold uppercase tracking-wide">{name || "SEU NOME"}</p>
-              </div>
-              <div>
-                <p className="text-white/50 text-[10px] uppercase mb-0.5">Validade</p>
-                <p className="text-white text-xs font-mono">{expiry || "MM/AA"}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* Back */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-verde-900 to-verde flex flex-col justify-center shadow-xl"
-          style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-          <div className="bg-black/30 h-10 w-full mb-6" />
-          <div className="px-6">
-            <p className="text-white/50 text-[10px] uppercase mb-1">CVV</p>
-            <div className="bg-white/20 rounded-lg px-4 py-2 text-center">
-              <p className="text-white font-mono tracking-widest">•••</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -161,13 +109,6 @@ export default function Signup() {
   const [zipLoading,    setZipLoading]    = useState(false);
 
   // step 4
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardName,   setCardName]   = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv,    setCardCvv]    = useState("");
-  const [cardFlipped, setCardFlipped] = useState(false);
-
-  // step 5
   const [email,       setEmail]       = useState("");
   const [password,    setPassword]    = useState("");
   const [confirm,     setConfirm]     = useState("");
@@ -175,7 +116,7 @@ export default function Signup() {
 
   // Google button
   useEffect(() => {
-    if (step !== 5) return;
+    if (step !== 4) return;
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId || !googleRef.current || googleRenderedRef.current) return;
     function render() {
@@ -220,7 +161,7 @@ export default function Signup() {
       if (!fullName.trim()) { toast.error("Informe o nome completo"); return false; }
       if (!phone.trim())    { toast.error("Informe o telefone"); return false; }
     }
-    if (step === 5) {
+    if (step === 4) {
       if (!email.trim())          { toast.error("Informe o e-mail"); return false; }
       if (password.length < 6)    { toast.error("Senha deve ter ao menos 6 caracteres"); return false; }
       if (password !== confirm)   { toast.error("As senhas não coincidem"); return false; }
@@ -545,69 +486,8 @@ export default function Signup() {
           </div>
         )}
 
-        {/* ── STEP 4: PAGAMENTO ─────────────────────────────────────────────── */}
+        {/* ── STEP 4: ACESSO ────────────────────────────────────────────────── */}
         {step === 4 && (
-          <div className="bg-white rounded-3xl border border-creme-100 p-8 shadow-sm">
-            <h2 className="text-xl font-bold text-verde mb-1">Dados de pagamento</h2>
-            <p className="text-xs text-gray-400 mb-6">
-              Plano <strong>{selectedPlan?.name}</strong> — {selectedPlan?.price}{selectedPlan?.period}.
-              Cobrança ativada após verificação da conta.
-            </p>
-
-            <div className="mb-6">
-              <CardPreview number={cardNumber.replace(/\s/g,"")} name={cardName} expiry={cardExpiry} flipped={cardFlipped} />
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className={LABEL}>Número do cartão</label>
-                <input value={cardNumber} onChange={(e) => setCardNumber(maskCard(e.target.value))}
-                  onFocus={() => setCardFlipped(false)}
-                  placeholder="0000 0000 0000 0000" inputMode="numeric" maxLength={19} className={INPUT} />
-              </div>
-              <div>
-                <label className={LABEL}>Nome no cartão</label>
-                <input value={cardName} onChange={(e) => setCardName(e.target.value.toUpperCase())}
-                  onFocus={() => setCardFlipped(false)}
-                  placeholder="ANA CAROLINA SILVA" className={INPUT} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={LABEL}>Validade</label>
-                  <input value={cardExpiry} onChange={(e) => setCardExpiry(maskExpiry(e.target.value))}
-                    onFocus={() => setCardFlipped(false)}
-                    placeholder="MM/AA" inputMode="numeric" maxLength={5} className={INPUT} />
-                </div>
-                <div>
-                  <label className={LABEL}>CVV</label>
-                  <input value={cardCvv} onChange={(e) => setCardCvv(maskCvv(e.target.value))}
-                    onFocus={() => setCardFlipped(true)}
-                    onBlur={() => setCardFlipped(false)}
-                    placeholder="•••" inputMode="numeric" maxLength={4} className={INPUT} />
-                </div>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-gray-400 mt-4 flex items-center gap-1.5">
-              <Shield size={12} className="text-verde" />
-              Seus dados de pagamento são protegidos com criptografia SSL. Não armazenamos o número completo do cartão.
-            </p>
-
-            <div className="flex gap-3 mt-6">
-              <button onClick={back}
-                className="flex-1 border border-creme-200 py-3 rounded-xl text-sm hover:bg-creme-50 transition flex items-center justify-center gap-2">
-                <ChevronLeft size={16} /> Voltar
-              </button>
-              <button onClick={next}
-                className="flex-1 bg-verde hover:bg-verde-900 text-white py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
-                Continuar <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── STEP 5: ACESSO ────────────────────────────────────────────────── */}
-        {step === 5 && (
           <div className="bg-white rounded-3xl border border-creme-100 p-8 shadow-sm">
             <h2 className="text-xl font-bold text-verde mb-1">Criar acesso</h2>
             <p className="text-xs text-gray-400 mb-6">Configure seu e-mail e senha para entrar no sistema.</p>

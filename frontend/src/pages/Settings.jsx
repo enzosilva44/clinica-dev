@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { User, Building2, MapPin, CreditCard, Lock, Save, Eye, EyeOff, Check, Sparkles, Percent } from "lucide-react";
+import { User, Building2, MapPin, Lock, Save, Eye, EyeOff, Check, Sparkles, Percent } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import { Card } from "../components/ui";
 import api from "../services/api";
@@ -34,14 +34,12 @@ const PLAN_OPTIONS = [
   },
 ];
 
-const CARD_BRANDS = ["Visa","Mastercard","Elo","American Express","Hipercard","Outro"];
 
 const TABS = [
   { id: "pessoal",   icon: User,       label: "Dados Pessoais" },
   { id: "clinica",   icon: Building2,  label: "Clínica"        },
   { id: "endereco",  icon: MapPin,     label: "Endereço"       },
   { id: "plano",     icon: Sparkles,   label: "Plano"          },
-  { id: "pagamento", icon: CreditCard, label: "Pagamento"      },
   { id: "maquininha",icon: Percent,    label: "Maquininha", feature: "financial" },
   { id: "senha",     icon: Lock,       label: "Senha"          },
 ];
@@ -85,13 +83,6 @@ export default function Settings() {
   const [state,         setState]         = useState("");
   const [zipLoading,    setZipLoading]    = useState(false);
 
-  // cartão
-  const [cardBrand,      setCardBrand]      = useState("");
-  const [cardHolderName, setCardHolderName] = useState("");
-  const [cardLast4,      setCardLast4]      = useState("");
-  const [cardExpiry,     setCardExpiry]     = useState("");
-  const [cardNumber,     setCardNumber]     = useState("");
-
   // plano
   const [selectedPlan, setSelectedPlan] = useState("");
   const [planSaving,   setPlanSaving]   = useState(false);
@@ -125,10 +116,6 @@ export default function Settings() {
       setNeighborhood(p.neighborhood?? "");
       setCity(p.city                ?? "");
       setState(p.state              ?? "");
-      setCardBrand(p.cardBrand      ?? "");
-      setCardHolderName(p.cardHolderName ?? "");
-      setCardLast4(p.cardLast4      ?? "");
-      setCardExpiry(p.cardExpiry    ?? "");
       setSelectedPlan(p.plan        ?? "solo");
     }).catch(() => toast.error("Erro ao carregar perfil"));
   }, []);
@@ -169,19 +156,6 @@ export default function Settings() {
       toast.success("Dados salvos com sucesso!");
     } catch (e) {
       toast.error(e.response?.data?.error ?? "Erro ao salvar");
-    } finally { setSaving(false); }
-  }
-
-  async function saveCard() {
-    setSaving(true);
-    try {
-      const last4 = cardNumber.replace(/\D/g,"").slice(-4) || cardLast4;
-      await api.patch("/profile", { cardBrand, cardHolderName, cardLast4: last4, cardExpiry });
-      setCardLast4(last4);
-      setCardNumber("");
-      toast.success("Cartão atualizado!");
-    } catch (e) {
-      toast.error(e.response?.data?.error ?? "Erro ao salvar cartão");
     } finally { setSaving(false); }
   }
 
@@ -435,69 +409,6 @@ export default function Settings() {
             </div>
           )}
 
-          {/* ── PAGAMENTO ── */}
-          {tab === "pagamento" && (
-            <div className="space-y-6">
-              {/* Cartão salvo */}
-              {cardLast4 && (
-                <div className="bg-linear-to-br from-verde to-[#2D6B60] rounded-2xl p-5 text-white">
-                  <p className="text-[11px] text-white/50 uppercase tracking-widest mb-3">Cartão cadastrado</p>
-                  <p className="text-lg font-mono tracking-widest mb-2">•••• •••• •••• {cardLast4}</p>
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-[10px] text-white/40 uppercase">Titular</p>
-                      <p className="text-sm font-semibold">{cardHolderName || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-white/40 uppercase">Validade</p>
-                      <p className="text-sm font-mono">{cardExpiry || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-white/40 uppercase">Bandeira</p>
-                      <p className="text-sm font-semibold">{cardBrand || "—"}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <p className="text-sm font-bold text-verde-900 mb-4">{cardLast4 ? "Atualizar cartão" : "Adicionar cartão"}</p>
-                <div className="space-y-4">
-                  <div>
-                    <label className={LABEL}>Número do cartão</label>
-                    <input value={cardNumber}
-                      onChange={(e) => {
-                        const v = e.target.value.replace(/\D/g,"").slice(0,16).replace(/(\d{4})/g,"$1 ").trim();
-                        setCardNumber(v);
-                      }}
-                      placeholder="0000 0000 0000 0000" inputMode="numeric" maxLength={19} className={INPUT + " font-mono"} />
-                    <p className="text-[11px] text-gray-400 mt-1">Apenas os últimos 4 dígitos são salvos. O número completo não é armazenado.</p>
-                  </div>
-                  <div>
-                    <label className={LABEL}>Nome no cartão</label>
-                    <input value={cardHolderName} onChange={(e) => setCardHolderName(e.target.value.toUpperCase())}
-                      placeholder="ANA CAROLINA SILVA" className={INPUT} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className={LABEL}>Validade</label>
-                      <input value={cardExpiry}
-                        onChange={(e) => setCardExpiry(e.target.value.replace(/\D/g,"").slice(0,4).replace(/(\d{2})(\d{0,2})/,"$1/$2").replace(/\/$/,""))}
-                        placeholder="MM/AA" inputMode="numeric" maxLength={5} className={INPUT + " font-mono"} />
-                    </div>
-                    <div>
-                      <label className={LABEL}>Bandeira</label>
-                      <select value={cardBrand} onChange={(e) => setCardBrand(e.target.value)} className={INPUT}>
-                        <option value="">Selecione...</option>
-                        {CARD_BRANDS.map((b) => <option key={b}>{b}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* ── MAQUININHA ── */}
           {tab === "maquininha" && <CardFeesSettings />}
 
@@ -540,13 +451,12 @@ export default function Settings() {
           {tab !== "plano" && tab !== "maquininha" && (
             <div className="mt-8 pt-6 border-t border-creme-100 flex justify-end">
               <button
-                onClick={tab === "senha" ? changePassword : tab === "pagamento" ? saveCard : saveProfile}
+                onClick={tab === "senha" ? changePassword : saveProfile}
                 disabled={saving || (profile?.authProvider === "google" && tab === "senha")}
                 className="flex items-center gap-2 bg-verde hover:bg-verde-900 disabled:opacity-50 text-white px-8 py-3 rounded-xl font-semibold text-sm transition">
                 <Save size={15} />
                 {saving ? "Salvando…"
                   : tab === "senha"     ? "Alterar senha"
-                  : tab === "pagamento" ? "Salvar cartão"
                   : "Salvar alterações"}
               </button>
             </div>

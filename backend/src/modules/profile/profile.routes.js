@@ -18,7 +18,6 @@ router.get("/", async (req, res) => {
         clinicName: true, specialty: true, professionalId: true,
         street: true, addressNumber: true, complement: true,
         neighborhood: true, city: true, state: true, zipCode: true,
-        cardBrand: true, cardLast4: true, cardHolderName: true, cardExpiry: true,
         avatarUrl: true, authProvider: true, createdAt: true,
       },
     });
@@ -36,7 +35,6 @@ router.patch("/", async (req, res) => {
       "clinicName", "specialty", "professionalId",
       "street", "addressNumber", "complement",
       "neighborhood", "city", "state", "zipCode",
-      "cardBrand", "cardLast4", "cardHolderName", "cardExpiry",
     ];
     const data = {};
     for (const key of allowed) {
