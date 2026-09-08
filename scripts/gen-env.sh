@@ -59,7 +59,9 @@ echo "backend/.env gerado com $(wc -l < backend/.env) linhas"
 {
   echo "VITE_API_URL=${VITE_API_URL}"
   echo "VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}"
-  echo "VITE_WHATSAPP_COMMERCIAL=${VITE_WHATSAPP_COMMERCIAL:-5516993427085}"
+  # WhatsApp de suporte. O padrão precisa bater com frontend/src/config/contato.js:
+  # este arquivo VENCE o fallback do código, porque o Vite embute a env no bundle.
+  echo "VITE_WHATSAPP_COMMERCIAL=${VITE_WHATSAPP_COMMERCIAL:-5511930779474}"
 } > frontend/.env.production
 
 echo "frontend/.env.production gerado com $(wc -l < frontend/.env.production) linhas"
